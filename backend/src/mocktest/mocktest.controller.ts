@@ -19,8 +19,12 @@ export class MockTestController {
 
   @Roles(UserRole.STUDENT)
   @Post(':id/start')
-  async startMockTest(@Req() req: any, @Param('id') id: string) {
-    return this.mockTestService.startMockTest(req.user.sub, id);
+  async startMockTest(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body('customDuration') customDuration?: number,
+  ) {
+    return this.mockTestService.startMockTest(req.user.sub, id, customDuration);
   }
 
   @Roles(UserRole.STUDENT)

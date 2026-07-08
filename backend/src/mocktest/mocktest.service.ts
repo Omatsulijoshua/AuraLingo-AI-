@@ -19,7 +19,7 @@ export class MockTestService {
   }
 
   // --- START ATTEMPT ---
-  async startMockTest(userId: string, mockTestId: string) {
+  async startMockTest(userId: string, mockTestId: string, customDuration?: number) {
     const mockTest = await this.prisma.mockTest.findUnique({
       where: { id: mockTestId },
       include: { sections: { orderBy: { order: 'asc' } } },
@@ -39,6 +39,7 @@ export class MockTestService {
         mockTestId,
         startedAt: new Date(),
         status: 'IN_PROGRESS',
+        customDuration: customDuration || null,
       },
     });
 
@@ -49,7 +50,7 @@ export class MockTestService {
     return {
       attemptId: attempt.id,
       mockTestTitle: mockTest.title,
-      totalDurationMinutes: mockTest.duration,
+      totalDurationMinutes: customDuration || mockTest.duration,
       firstSection: {
         id: firstSection.id,
         title: firstSection.title,
@@ -77,7 +78,8 @@ export class MockTestService {
 
     // Check if total test duration has expired
     const elapsedMinutes = (Date.now() - new Date(attempt.startedAt).getTime()) / (60 * 1000);
-    if (elapsedMinutes > attempt.mockTest.duration + 5) { // 5 mins grace period
+    const durationLimit = attempt.customDuration || attempt.mockTest.duration;
+    if (elapsedMinutes > durationLimit + 5) { // 5 mins grace period
       return this.finalizeMockAttempt(attemptId);
     }
 
@@ -155,7 +157,7 @@ export class MockTestService {
     });
     if (!attempt) throw new NotFoundException('Attempt not found');
 
-    const totalSeconds = attempt.mockTest.duration * 60;
+    const totalSeconds = (attempt.customDuration || attempt.mockTest.duration) * 60;
     const elapsedSeconds = Math.floor((Date.now() - new Date(attempt.startedAt).getTime()) / 1000);
     const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
 
