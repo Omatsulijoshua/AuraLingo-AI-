@@ -1,0 +1,424 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  TUTOR
+  STUDENT
+}
+
+enum ExamType {
+  ACADEMIC
+  GENERAL
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ModuleName {
+  LISTENING
+  READING
+  WRITING
+  SPEAKING
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  FILL_IN_THE_BLANK
+  MATCHING
+  TRUE_FALSE_NOT_GIVEN
+  YES_NO_NOT_GIVEN
+  SHORT_ANSWER
+  DRAG_AND_DROP
+}
+
+enum SubscriptionInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYSTACK
+  FLUTTERWAVE
+  MANUAL
+}
+
+enum NotificationType {
+  REMINDER
+  FEEDBACK
+  EXPIRY
+  NEW_LESSON
+  PAYMENT
+  ANNOUNCEMENT
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  email              String               @unique
+  passwordHash       String
+  name               String
+  role               UserRole             @default(STUDENT)
+  targetExam         ExamType             @default(ACADEMIC)
+  targetBand         Float                @default(7.0)
+  studyStreak        Int                  @default(0)
+  streakLastUpdated  DateTime?
+  isVerified         Boolean              @default(false)
+  verificationToken  String?
+  resetToken         String?
+  resetTokenExpires  DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  subscriptions      Subscription[]
+  payments           Payment[]
+  mockAttempts       UserMockAttempt[]
+  userAnswers        UserAnswer[]
+  writingSubmissions WritingSubmission[]
+  speakingSubmissions SpeakingSubmission[]
+  tutorFeedbacksGiven TutorFeedback[]     @relation("TutorReviews")
+  progressStats      ProgressStats?
+  notifications      Notification[]
+  auditLogs          AdminAuditLog[]
+}
+
+model SubscriptionPlan {
+  id                String               @id @default(uuid())
+  name              String
+  code              String               @unique // e.g., FREE, BASIC, PRO, PREMIUM
+  price             Decimal
+  interval          SubscriptionInterval @default(MONTHLY)
+  features          String[]
+  active            Boolean              @default(true)
+  limitLessons      Int                  @default(-1) // -1 for unlimited
+  limitDailyPractice Int                 @default(-1)
+  limitMockTests    Int                  @default(-1)
+  hasAiWriting      Boolean              @default(false)
+  hasAiSpeaking     Boolean              @default(false)
+  hasTutorReview    Boolean              @default(false)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  subscriptions     Subscription[]
+}
+
+model Subscription {
+  id                   String           @id @default(uuid())
+  userId               String
+  user                 User             @relation(fields: [userId], references: [id])
+  planId               String
+  plan                 SubscriptionPlan @relation(fields: [planId], references: [id])
+  status               String           // ACTIVE, EXPIRED, CANCELLED
+  startDate            DateTime         @default(now())
+  endDate              DateTime
+  autoRenew            Boolean          @default(true)
+  stripeSubscriptionId String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  payments             Payment[]
+}
+
+model Payment {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  subscriptionId    String?
+  subscription      Subscription?   @relation(fields: [subscriptionId], references: [id])
+  amount            Decimal
+  currency          String          @default("USD")
+  provider          PaymentProvider
+  providerReference String          @unique
+  status            PaymentStatus   @default(PENDING)
+  couponId          String?
+  coupon            Coupon?         @relation(fields: [couponId], references: [id])
+  createdAt         DateTime        @default(now())
+}
+
+model Coupon {
+  id             String    @id @default(uuid())
+  code           String    @unique
+  discountPercent Int
+  active         Boolean   @default(true)
+  expiryDate     DateTime?
+  usageLimit     Int?
+  usageCount     Int       @default(0)
+  createdAt      DateTime  @default(now())
+  payments       Payment[]
+}
+
+model Module {
+  id                String             @id @default(uuid())
+  name              ModuleName         @unique
+  lessons           Lesson[]
+  practiceQuestions PracticeQuestion[]
+  mockTestSections  MockTestSection[]
+}
+
+model Lesson {
+  id          String     @id @default(uuid())
+  title       String
+  content     String     @db.Text
+  videoUrl    String?
+  pdfUrl      String?
+  moduleId    String
+  module      Module     @relation(fields: [moduleId], references: [id])
+  difficulty  Difficulty @default(INTERMEDIATE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model ReadingPassage {
+  id                String             @id @default(uuid())
+  title             String
+  text              String             @db.Text
+  difficulty        Difficulty         @default(INTERMEDIATE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  practiceQuestions PracticeQuestion[]
+  mockTestSections  MockTestSection[]
+}
+
+model ListeningAudio {
+  id                String             @id @default(uuid())
+  title             String
+  audioUrl          String
+  transcript        String             @db.Text
+  duration          Int
+  difficulty        Difficulty         @default(INTERMEDIATE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  practiceQuestions PracticeQuestion[]
+  mockTestSections  MockTestSection[]
+}
+
+model PracticeQuestion {
+  id               String          @id @default(uuid())
+  moduleId         String
+  module           Module          @relation(fields: [moduleId], references: [id])
+  readingPassageId String?
+  readingPassage   ReadingPassage? @relation(fields: [readingPassageId], references: [id])
+  listeningAudioId String?
+  listeningAudio   ListeningAudio? @relation(fields: [listeningAudioId], references: [id])
+  questionType     QuestionType
+  difficulty       Difficulty      @default(INTERMEDIATE)
+  instruction      String
+  questionText     String          @db.Text
+  explanation      String          @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  options          QuestionOption[]
+  answers          Answer[]
+  userAnswers      UserAnswer[]
+}
+
+model QuestionOption {
+  id           String           @id @default(uuid())
+  questionId   String
+  question     PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionText   String
+  optionLetter String?          // e.g., 'A', 'B', 'C'
+  isCorrect    Boolean          @default(false)
+}
+
+model Answer {
+  id             String           @id @default(uuid())
+  questionId     String
+  question       PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  correctText    String
+  acceptableTexts String[]
+}
+
+model WritingPrompt {
+  id          String      @id @default(uuid())
+  title       String
+  promptText  String      @db.Text
+  examType    ExamType
+  taskType    String      // TASK_1 or TASK_2
+  imageUrl    String?
+  difficulty  Difficulty  @default(INTERMEDIATE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  submissions WritingSubmission[]
+}
+
+model SpeakingPrompt {
+  id                String               @id @default(uuid())
+  part              Int                  // 1, 2, or 3
+  cueCardText       String?              @db.Text
+  followUpQuestions String[]
+  topic             String
+  difficulty        Difficulty           @default(INTERMEDIATE)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  submissions       SpeakingSubmission[]
+}
+
+model MockTest {
+  id        String            @id @default(uuid())
+  title     String
+  examType  ExamType
+  duration  Int               // Total duration in minutes (normally 160)
+  active    Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  sections  MockTestSection[]
+  attempts  UserMockAttempt[]
+}
+
+model MockTestSection {
+  id               String          @id @default(uuid())
+  mockTestId       String
+  mockTest         MockTest        @relation(fields: [mockTestId], references: [id], onDelete: Cascade)
+  moduleId         String
+  module           Module          @relation(fields: [moduleId], references: [id])
+  title            String
+  order            Int
+  readingPassageId String?
+  readingPassage   ReadingPassage? @relation(fields: [readingPassageId], references: [id])
+  listeningAudioId String?
+  listeningAudio   ListeningAudio? @relation(fields: [listeningAudioId], references: [id])
+  instructions     String          @db.Text
+}
+
+model UserMockAttempt {
+  id                   String       @id @default(uuid())
+  userId               String
+  user                 User         @relation(fields: [userId], references: [id])
+  mockTestId           String
+  mockTest             MockTest     @relation(fields: [mockTestId], references: [id])
+  overallBandEstimate  Float?
+  listeningScore       Float?
+  readingScore         Float?
+  writingScore         Float?
+  speakingScore        Float?
+  startedAt            DateTime     @default(now())
+  completedAt          DateTime?
+  status               String       // IN_PROGRESS, COMPLETED
+  reportPdfUrl         String?
+  answers              UserAnswer[]
+}
+
+model UserAnswer {
+  id                String           @id @default(uuid())
+  attemptId         String?
+  attempt           UserMockAttempt? @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User             @relation(fields: [userId], references: [id])
+  questionId        String
+  question          PracticeQuestion @relation(fields: [questionId], references: [id])
+  answerText        String
+  isCorrect         Boolean          @default(false)
+  bandScoreEstimate Float?
+  feedback          String?          @db.Text
+  createdAt         DateTime         @default(now())
+}
+
+model WritingSubmission {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  promptId          String
+  prompt            WritingPrompt   @relation(fields: [promptId], references: [id])
+  userText          String          @db.Text
+  wordCount         Int
+  bandScoreEstimate Float?
+  feedbackJson      Json?
+  isTutorReviewed   Boolean         @default(false)
+  tutorFeedbackId   String?         @unique
+  tutorFeedback     TutorFeedback?  @relation("WritingFeedback")
+  createdAt         DateTime        @default(now())
+}
+
+model SpeakingSubmission {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  promptId          String
+  prompt            SpeakingPrompt  @relation(fields: [promptId], references: [id])
+  audioUrl          String
+  transcription     String          @db.Text
+  bandScoreEstimate Float?
+  feedbackJson      Json?
+  isTutorReviewed   Boolean         @default(false)
+  tutorFeedbackId   String?         @unique
+  tutorFeedback     TutorFeedback?  @relation("SpeakingFeedback")
+  createdAt         DateTime        @default(now())
+}
+
+model TutorFeedback {
+  id                   String              @id @default(uuid())
+  reviewerId           String
+  reviewer             User                @relation("TutorReviews", fields: [reviewerId], references: [id])
+  writingSubmissionId  String?             @unique
+  writingSubmission    WritingSubmission?  @relation("WritingFeedback", fields: [writingSubmissionId], references: [id])
+  speakingSubmissionId String?             @unique
+  speakingSubmission   SpeakingSubmission? @relation("SpeakingFeedback", fields: [speakingSubmissionId], references: [id])
+  bandScore            Float
+  feedbackText         String              @db.Text
+  createdAt            DateTime            @default(now())
+}
+
+model ProgressStats {
+  id                     String   @id @default(uuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id])
+  overallBandEstimate    Float    @default(0.0)
+  listeningHistory       Json     @default("[]")
+  readingHistory         Json     @default("[]")
+  writingHistory         Json     @default("[]")
+  speakingHistory        Json     @default("[]")
+  timeSpentStudying      Int      @default(0) // in minutes
+  lessonsCompletedCount  Int      @default(0)
+  mockTestsCompletedCount Int     @default(0)
+  weakQuestionTypes      Json     @default("[]")
+  lastUpdated            DateTime @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model AdminAuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  action    String
+  target    String
+  ipAddress String?
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+}
+
+model AppSettings {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  isEncrypted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
