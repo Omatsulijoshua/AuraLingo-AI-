@@ -74,9 +74,19 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-navy text-white flex flex-col">
       {/* Header */}
       <header className="h-16 border-b border-primary-light/30 bg-primary/45 backdrop-blur-md flex items-center justify-between px-8 md:px-16">
-        <Link href="/" className="text-xl font-bold tracking-wider flex items-center gap-1.5">
-          <span className="text-gold">BandUp</span> IELTS
-        </Link>
+        <div className="flex items-center gap-8">
+          <Link href="/" className="text-xl font-bold tracking-wider flex items-center gap-1.5">
+            <span className="text-gold">BandUp</span> IELTS
+          </Link>
+          <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-300">
+            <Link href="/dashboard/progress" className="hover:text-gold transition-colors">
+              📈 AI Progress Report
+            </Link>
+            <Link href="/dashboard/referrals" className="hover:text-gold transition-colors">
+              💸 Referral Program
+            </Link>
+          </nav>
+        </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-400">Streak:</span>

@@ -238,6 +238,11 @@ Topic: {topic}
 Cue Card/Questions: {cueCardText}
 Student Transcript: {transcription}`, 
       description: 'System prompt template for IELTS Speaking evaluations' 
+    },
+    {
+      key: 'manual_bank_payment_details',
+      value: '{"accountName": "Joshua toritseju omatsuli", "bankName": "Opay", "accountNumber": "8158075936"}',
+      description: 'Dynamic manual bank details for student subscription payments'
     }
   ];
 

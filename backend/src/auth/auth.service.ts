@@ -27,6 +27,19 @@ export class AuthService {
     
     // Create user and dependencies in a transaction
     return this.prisma.$transaction(async (tx: any) => {
+      let referrerId: string | null = null;
+      if (dto.referralCode) {
+        const referrer = await tx.user.findUnique({ where: { id: dto.referralCode } });
+        if (referrer) {
+          referrerId = referrer.id;
+          // Credit $1.0 to referrer balance for sign up referral reward
+          await tx.user.update({
+            where: { id: referrer.id },
+            data: { referralBalance: { increment: 1.0 } },
+          });
+        }
+      }
+
       const user = await tx.user.create({
         data: {
           email: dto.email.toLowerCase(),
@@ -37,6 +50,7 @@ export class AuthService {
           targetBand: 7.0,
           isVerified: false,
           verificationToken: crypto.randomBytes(32).toString('hex'),
+          referredById: referrerId,
         },
       });
 

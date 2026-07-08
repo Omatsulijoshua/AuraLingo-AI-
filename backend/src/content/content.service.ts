@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { CreateWritingSubmissionDto } from './dto/create-writing-submission.dto';
 import { TutorFeedbackDto } from './dto/tutor-feedback.dto';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { SubmitAssignmentDto } from './dto/submit-assignment.dto';
+import { GradeAssignmentDto } from './dto/grade-assignment.dto';
 import { Difficulty } from '@prisma/client';
 import { AiService } from '../admin/ai.service';
 
@@ -430,6 +433,103 @@ Provide a short, 3-paragraph explanation:
       }
 
       return feedback;
+    });
+  }
+
+  // --- ASSIGNMENTS MANAGEMENT SYSTEM ---
+  async createAssignment(tutorId: string, dto: CreateAssignmentDto) {
+    return this.prisma.assignment.create({
+      data: {
+        title: dto.title,
+        description: dto.description,
+        moduleId: dto.moduleId,
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+        tutorId,
+      },
+    });
+  }
+
+  async getAssignments() {
+    return this.prisma.assignment.findMany({
+      include: {
+        module: { select: { name: true } },
+        tutor: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async submitAssignment(studentId: string, assignmentId: string, dto: SubmitAssignmentDto) {
+    const assignment = await this.prisma.assignment.findUnique({ where: { id: assignmentId } });
+    if (!assignment) throw new NotFoundException('Assignment not found');
+
+    return this.prisma.assignmentSubmission.create({
+      data: {
+        assignmentId,
+        studentId,
+        submissionText: dto.submissionText,
+      },
+    });
+  }
+
+  async getTutorSubmissions(tutorId: string) {
+    return this.prisma.assignmentSubmission.findMany({
+      where: {
+        assignment: { tutorId },
+      },
+      include: {
+        assignment: true,
+        student: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async gradeAssignmentSubmission(tutorId: string, submissionId: string, dto: GradeAssignmentDto) {
+    const submission = await this.prisma.assignmentSubmission.findUnique({
+      where: { id: submissionId },
+      include: { assignment: true },
+    });
+
+    if (!submission) throw new NotFoundException('Submission not found');
+    if (submission.assignment.tutorId !== tutorId) {
+      throw new BadRequestException('You are not authorized to grade this submission');
+    }
+
+    let finalScore = dto.score || 6.5;
+    let finalFeedback = dto.feedback || 'Good attempt.';
+
+    if (dto.useAi) {
+      // Call AI to grade the assignment
+      try {
+        const prompt = `Grade this student IELTS assignment:
+        Assignment Title: ${submission.assignment.title}
+        Assignment Prompt: ${submission.assignment.description}
+        Student Response: ${submission.submissionText}
+        
+        Evaluate the writing and provide an estimated IELTS band score and detailed feedback recommendations.
+        CRITICAL: Return ONLY a valid JSON string without markdown formatting. Format:
+        {
+          "score": 7.0,
+          "feedback": "Paragraph 1: Cohesion was great... Paragraph 2: Watch out for grammar..."
+        }`;
+
+        const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+        const parsed = JSON.parse(aiResponse.text.trim());
+        finalScore = Number(parsed.score) || finalScore;
+        finalFeedback = parsed.feedback || finalFeedback;
+      } catch (err) {
+        console.warn('[AI_GRADE_ASSIGNMENT_ERROR] Falling back to manual details:', err);
+      }
+    }
+
+    return this.prisma.assignmentSubmission.update({
+      where: { id: submissionId },
+      data: {
+        score: finalScore,
+        feedback: finalFeedback,
+        gradedAt: new Date(),
+      },
     });
   }
 }

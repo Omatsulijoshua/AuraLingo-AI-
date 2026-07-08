@@ -22,4 +22,8 @@ export class RegisterDto {
   @IsEnum(ExamType)
   @IsOptional()
   targetExam?: ExamType;
+
+  @IsString()
+  @IsOptional()
+  referralCode?: string;
 }

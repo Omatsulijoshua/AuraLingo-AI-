@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { AiService } from '../admin/ai.service';
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AiService,
+  ) {}
 
   async getUserStats(userId: string) {
     const stats = await this.prisma.progressStats.findUnique({
@@ -65,5 +69,51 @@ export class AnalyticsService {
         recommendedLesson: lessonRec,
       };
     });
+  }
+
+  async getProgressReport(userId: string) {
+    const stats = await this.getUserStats(userId);
+    const mockAttempts = await this.prisma.userMockAttempt.findMany({
+      where: { userId, status: 'COMPLETED' },
+      orderBy: { startedAt: 'asc' },
+    });
+
+    const mockSummary = mockAttempts.map((att) => ({
+      startedAt: att.startedAt,
+      score: att.overallBandEstimate,
+      listening: att.listeningScore,
+      reading: att.readingScore,
+      writing: att.writingScore,
+      speaking: att.speakingScore,
+    }));
+
+    const prompt = `You are an IELTS tutor analyzing a student's performance logs.
+    Student Target Band: ${stats.user.targetBand}
+    Weekly Lessons Completed: ${stats.lessonsCompletedCount}
+    Mock Exams Taken: ${mockSummary.length}
+    Exam Scores History (first to latest): ${JSON.stringify(mockSummary)}
+    Weak Question Types identified: ${JSON.stringify(stats.weakQuestionTypes)}
+    
+    Write a highly detailed, 4-paragraph student report in Markdown format:
+    1. Overall Assessment: State clearly if there is an **improvement or not** based on comparison between early mock scores and recent mock scores. If there are no mock exams yet, base it on lessons/practices.
+    2. Strength areas: What sections they excel in.
+    3. Weakness focus: What sections and specific question types (e.g. MCQ, TFNG) they need to focus on.
+    4. Strategic Study Action Plan: Tailored schedule recommending how many practice hours and lessons they should take this week to hit their target band of ${stats.user.targetBand}.`;
+
+    try {
+      const aiResponse = await this.aiService.generateChatCompletion([
+        { role: 'user', content: prompt },
+      ]);
+      return { report: aiResponse.text };
+    } catch (err) {
+      return {
+        report: `### Progress Report (Fallback)
+* Overall Band Estimate: Band ${stats.overallBandEstimate || '6.5'}
+* Target Band: Band ${stats.user.targetBand}
+* Completed Lessons: ${stats.lessonsCompletedCount}
+
+Keep practicing to generate detailed AI progress insights!`,
+      };
+    }
   }
 }

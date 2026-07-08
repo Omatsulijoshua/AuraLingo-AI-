@@ -9,6 +9,7 @@ import { ContentModule } from './content/content.module';
 import { MockTestModule } from './mocktest/mocktest.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { NotificationModule } from './notification/notification.module';
+import { ReferralsModule } from './referrals/referrals.module';
 import { PrismaService } from './prisma.service';
 
 @Module({
@@ -23,6 +24,7 @@ import { PrismaService } from './prisma.service';
     MockTestModule,
     AnalyticsModule,
     NotificationModule,
+    ReferralsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

@@ -30,4 +30,10 @@ export class AnalyticsController {
   async getWeakAreas(@Req() req: any) {
     return this.analyticsService.getWeakAreasBreakdown(req.user.sub);
   }
+
+  @Roles(UserRole.STUDENT)
+  @Get('progress-report')
+  async getProgressReport(@Req() req: any) {
+    return this.analyticsService.getProgressReport(req.user.sub);
+  }
 }

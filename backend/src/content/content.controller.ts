@@ -4,6 +4,9 @@ import { CreateLessonDto } from './dto/create-lesson.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { CreateWritingSubmissionDto } from './dto/create-writing-submission.dto';
 import { TutorFeedbackDto } from './dto/tutor-feedback.dto';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { SubmitAssignmentDto } from './dto/submit-assignment.dto';
+import { GradeAssignmentDto } from './dto/grade-assignment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -135,5 +138,47 @@ export class ContentController {
     @Body() dto: TutorFeedbackDto,
   ) {
     return this.contentService.submitTutorFeedback(req.user.sub, submissionId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.TUTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post('assignments')
+  async createAssignment(@Req() req: any, @Body() dto: CreateAssignmentDto) {
+    return this.contentService.createAssignment(req.user.sub, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('assignments')
+  async getAssignments() {
+    return this.contentService.getAssignments();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT)
+  @Post('assignments/:id/submit')
+  async submitAssignment(
+    @Req() req: any,
+    @Param('id') assignmentId: string,
+    @Body() dto: SubmitAssignmentDto,
+  ) {
+    return this.contentService.submitAssignment(req.user.sub, assignmentId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.TUTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Get('assignments/tutor/submissions')
+  async getTutorAssignments(@Req() req: any) {
+    return this.contentService.getTutorSubmissions(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.TUTOR, UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post('assignments/submissions/:id/grade')
+  async gradeAssignment(
+    @Req() req: any,
+    @Param('id') submissionId: string,
+    @Body() dto: GradeAssignmentDto,
+  ) {
+    return this.contentService.gradeAssignmentSubmission(req.user.sub, submissionId, dto);
   }
 }

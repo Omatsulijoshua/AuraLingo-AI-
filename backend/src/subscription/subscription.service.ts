@@ -107,6 +107,19 @@ export class SubscriptionService {
         },
       });
 
+      // Credit 10% commission if user has a referrer
+      const subscriber = await tx.user.findUnique({
+        where: { id: userId },
+        select: { referredById: true },
+      });
+      if (subscriber?.referredById && finalAmount > 0) {
+        const commission = finalAmount * 0.10;
+        await tx.user.update({
+          where: { id: subscriber.referredById },
+          data: { referralBalance: { increment: commission } },
+        });
+      }
+
       // Increment coupon count
       if (couponId) {
         await tx.coupon.update({
@@ -221,5 +234,19 @@ export class SubscriptionService {
     }
 
     return false;
+  }
+
+  async getPaymentInfo() {
+    const setting = await this.prisma.appSettings.findUnique({
+      where: { key: 'manual_bank_payment_details' },
+    });
+    if (!setting) {
+      return {
+        accountName: 'Joshua toritseju omatsuli',
+        bankName: 'Opay',
+        accountNumber: '8158075936',
+      };
+    }
+    return JSON.parse(setting.value);
   }
 }

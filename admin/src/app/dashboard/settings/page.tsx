@@ -352,7 +352,59 @@ export default function AiConfiguration() {
                 )}
               </div>
             ))}
-        </div>
+         </div>
+      </div>
+
+      {/* Manual Bank Payment Details Configuration */}
+      <div className="bg-primary/25 border border-primary-light/40 rounded-xl p-6 shadow-xl backdrop-blur-sm space-y-6">
+        <h3 className="text-white font-bold text-base">Student Subscription Manual Payment Bank Account</h3>
+        <p className="text-slate-400 text-xs leading-relaxed">
+          Configure the bank account details shown to students when they choose manual payment options for paid subscriptions checkout.
+        </p>
+
+        {getSetting('manual_bank_payment_details') && (
+          <div className="space-y-4">
+            {editingKey === 'manual_bank_payment_details' ? (
+              <div className="space-y-4">
+                <textarea
+                  value={editingValue}
+                  onChange={(e) => setEditingValue(e.target.value)}
+                  rows={3}
+                  className="w-full bg-navy/60 border border-gold rounded-lg p-3 text-white text-xs focus:outline-none leading-relaxed font-mono"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => handleUpdate('manual_bank_payment_details', editingValue)}
+                    className="bg-emerald text-primary font-bold px-4 py-1.5 rounded text-xs cursor-pointer"
+                  >
+                    Save Details
+                  </button>
+                  <button
+                    onClick={() => setEditingKey(null)}
+                    className="bg-red-500 text-white font-bold px-4 py-1.5 rounded text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-start">
+                <pre className="text-slate-300 text-xs font-mono bg-navy/40 p-4 rounded-lg border border-primary-light/20 whitespace-pre-wrap leading-relaxed flex-1 mr-4">
+                  {getSetting('manual_bank_payment_details')?.value}
+                </pre>
+                <button
+                  onClick={() => {
+                    setEditingKey('manual_bank_payment_details');
+                    setEditingValue(getSetting('manual_bank_payment_details')?.value || '');
+                  }}
+                  className="text-xs font-bold text-gold hover:underline cursor-pointer"
+                >
+                  Edit Bank Config
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -86,6 +86,21 @@ model User {
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 
+  // Referral System
+  referredById       String?
+  referredBy         User?                @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals          User[]               @relation("UserReferrals")
+  referralBalance    Float                @default(0.0)
+  isReferralVerified Boolean              @default(false)
+  referralBankName   String?
+  referralAccountNumber String?
+  referralAccountName String?
+  withdrawals        ReferralWithdrawal[]
+
+  // Assignment System
+  assignmentsCreated    Assignment[]           @relation("TutorAssignments")
+  assignmentSubmissions AssignmentSubmission[]
+
   subscriptions      Subscription[]
   payments           Payment[]
   mockAttempts       UserMockAttempt[]
@@ -168,6 +183,7 @@ model Module {
   lessons           Lesson[]
   practiceQuestions PracticeQuestion[]
   mockTestSections  MockTestSection[]
+  assignments       Assignment[]
 }
 
 model Lesson {
@@ -422,4 +438,39 @@ model AppSettings {
   isEncrypted Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Assignment {
+  id          String                 @id @default(uuid())
+  title       String
+  description String                 @db.Text
+  moduleId    String
+  module      Module                 @relation(fields: [moduleId], references: [id])
+  dueDate     DateTime?
+  tutorId     String
+  tutor       User                   @relation("TutorAssignments", fields: [tutorId], references: [id])
+  createdAt   DateTime               @default(now())
+  submissions AssignmentSubmission[]
+}
+
+model AssignmentSubmission {
+  id             String     @id @default(uuid())
+  assignmentId   String
+  assignment     Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        User       @relation(fields: [studentId], references: [id])
+  submissionText String     @db.Text
+  score          Float?
+  feedback       String?    @db.Text
+  gradedAt       DateTime?
+  createdAt      DateTime   @default(now())
+}
+
+model ReferralWithdrawal {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Float
+  status    String   // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now())
 }

@@ -45,4 +45,9 @@ export class SubscriptionController {
       note,
     );
   }
+
+  @Get('payment-info')
+  async getPaymentInfo() {
+    return this.subscriptionService.getPaymentInfo();
+  }
 }
