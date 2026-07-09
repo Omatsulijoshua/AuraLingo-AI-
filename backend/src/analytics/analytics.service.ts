@@ -116,4 +116,45 @@ Keep practicing to generate detailed AI progress insights!`,
       };
     }
   }
+
+  async getHistoryByMode(userId: string) {
+    const answers = await this.prisma.userAnswer.findMany({
+      where: { userId },
+      include: { question: { include: { module: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const mockAttempts = await this.prisma.userMockAttempt.findMany({
+      where: { userId },
+      include: { mockTest: true },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    const writingSubmissions = await this.prisma.writingSubmission.findMany({
+      where: { userId },
+      include: { prompt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const speakingSubmissions = await this.prisma.speakingSubmission.findMany({
+      where: { userId },
+      include: { prompt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      examMode: {
+        mockExams: mockAttempts.filter((a) => a.mode === 'EXAM'),
+        practiceAnswers: answers.filter((a) => a.mode === 'EXAM'),
+        writing: writingSubmissions.filter((s) => s.mode === 'EXAM'),
+        speaking: speakingSubmissions.filter((s) => s.mode === 'EXAM'),
+      },
+      practiceMode: {
+        mockExams: mockAttempts.filter((a) => a.mode === 'PRACTICE'),
+        practiceAnswers: answers.filter((a) => a.mode === 'PRACTICE'),
+        writing: writingSubmissions.filter((s) => s.mode === 'PRACTICE'),
+        speaking: speakingSubmissions.filter((s) => s.mode === 'PRACTICE'),
+      },
+    };
+  }
 }

@@ -36,4 +36,10 @@ export class AnalyticsController {
   async getProgressReport(@Req() req: any) {
     return this.analyticsService.getProgressReport(req.user.sub);
   }
+
+  @Roles(UserRole.STUDENT)
+  @Get('history')
+  async getHistory(@Req() req: any) {
+    return this.analyticsService.getHistoryByMode(req.user.sub);
+  }
 }

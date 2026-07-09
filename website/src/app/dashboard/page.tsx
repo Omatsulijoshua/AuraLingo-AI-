@@ -82,6 +82,9 @@ export default function StudentDashboard() {
             <Link href="/dashboard/progress" className="hover:text-gold transition-colors">
               📈 AI Progress Report
             </Link>
+            <Link href="/dashboard/history" className="hover:text-gold transition-colors">
+              📜 Attempt History
+            </Link>
             <Link href="/dashboard/referrals" className="hover:text-gold transition-colors">
               💸 Referral Program
             </Link>

@@ -96,8 +96,9 @@ export class ContentController {
     @Req() req: any,
     @Param('id') questionId: string,
     @Body('answerText') answerText: string,
+    @Body('mode') mode?: string,
   ) {
-    return this.contentService.submitAnswer(req.user.sub, questionId, answerText);
+    return this.contentService.submitAnswer(req.user.sub, questionId, answerText, mode);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -106,8 +107,9 @@ export class ContentController {
   async submitWriting(
     @Req() req: any,
     @Body() dto: CreateWritingSubmissionDto,
+    @Body('mode') mode?: string,
   ) {
-    return this.contentService.submitWriting(req.user.sub, dto);
+    return this.contentService.submitWriting(req.user.sub, dto, mode);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -118,8 +120,21 @@ export class ContentController {
     @Body('promptId') promptId: string,
     @Body('audioUrl') audioUrl: string,
     @Body('transcription') transcription?: string,
+    @Body('mode') mode?: string,
   ) {
-    return this.contentService.submitSpeaking(req.user.sub, promptId, audioUrl, transcription);
+    return this.contentService.submitSpeaking(req.user.sub, promptId, audioUrl, transcription, mode);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('writing/prompts')
+  async getWritingPrompts(@Req() req: any) {
+    return this.contentService.getWritingPrompts(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('speaking/prompts')
+  async getSpeakingPrompts() {
+    return this.contentService.getSpeakingPrompts();
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

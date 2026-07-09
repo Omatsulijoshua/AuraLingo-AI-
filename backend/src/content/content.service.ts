@@ -144,7 +144,7 @@ export class ContentService {
     });
   }
 
-  async submitAnswer(userId: string, questionId: string, answerText: string) {
+  async submitAnswer(userId: string, questionId: string, answerText: string, mode?: string) {
     const question = await this.prisma.practiceQuestion.findUnique({
       where: { id: questionId },
       include: { options: true, answers: true, module: true },
@@ -169,17 +169,18 @@ export class ContentService {
       }
     }
 
-    // 2. Generate AI Explanation if enabled
+    const currentMode = mode || 'PRACTICE';
     let explanationText = question.explanation;
-    
-    // Check if AI is enabled globally
-    const aiEnabledSetting = await this.prisma.appSettings.findUnique({ where: { key: 'ai_enabled' } });
-    if (aiEnabledSetting && aiEnabledSetting.value === 'true') {
-      try {
-        const aiResponse = await this.aiService.generateChatCompletion([
-          {
-            role: 'user',
-            content: `Explain this IELTS practice question marking:
+
+    // 2. Generate AI Explanation if enabled (only in PRACTICE mode!)
+    if (currentMode === 'PRACTICE') {
+      const aiEnabledSetting = await this.prisma.appSettings.findUnique({ where: { key: 'ai_enabled' } });
+      if (aiEnabledSetting && aiEnabledSetting.value === 'true') {
+        try {
+          const aiResponse = await this.aiService.generateChatCompletion([
+            {
+              role: 'user',
+              content: `Explain this IELTS practice question marking:
 Module: ${question.module.name}
 Question Type: ${question.questionType}
 Instruction: ${question.instruction}
@@ -192,12 +193,16 @@ Provide a short, 3-paragraph explanation:
 1. Why the correct answer is correct.
 2. Why the student's answer was correct or wrong.
 3. A test-taking strategy for this question type.`,
-          },
-        ]);
-        explanationText = aiResponse.text;
-      } catch (err) {
-        console.warn('[AI_EXPLAIN_ERROR] Falling back to database explanation:', err);
+            },
+          ]);
+          explanationText = aiResponse.text;
+        } catch (err) {
+          console.warn('[AI_EXPLAIN_ERROR] Falling back to database explanation:', err);
+        }
       }
+    } else {
+      // In EXAM mode, suppress correct explanations during the exam
+      explanationText = 'Answers and explanations are hidden during exam mode.';
     }
 
     // 3. Log user answer
@@ -208,6 +213,7 @@ Provide a short, 3-paragraph explanation:
         answerText,
         isCorrect,
         feedback: explanationText,
+        mode: currentMode,
       },
     });
 
@@ -238,16 +244,27 @@ Provide a short, 3-paragraph explanation:
       });
     }
 
+    if (currentMode === 'EXAM') {
+      return {
+        isCorrect: null,
+        correctAnswer: null,
+        explanation: 'Submitted successfully in exam mode.',
+        timeStrategy: null,
+        userAnswer,
+      };
+    }
+
     return {
       isCorrect,
       correctAnswer: correctAnswerStr,
       explanation: explanationText,
+      timeStrategy: question.timeStrategy || 'Strategy: Read instructions carefully, allocate max 1.5 minutes per question.',
       userAnswer,
     };
   }
 
   // --- WRITING EVALUATION SYSTEM ---
-  async submitWriting(userId: string, dto: CreateWritingSubmissionDto) {
+  async submitWriting(userId: string, dto: CreateWritingSubmissionDto, mode?: string) {
     const prompt = await this.prisma.writingPrompt.findUnique({ where: { id: dto.promptId } });
     if (!prompt) throw new NotFoundException('Writing prompt not found');
 
@@ -307,13 +324,14 @@ Provide a short, 3-paragraph explanation:
         wordCount,
         bandScoreEstimate: feedbackJson.estimatedBand,
         feedbackJson,
+        mode: mode || 'PRACTICE',
       },
       include: { prompt: true },
     });
   }
 
   // --- SPEAKING EVALUATION SYSTEM ---
-  async submitSpeaking(userId: string, promptId: string, audioUrl: string, transcription?: string) {
+  async submitSpeaking(userId: string, promptId: string, audioUrl: string, transcription?: string, mode?: string) {
     const prompt = await this.prisma.speakingPrompt.findUnique({ where: { id: promptId } });
     if (!prompt) throw new NotFoundException('Speaking prompt not found');
 
@@ -371,8 +389,31 @@ Provide a short, 3-paragraph explanation:
         transcription: finalTranscription,
         bandScoreEstimate: feedbackJson.estimatedBand,
         feedbackJson,
+        mode: mode || 'PRACTICE',
       },
       include: { prompt: true },
+    });
+  }
+
+  // --- FILTERED PROMPTS LISTS ---
+  async getWritingPrompts(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.role === 'STUDENT') {
+      return this.prisma.writingPrompt.findMany({
+        where: { examType: user.targetExam },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    return this.prisma.writingPrompt.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getSpeakingPrompts() {
+    return this.prisma.speakingPrompt.findMany({
+      orderBy: { createdAt: 'desc' },
     });
   }
 

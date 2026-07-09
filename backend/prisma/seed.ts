@@ -260,6 +260,80 @@ Student Transcript: {transcription}`,
   }
   console.log('[SEED] Default app settings (AI configurations) seeded.');
 
+  // 5. Seed Writing Prompts (Academic vs General Training)
+  const writingPrompts = [
+    {
+      id: 'academic-w1',
+      title: 'Global Fish & Meat Consumption',
+      promptText: 'The graph below shows the consumption of fish and different kinds of meat in a European country between 1979 and 2004. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.',
+      examType: 'ACADEMIC' as any,
+      taskType: 'TASK_1',
+      difficulty: 'INTERMEDIATE' as any,
+    },
+    {
+      id: 'academic-w2',
+      title: 'University Career Focus',
+      promptText: 'Some people think that universities should provide graduates with the knowledge and skills needed in the workplace. Others think that the true function of a university should be to give access to knowledge for its own sake, regardless of whether the course is useful to an employer. Discuss both views and give your opinion.',
+      examType: 'ACADEMIC' as any,
+      taskType: 'TASK_2',
+      difficulty: 'ADVANCED' as any,
+    },
+    {
+      id: 'gt-w1',
+      title: 'Complaining to Local Council',
+      promptText: 'Write a letter to your local council complaining about a new restaurant nearby that is creating noise and parking problems. In your letter: explain who you are, detail the problems, and suggest what action they should take.',
+      examType: 'GENERAL' as any,
+      taskType: 'TASK_1',
+      difficulty: 'BEGINNER' as any,
+    },
+    {
+      id: 'gt-w2',
+      title: 'Modern Job Market Competition',
+      promptText: 'In many countries, more and more people are competing for jobs. What are the causes of this competition? What strategies can individuals use to stand out in a competitive job market?',
+      examType: 'GENERAL' as any,
+      taskType: 'TASK_2',
+      difficulty: 'INTERMEDIATE' as any,
+    },
+  ];
+
+  for (const wp of writingPrompts) {
+    await prisma.writingPrompt.upsert({
+      where: { id: wp.id },
+      update: {},
+      create: wp,
+    });
+  }
+  console.log('[SEED] Writing prompts seeded.');
+
+  // 6. Seed Speaking Prompts
+  const speakingPrompts = [
+    {
+      id: 'speaking-p1',
+      part: 1,
+      topic: 'Hometown and Studies',
+      cueCardText: 'Let’s talk about your hometown. Where is your hometown? What do you like most about it?',
+      followUpQuestions: ['Do you think your hometown is a good place for young people to live?'],
+      difficulty: 'BEGINNER' as any,
+    },
+    {
+      id: 'speaking-p2',
+      part: 2,
+      topic: 'An Interesting Journey',
+      cueCardText: 'Describe an interesting journey you have been on. You should say: where you went, how you travelled, why you went there, and explain what made the journey so interesting.',
+      followUpQuestions: ['Do you prefer travelling alone or with friends?', 'Has travel changed compared to the past?'],
+      difficulty: 'INTERMEDIATE' as any,
+    },
+  ];
+
+  for (const sp of speakingPrompts) {
+    await prisma.speakingPrompt.upsert({
+      where: { id: sp.id },
+      update: {},
+      create: sp,
+    });
+  }
+  console.log('[SEED] Speaking prompts seeded.');
+
   console.log('[SEED] Seeding finished successfully!');
 }
 
