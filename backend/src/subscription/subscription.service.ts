@@ -68,13 +68,23 @@ export class SubscriptionService {
 
     let finalDiscountPercent = discountPercent;
     
-    // Check if the user was referred -> auto-apply 30% discount if not already discounted higher
+    // Check if the user was referred AND this is their first paid subscription payment
     const student = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { referredById: true },
     });
     if (student?.referredById) {
-      finalDiscountPercent = Math.max(finalDiscountPercent, 30);
+      const completedPayments = await this.prisma.payment.count({
+        where: { userId, status: 'SUCCESSFUL' },
+      });
+      if (completedPayments === 0) {
+        // Fetch dynamic discount percentage setting from AppSettings
+        const discountSetting = await this.prisma.appSettings.findUnique({
+          where: { key: 'referral_discount_percentage' },
+        });
+        const refDiscountVal = discountSetting ? Number(discountSetting.value) : 30;
+        finalDiscountPercent = Math.max(finalDiscountPercent, refDiscountVal);
+      }
     }
 
     const originalPrice = Number(plan.price);

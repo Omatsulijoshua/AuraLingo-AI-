@@ -406,6 +406,102 @@ export default function AiConfiguration() {
           </div>
         )}
       </div>
+
+      {/* Referral Program Settings */}
+      <div className="bg-primary/25 border border-primary-light/40 rounded-xl p-6 shadow-xl backdrop-blur-sm space-y-6">
+        <h3 className="text-white font-bold text-base">Referral & Promo Code Rewards Configuration</h3>
+        <p className="text-slate-400 text-xs leading-relaxed">
+          Configure the percentage discount given to referred students on their first month, and the immediate sign-up reward (in Naira) credited to referrers.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Discount Percentage */}
+          {getSetting('referral_discount_percentage') && (
+            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-2">
+              <p className="text-slate-300 text-xs font-bold">Automatic Referral Discount (%)</p>
+              <p className="text-[10px] text-slate-500">Applied automatically to the student’s first monthly subscription payment.</p>
+              {editingKey === 'referral_discount_percentage' ? (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={editingValue}
+                    onChange={(e) => setEditingValue(e.target.value)}
+                    className="bg-navy border border-gold rounded px-2.5 py-1 text-white text-xs w-24 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleUpdate('referral_discount_percentage', editingValue)}
+                    className="bg-emerald text-primary font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingKey(null)}
+                    className="bg-red-500 text-white font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-gold font-extrabold text-lg">{getSetting('referral_discount_percentage')?.value}%</span>
+                  <button
+                    onClick={() => {
+                      setEditingKey('referral_discount_percentage');
+                      setEditingValue(getSetting('referral_discount_percentage')?.value || '');
+                    }}
+                    className="text-[10px] font-bold text-gold hover:underline cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Referrer Reward Amount */}
+          {getSetting('referral_reward_naira') && (
+            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-2">
+              <p className="text-slate-300 text-xs font-bold">Referrer Sign-Up Reward (₦)</p>
+              <p className="text-[10px] text-slate-500">Naira reward credited instantly to the referrer’s balance upon registration.</p>
+              {editingKey === 'referral_reward_naira' ? (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={editingValue}
+                    onChange={(e) => setEditingValue(e.target.value)}
+                    className="bg-navy border border-gold rounded px-2.5 py-1 text-white text-xs w-24 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleUpdate('referral_reward_naira', editingValue)}
+                    className="bg-emerald text-primary font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingKey(null)}
+                    className="bg-red-500 text-white font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-emerald font-extrabold text-lg">₦{getSetting('referral_reward_naira')?.value}</span>
+                  <button
+                    onClick={() => {
+                      setEditingKey('referral_reward_naira');
+                      setEditingValue(getSetting('referral_reward_naira')?.value || '');
+                    }}
+                    className="text-[10px] font-bold text-gold hover:underline cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

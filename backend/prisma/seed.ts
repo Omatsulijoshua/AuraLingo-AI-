@@ -243,6 +243,16 @@ Student Transcript: {transcription}`,
       key: 'manual_bank_payment_details',
       value: '{"accountName": "Joshua toritseju omatsuli", "bankName": "Opay", "accountNumber": "8158075936"}',
       description: 'Dynamic manual bank details for student subscription payments'
+    },
+    {
+      key: 'referral_discount_percentage',
+      value: '30',
+      description: 'Automatic percentage discount applied to a referred user’s first month paid subscription'
+    },
+    {
+      key: 'referral_reward_naira',
+      value: '1000',
+      description: 'Amount in Naira rewarded to the referrer upon successful registration of a referred student'
     }
   ];
 

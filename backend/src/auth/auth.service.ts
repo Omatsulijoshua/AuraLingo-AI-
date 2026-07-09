@@ -32,10 +32,17 @@ export class AuthService {
         const referrer = await tx.user.findUnique({ where: { id: dto.referralCode } });
         if (referrer) {
           referrerId = referrer.id;
-          // Credit 1,000 Naira to referrer balance
+          
+          // Fetch dynamic reward amount setting
+          const rewardSetting = await tx.appSettings.findUnique({
+            where: { key: 'referral_reward_naira' },
+          });
+          const rewardAmount = rewardSetting ? Number(rewardSetting.value) : 1000.0;
+
+          // Credit reward amount to referrer balance
           await tx.user.update({
             where: { id: referrer.id },
-            data: { referralBalance: { increment: 1000.0 } },
+            data: { referralBalance: { increment: rewardAmount } },
           });
         }
       }
