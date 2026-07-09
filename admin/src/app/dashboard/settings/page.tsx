@@ -500,6 +500,101 @@ export default function AiConfiguration() {
               )}
             </div>
           )}
+
+          {/* Recurring Commission Strategy */}
+          {getSetting('referral_commission_type') && (
+            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-2">
+              <p className="text-slate-300 text-xs font-bold">Recurring Commission Strategy</p>
+              <p className="text-[10px] text-slate-500">Reward strategy applied to referrers upon student resubscriptions.</p>
+              {editingKey === 'referral_commission_type' ? (
+                <div className="flex gap-2">
+                  <select
+                    value={editingValue}
+                    onChange={(e) => setEditingValue(e.target.value)}
+                    className="bg-navy border border-gold rounded px-2.5 py-1 text-white text-xs focus:outline-none"
+                  >
+                    <option value="NONE">NONE (No Commission)</option>
+                    <option value="FLAT">FLAT (Fixed Naira Reward)</option>
+                    <option value="PERCENT">PERCENT (Percentage Commission)</option>
+                  </select>
+                  <button
+                    onClick={() => handleUpdate('referral_commission_type', editingValue)}
+                    className="bg-emerald text-primary font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingKey(null)}
+                    className="bg-red-500 text-white font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-gold font-extrabold text-xs uppercase tracking-wider bg-gold/15 px-2.5 py-0.5 rounded border border-gold/20">
+                    {getSetting('referral_commission_type')?.value}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setEditingKey('referral_commission_type');
+                      setEditingValue(getSetting('referral_commission_type')?.value || 'FLAT');
+                    }}
+                    className="text-[10px] font-bold text-gold hover:underline cursor-pointer"
+                  >
+                    Edit Strategy
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Recurring Commission Strategy Value */}
+          {getSetting('referral_commission_value') && (
+            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-2">
+              <p className="text-slate-300 text-xs font-bold">Commission Value (₦ or %)</p>
+              <p className="text-[10px] text-slate-500">Value corresponding to the chosen strategy (flat amount or percentage).</p>
+              {editingKey === 'referral_commission_value' ? (
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={editingValue}
+                    onChange={(e) => setEditingValue(e.target.value)}
+                    className="bg-navy border border-gold rounded px-2.5 py-1 text-white text-xs w-24 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleUpdate('referral_commission_value', editingValue)}
+                    className="bg-emerald text-primary font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingKey(null)}
+                    className="bg-red-500 text-white font-bold px-3 py-1 rounded text-[10px] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-white font-extrabold text-lg">
+                    {getSetting('referral_commission_type')?.value === 'PERCENT'
+                      ? `${getSetting('referral_commission_value')?.value}%`
+                      : `₦${getSetting('referral_commission_value')?.value}`}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setEditingKey('referral_commission_value');
+                      setEditingValue(getSetting('referral_commission_value')?.value || '');
+                    }}
+                    className="text-[10px] font-bold text-gold hover:underline cursor-pointer"
+                  >
+                    Edit Value
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

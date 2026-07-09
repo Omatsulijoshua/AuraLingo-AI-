@@ -253,6 +253,16 @@ Student Transcript: {transcription}`,
       key: 'referral_reward_naira',
       value: '1000',
       description: 'Amount in Naira rewarded to the referrer upon successful registration of a referred student'
+    },
+    {
+      key: 'referral_commission_type',
+      value: 'FLAT',
+      description: 'Strategy type for recurring referrer rewards on subscription checkouts. Valid values: NONE, FLAT, PERCENT.'
+    },
+    {
+      key: 'referral_commission_value',
+      value: '1000',
+      description: 'The value applied to the referral recurring strategy. Flat amount (in Naira) or percentage percentage depending on strategy.'
     }
   ];
 

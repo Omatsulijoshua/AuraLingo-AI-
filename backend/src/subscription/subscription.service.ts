@@ -134,15 +134,30 @@ export class SubscriptionService {
         select: { referredById: true },
       });
       if (subscriber?.referredById && finalAmount > 0) {
-        const rewardSetting = await tx.appSettings.findUnique({
-          where: { key: 'referral_reward_naira' },
+        // Fetch dynamic commission settings
+        const typeSetting = await tx.appSettings.findUnique({
+          where: { key: 'referral_commission_type' },
         });
-        const rewardAmount = rewardSetting ? Number(rewardSetting.value) : 1000.0;
+        const commissionType = typeSetting ? typeSetting.value : 'FLAT';
 
-        await tx.user.update({
-          where: { id: subscriber.referredById },
-          data: { referralBalance: { increment: rewardAmount } },
+        const valueSetting = await tx.appSettings.findUnique({
+          where: { key: 'referral_commission_value' },
         });
+        const commissionValue = valueSetting ? Number(valueSetting.value) : 1000.0;
+
+        let rewardAmount = 0;
+        if (commissionType === 'FLAT') {
+          rewardAmount = commissionValue;
+        } else if (commissionType === 'PERCENT') {
+          rewardAmount = (finalAmount * commissionValue) / 100;
+        }
+
+        if (rewardAmount > 0) {
+          await tx.user.update({
+            where: { id: subscriber.referredById },
+            data: { referralBalance: { increment: rewardAmount } },
+          });
+        }
       }
 
       // Increment coupon count
