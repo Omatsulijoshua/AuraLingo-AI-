@@ -66,8 +66,19 @@ export class SubscriptionService {
       }
     }
 
+    let finalDiscountPercent = discountPercent;
+    
+    // Check if the user was referred -> auto-apply 30% discount if not already discounted higher
+    const student = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { referredById: true },
+    });
+    if (student?.referredById) {
+      finalDiscountPercent = Math.max(finalDiscountPercent, 30);
+    }
+
     const originalPrice = Number(plan.price);
-    const finalAmount = originalPrice - (originalPrice * discountPercent) / 100;
+    const finalAmount = originalPrice - (originalPrice * finalDiscountPercent) / 100;
 
     // 3. Process in a database transaction
     return this.prisma.$transaction(async (tx) => {
@@ -189,14 +200,40 @@ export class SubscriptionService {
   }
 
   // --- PLAN LIMITS VALIDATION UTILITY ---
-  async checkUserPlanLimit(userId: string, actionType: 'LESSON' | 'PRACTICE' | 'MOCK_TEST' | 'AI_WRITING' | 'AI_SPEAKING'): Promise<boolean> {
+  async checkUserPlanLimit(
+    userId: string,
+    actionType: 'LESSON' | 'PRACTICE' | 'MOCK_TEST' | 'AI_WRITING' | 'AI_SPEAKING',
+    mode?: string,
+  ): Promise<boolean> {
     const activeSub = await this.prisma.subscription.findFirst({
       where: { userId, status: 'ACTIVE' },
       include: { plan: true },
     });
 
     if (!activeSub) return false; // No subscription means no access at all
+
+    // Check expiration (especially for 7-day trials)
+    if (activeSub.endDate && new Date() > new Date(activeSub.endDate)) {
+      return false;
+    }
+
     const plan = activeSub.plan;
+
+    // Custom limits for TRIAL plan: 1 Practice mode and 1 Exam mode a day
+    if (plan.code === 'TRIAL' && actionType === 'PRACTICE') {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const targetMode = mode === 'EXAM' ? 'EXAM' : 'PRACTICE';
+
+      const dailyCount = await this.prisma.userAnswer.count({
+        where: {
+          userId,
+          mode: targetMode,
+          createdAt: { gte: startOfDay },
+        },
+      });
+      return dailyCount < 1;
+    }
 
     // Check specific capabilities
     if (actionType === 'AI_WRITING') return plan.hasAiWriting;

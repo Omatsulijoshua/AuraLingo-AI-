@@ -32,10 +32,10 @@ export class AuthService {
         const referrer = await tx.user.findUnique({ where: { id: dto.referralCode } });
         if (referrer) {
           referrerId = referrer.id;
-          // Credit $1.0 to referrer balance for sign up referral reward
+          // Credit 1,000 Naira to referrer balance
           await tx.user.update({
             where: { id: referrer.id },
-            data: { referralBalance: { increment: 1.0 } },
+            data: { referralBalance: { increment: 1000.0 } },
           });
         }
       }
@@ -54,37 +54,37 @@ export class AuthService {
         },
       });
 
-      // Find or create a default FREE subscription plan
-      let freePlan = await tx.subscriptionPlan.findUnique({
-        where: { code: 'FREE' },
+      // Find or create a default TRIAL subscription plan
+      let trialPlan = await tx.subscriptionPlan.findUnique({
+        where: { code: 'TRIAL' },
       });
 
-      if (!freePlan) {
-        freePlan = await tx.subscriptionPlan.create({
+      if (!trialPlan) {
+        trialPlan = await tx.subscriptionPlan.create({
           data: {
-            name: 'Free Starter Plan',
-            code: 'FREE',
+            name: '1-Week Free Trial',
+            code: 'TRIAL',
             price: 0,
             interval: 'MONTHLY',
-            features: ['5 Practice Questions/day', '1 Mock Test', 'Basic Progress Tracker'],
-            limitLessons: 5,
-            limitDailyPractice: 5,
-            limitMockTests: 1,
-            hasAiWriting: false,
-            hasAiSpeaking: false,
+            features: ['1 Practice Mode attempt/day', '1 Exam Mode attempt/day', 'AI progress insights'],
+            limitLessons: 7,
+            limitDailyPractice: 2,
+            limitMockTests: 2,
+            hasAiWriting: true,
+            hasAiSpeaking: true,
             hasTutorReview: false,
           },
         });
       }
 
-      // Create free subscription
+      // Create 7-day trial subscription
       await tx.subscription.create({
         data: {
           userId: user.id,
-          planId: freePlan.id,
+          planId: trialPlan.id,
           status: 'ACTIVE',
           startDate: new Date(),
-          endDate: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000), // Far in the future
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days free trial
           autoRenew: false,
         },
       });

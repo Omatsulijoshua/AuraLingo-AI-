@@ -9,12 +9,14 @@ import { SubmitAssignmentDto } from './dto/submit-assignment.dto';
 import { GradeAssignmentDto } from './dto/grade-assignment.dto';
 import { Difficulty } from '@prisma/client';
 import { AiService } from '../admin/ai.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class ContentService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
+    private subscriptionService: SubscriptionService,
   ) {}
 
   // --- MODULES ---
@@ -150,6 +152,11 @@ export class ContentService {
       include: { options: true, answers: true, module: true },
     });
     if (!question) throw new NotFoundException('Practice question not found');
+
+    const canSubmit = await this.subscriptionService.checkUserPlanLimit(userId, 'PRACTICE', mode);
+    if (!canSubmit) {
+      throw new BadRequestException('Daily attempt limit exceeded on your current plan. Upgrade to unlock unlimited practice and exam modes!');
+    }
 
     let isCorrect = false;
     let correctAnswerStr = '';
