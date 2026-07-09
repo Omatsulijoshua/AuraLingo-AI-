@@ -134,10 +134,14 @@ export class SubscriptionService {
         select: { referredById: true },
       });
       if (subscriber?.referredById && finalAmount > 0) {
-        const commission = finalAmount * 0.10;
+        const rewardSetting = await tx.appSettings.findUnique({
+          where: { key: 'referral_reward_naira' },
+        });
+        const rewardAmount = rewardSetting ? Number(rewardSetting.value) : 1000.0;
+
         await tx.user.update({
           where: { id: subscriber.referredById },
-          data: { referralBalance: { increment: commission } },
+          data: { referralBalance: { increment: rewardAmount } },
         });
       }
 
