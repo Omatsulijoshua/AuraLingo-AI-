@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import 'writing_practice_screen.dart';
+import 'referrals_screen.dart';
+import 'history_screen.dart';
+import 'progress_report_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -83,7 +87,19 @@ class DashboardScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Quick Navigation Panel
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildQuickAction(context, 'Progress', Icons.insights_rounded, const ProgressReportScreen()),
+                _buildQuickAction(context, 'History', Icons.history_rounded, const HistoryScreen()),
+                _buildQuickAction(context, 'Referrals', Icons.card_giftcard_rounded, const ReferralsScreen()),
+              ],
+            ),
             const SizedBox(height: 32),
+
             const Text(
               'IELTS Practice Modules',
               style: TextStyle(
@@ -109,6 +125,30 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(BuildContext context, String label, IconData icon, Widget screen) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B1E36),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF1E3E6E)),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: const Color(0xFFD4AF37), size: 20),
+              const SizedBox(height: 6),
+              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
       ),
     );
@@ -140,7 +180,9 @@ class DashboardScreen extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            // Route to practice module screen
+            if (title == 'Writing') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(16.0),

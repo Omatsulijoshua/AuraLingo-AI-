@@ -137,6 +137,22 @@ export default function StudentDashboard() {
           </div>
         </div>
 
+        {/* Quick Navigation Cards for Mobile Parity */}
+        <div className="grid grid-cols-3 gap-3 md:hidden">
+          <Link href="/dashboard/progress" className="bg-primary/30 border border-primary-light/45 rounded-xl p-3.5 text-center flex flex-col items-center justify-center space-y-2 hover:border-gold/30 transition-colors">
+            <span className="text-lg">📈</span>
+            <span className="text-[10px] font-extrabold text-slate-200">AI Report</span>
+          </Link>
+          <Link href="/dashboard/history" className="bg-primary/30 border border-primary-light/45 rounded-xl p-3.5 text-center flex flex-col items-center justify-center space-y-2 hover:border-gold/30 transition-colors">
+            <span className="text-lg">📜</span>
+            <span className="text-[10px] font-extrabold text-slate-200">History</span>
+          </Link>
+          <Link href="/dashboard/referrals" className="bg-primary/30 border border-primary-light/45 rounded-xl p-3.5 text-center flex flex-col items-center justify-center space-y-2 hover:border-gold/30 transition-colors">
+            <span className="text-lg">💸</span>
+            <span className="text-[10px] font-extrabold text-slate-200">Referrals</span>
+          </Link>
+        </div>
+
         {/* Practice Grid */}
         <div className="space-y-4">
           <h3 className="text-white font-bold text-lg">Practice Modules</h3>
