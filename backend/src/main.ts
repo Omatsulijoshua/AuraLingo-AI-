@@ -20,9 +20,8 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   
-  // CORS configuration
-  const allowedOriginsStr = configService.get<string>('ALLOWED_ORIGINS') || 'http://localhost:3000,http://localhost:3001';
-  const allowedOrigins = allowedOriginsStr.split(',');
+  const allowedOriginsStr = configService.get<string>('ALLOWED_ORIGINS') || 'http://localhost:3000,http://localhost:3001,https://bandup-ielts-prep.vercel.app,https://bandup-ielts-admin.vercel.app,https://website-blue-omega-77.vercel.app,https://admin-brown-iota-42.vercel.app';
+  const allowedOrigins = allowedOriginsStr.split(',').map(o => o.trim());
   
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
