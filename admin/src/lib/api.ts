@@ -1,4 +1,14 @@
-let rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+let rawUrl = '';
+if (typeof window !== 'undefined') {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  } else {
+    rawUrl = process.env.NEXT_PUBLIC_API_URL || 'https://bandup-ielts.onrender.com/api';
+  }
+} else {
+  rawUrl = process.env.NEXT_PUBLIC_API_URL || 'https://bandup-ielts.onrender.com/api';
+}
+
 if (rawUrl && !rawUrl.endsWith('/api') && !rawUrl.endsWith('/api/')) {
   rawUrl = rawUrl.endsWith('/') ? `${rawUrl}api` : `${rawUrl}/api`;
 }
