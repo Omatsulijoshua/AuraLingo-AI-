@@ -84,6 +84,17 @@ flutter run
 
 ---
 
+## 🌟 Key Platform Features & Updates
+
+*   **🇳🇬 Naira Currency Transition**: 100% localization from USD ($) to Nigerian Naira (₦) across landing pages, backend database models, payment records, and referral calculations.
+*   **⚡ Groq Cloud Integration (`console.groq.com`)**: Integrated Groq API using the ultra-fast Llama 3.3 70B Versatile model for speaking and writing evaluations.
+*   **📅 Daily Question Auto-Scheduler**: Background task that automatically seeds 20 questions daily (balanced across Listening, Reading, Writing, and Speaking) up to a maximum database limit of 1,000 questions.
+*   **📊 Student Limits & Usage Tracker**: Dynamic progress bars on the student dashboard displaying daily question usage and remaining mock tests.
+*   **💳 Admin Subscription Upgrader**: Interactive plan selectors directly within the Admin Users list to grant, modify, or revoke student subscription privileges in one click.
+*   **🎨 Custom App Icon & release APK**: Re-branded native app icons with the custom gold logo and built the final release APK.
+
+---
+
 ## 🔍 Validation Commands
 
 To verify that all components are syntax-error free and build correctly:
