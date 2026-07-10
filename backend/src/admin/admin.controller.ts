@@ -160,4 +160,20 @@ Each object in the array must match this schema:
       throw new BadRequestException(`AI Generation failed: ${err.message}`);
     }
   }
+
+  @Get('payouts')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  async getPayouts() {
+    return this.adminService.getPayouts();
+  }
+
+  @Put('payouts/:id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  async updatePayout(
+    @Param('id') id: string,
+    @Body('status') status: 'PROCESSED' | 'FAILED',
+    @Body('transactionSlipUrl') transactionSlipUrl?: string,
+  ) {
+    return this.adminService.updatePayoutStatus(id, status, transactionSlipUrl);
+  }
 }

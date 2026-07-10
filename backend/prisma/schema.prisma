@@ -472,10 +472,11 @@ model AssignmentSubmission {
 }
 
 model ReferralWithdrawal {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  amount    Float
-  status    String   // PENDING, APPROVED, REJECTED
-  createdAt DateTime @default(now())
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id])
+  amount             Float
+  status             String   // PROCESSING, PROCESSED, FAILED
+  transactionSlipUrl String?
+  createdAt          DateTime @default(now())
 }

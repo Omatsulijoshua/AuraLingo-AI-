@@ -187,4 +187,61 @@ export class AdminService {
       },
     });
   }
+
+  // --- PAYOUTS (WITHDRAWALS) MANAGEMENT ---
+  async getPayouts() {
+    return this.prisma.referralWithdrawal.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            referralBankName: true,
+            referralAccountNumber: true,
+            referralAccountName: true,
+            referrals: {
+              select: {
+                id: true,
+                payments: {
+                  where: { status: 'SUCCESSFUL' },
+                  select: { id: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async updatePayoutStatus(id: string, status: 'PROCESSED' | 'FAILED', transactionSlipUrl?: string) {
+    const withdrawal = await this.prisma.referralWithdrawal.findUnique({
+      where: { id },
+    });
+    if (!withdrawal) throw new NotFoundException('Payout request not found');
+
+    if (withdrawal.status !== 'PROCESSING') {
+      throw new BadRequestException(`Payout is already completed/resolved as ${withdrawal.status}`);
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // If failed/rejected, refund user's balance
+      if (status === 'FAILED') {
+        await tx.user.update({
+          where: { id: withdrawal.userId },
+          data: { referralBalance: { increment: withdrawal.amount } },
+        });
+      }
+
+      return tx.referralWithdrawal.update({
+        where: { id },
+        data: {
+          status,
+          transactionSlipUrl,
+        },
+      });
+    });
+  }
 }

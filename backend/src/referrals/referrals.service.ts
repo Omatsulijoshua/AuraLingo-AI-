@@ -11,7 +11,16 @@ export class ReferralsService {
       where: { id: userId },
       include: {
         referrals: {
-          select: { id: true, name: true, email: true, createdAt: true },
+          select: { 
+            id: true, 
+            name: true, 
+            email: true, 
+            createdAt: true,
+            payments: {
+              where: { status: 'SUCCESSFUL' },
+              select: { id: true },
+            },
+          },
         },
         withdrawals: {
           orderBy: { createdAt: 'desc' },
@@ -21,14 +30,35 @@ export class ReferralsService {
 
     if (!user) throw new NotFoundException('User not found');
 
+    const unpaidCount = user.referrals.filter(r => r.payments.length === 0).length;
+
+    const rewardSetting = await this.prisma.appSettings.findUnique({
+      where: { key: 'referral_reward_naira' },
+    });
+    const defaultReward = rewardSetting ? Number(rewardSetting.value) : 1000.0;
+
+    const lockedBalance = unpaidCount * defaultReward;
+    const withdrawableBalance = Math.max(0, user.referralBalance - lockedBalance);
+
+    const referralsFormatted = user.referrals.map(r => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      createdAt: r.createdAt,
+      isPaidUser: r.payments.length > 0,
+    }));
+
     return {
       referralBalance: user.referralBalance,
+      withdrawableBalance,
+      lockedBalance,
+      unpaidReferralsCount: unpaidCount,
       isReferralVerified: user.isReferralVerified,
       bankName: user.referralBankName,
       accountNumber: user.referralAccountNumber,
       accountName: user.referralAccountName,
       totalReferralsCount: user.referrals.length,
-      referralsList: user.referrals,
+      referralsList: referralsFormatted,
       withdrawalsHistory: user.withdrawals,
     };
   }
@@ -57,15 +87,38 @@ export class ReferralsService {
       throw new BadRequestException('Withdrawal amount must be greater than zero');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        referrals: {
+          include: {
+            payments: {
+              where: { status: 'SUCCESSFUL' },
+            },
+          },
+        },
+      },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     if (!user.isReferralVerified) {
       throw new BadRequestException('Referral account must be verified before requesting withdrawal');
     }
 
-    if (user.referralBalance < amount) {
-      throw new BadRequestException('Insufficient referral balance');
+    const unpaidCount = user.referrals.filter(r => r.payments.length === 0).length;
+
+    const rewardSetting = await this.prisma.appSettings.findUnique({
+      where: { key: 'referral_reward_naira' },
+    });
+    const defaultReward = rewardSetting ? Number(rewardSetting.value) : 1000.0;
+
+    const lockedBalance = unpaidCount * defaultReward;
+    const withdrawableBalance = Math.max(0, user.referralBalance - lockedBalance);
+
+    if (withdrawableBalance < amount) {
+      throw new BadRequestException(
+        `Insufficient withdrawable balance. You have ₦${lockedBalance} pending because ${unpaidCount} of your referred users have not subscribed to a paid plan yet.`
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -80,7 +133,7 @@ export class ReferralsService {
         data: {
           userId,
           amount,
-          status: 'PENDING',
+          status: 'PROCESSING',
         },
       });
     });

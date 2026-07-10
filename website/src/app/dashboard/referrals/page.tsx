@@ -16,7 +16,7 @@ export default function ReferralDashboard() {
   const [verifying, setVerifying] = useState(false);
 
   // Withdrawal Form
-  const [withdrawAmount, setWithdrawAmount] = useState(10.0);
+  const [withdrawAmount, setWithdrawAmount] = useState(1000);
   const [withdrawing, setWithdrawing] = useState(false);
 
   const fetchStats = async () => {
@@ -63,7 +63,7 @@ export default function ReferralDashboard() {
         body: JSON.stringify({ amount: Number(withdrawAmount) }),
       });
       alert('Withdrawal request submitted successfully! Processing in 24 hours.');
-      setWithdrawAmount(10.0);
+      setWithdrawAmount(1000);
       await fetchStats();
     } catch (err: any) {
       alert(err.message || 'Withdrawal request failed');
@@ -104,14 +104,20 @@ export default function ReferralDashboard() {
           {/* Earnings Overview */}
           <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4 md:col-span-2">
             <h3 className="text-white font-bold text-base">Referral Earnings Dashboard</h3>
-            <div className="grid grid-cols-2 gap-4">
+            
+            {/* Extended Balances Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/20">
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Available Balance</p>
-                <p className="text-gold text-2xl font-black mt-1">${stats?.referralBalance?.toFixed(2) || '0.00'}</p>
+                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Total Balance</p>
+                <p className="text-white text-2xl font-black mt-1">₦{stats?.referralBalance?.toLocaleString() || '0'}</p>
               </div>
-              <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/20">
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Total Referred Students</p>
-                <p className="text-white text-2xl font-black mt-1">{stats?.totalReferralsCount || 0}</p>
+              <div className="bg-navy/40 p-4 rounded-xl border border-emerald/10">
+                <p className="text-emerald text-[10px] uppercase font-bold tracking-wider">Withdrawable Balance</p>
+                <p className="text-gold text-2xl font-black mt-1">₦{stats?.withdrawableBalance?.toLocaleString() || '0'}</p>
+              </div>
+              <div className="bg-navy/40 p-4 rounded-xl border border-amber-500/10">
+                <p className="text-amber-500 text-[10px] uppercase font-bold tracking-wider">Pending Balance</p>
+                <p className="text-amber-500 text-2xl font-black mt-1">₦{stats?.lockedBalance?.toLocaleString() || '0'}</p>
               </div>
             </div>
 
@@ -134,7 +140,9 @@ export default function ReferralDashboard() {
                   Copy
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500">Share this link. Earn $1.00 immediately when they sign up, plus 10% of their subscription payments!</p>
+              <p className="text-[10px] text-slate-500">
+                🚨 Earn ₦1,000 for every signup! Payouts become **Withdrawable** as soon as your referee activates a paid plan (keeps the system safe from spam).
+              </p>
             </div>
           </div>
 
@@ -144,21 +152,24 @@ export default function ReferralDashboard() {
             {stats?.isReferralVerified ? (
               <form onSubmit={handleWithdraw} className="space-y-4">
                 <div>
-                  <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Withdrawal Amount ($)</label>
+                  <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Withdrawal Amount (₦)</label>
                   <input
                     type="number"
-                    min="10.0"
-                    step="0.5"
+                    min="500"
+                    step="100"
                     required
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(Number(e.target.value))}
                     className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none text-center font-bold"
                   />
+                  <p className="text-[9px] text-slate-500 mt-2 text-center">
+                    Maximum withdrawable right now: ₦{stats?.withdrawableBalance?.toLocaleString()}
+                  </p>
                 </div>
                 <button
                   type="submit"
-                  disabled={withdrawing}
-                  className="w-full bg-gold hover:bg-gold-dark text-primary font-bold py-2.5 rounded-lg text-xs transition-colors cursor-pointer disabled:opacity-50"
+                  disabled={withdrawing || (stats?.withdrawableBalance || 0) < withdrawAmount}
+                  className="w-full bg-gold hover:bg-gold-dark text-primary font-bold py-2.5 rounded-lg text-xs transition-colors cursor-pointer disabled:opacity-40"
                 >
                   {withdrawing ? 'Processing Withdrawal...' : 'Request Payout'}
                 </button>
@@ -182,7 +193,7 @@ export default function ReferralDashboard() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Opay, Kuda"
+                  placeholder="e.g. Opay, Kuda, GTBank"
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
                   className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
@@ -229,9 +240,21 @@ export default function ReferralDashboard() {
               ) : (
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {stats?.referralsList?.map((refUser: any) => (
-                    <div key={refUser.id} className="p-3 bg-navy/40 border border-primary-light/20 rounded-lg flex justify-between text-xs">
-                      <span>{refUser.name}</span>
-                      <span className="text-slate-500">{new Date(refUser.createdAt).toLocaleDateString()}</span>
+                    <div key={refUser.id} className="p-3 bg-navy/40 border border-primary-light/20 rounded-lg flex justify-between text-xs items-center">
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-white">{refUser.name}</p>
+                        <p className="text-[10px] text-slate-500">{refUser.email}</p>
+                      </div>
+                      <div className="text-right space-y-1">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                          refUser.isPaidUser 
+                            ? 'bg-emerald/10 text-emerald border border-emerald/20' 
+                            : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                        }`}>
+                          {refUser.isPaidUser ? 'PAID USER' : 'TRIAL ONLY'}
+                        </span>
+                        <p className="text-[9px] text-slate-500">{new Date(refUser.createdAt).toLocaleDateString()}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -247,14 +270,30 @@ export default function ReferralDashboard() {
                   {stats?.withdrawalsHistory?.map((w: any) => (
                     <div key={w.id} className="p-3 bg-navy/40 border border-primary-light/20 rounded-lg flex justify-between text-xs items-center">
                       <div>
-                        <p className="font-bold text-white">${w.amount.toFixed(2)}</p>
+                        <p className="font-bold text-white">₦{w.amount.toLocaleString()}</p>
                         <p className="text-[9px] text-slate-500">{new Date(w.createdAt).toLocaleString()}</p>
                       </div>
-                      <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                        w.status === 'PENDING' ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20' : 'bg-emerald/15 text-emerald border border-emerald/20'
-                      }`}>
-                        {w.status}
-                      </span>
+                      <div className="text-right space-y-1">
+                        <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                          w.status === 'PROCESSED' 
+                            ? 'bg-emerald/10 text-emerald border border-emerald/20' 
+                            : w.status === 'FAILED'
+                              ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              : 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse'
+                        }`}>
+                          {w.status}
+                        </span>
+                        {w.transactionSlipUrl && (
+                          <a 
+                            href={w.transactionSlipUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="block text-[9px] text-gold hover:underline font-bold mt-1"
+                          >
+                            View Receipt
+                          </a>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
