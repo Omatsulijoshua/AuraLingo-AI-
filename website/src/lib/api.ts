@@ -1,4 +1,8 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+let rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+if (rawUrl && !rawUrl.endsWith('/api') && !rawUrl.endsWith('/api/')) {
+  rawUrl = rawUrl.endsWith('/') ? `${rawUrl}api` : `${rawUrl}/api`;
+}
+const API_BASE_URL = rawUrl;
 
 export interface User {
   id: string;
