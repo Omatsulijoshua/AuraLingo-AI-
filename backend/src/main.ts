@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from './prisma.service';
+import * as bcrypt from 'bcrypt';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,6 +35,39 @@ async function bootstrap() {
     },
     credentials: true,
   });
+
+  // Auto-seed production super-admin if missing
+  try {
+    const prisma = app.get(PrismaService);
+    const adminEmail = 'joshuaomatsuli01@gmail.com';
+    const adminUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (!adminUser) {
+      const passwordHash = await bcrypt.hash('Jos@56567', 10);
+      const user = await prisma.user.create({
+        data: {
+          email: adminEmail,
+          name: 'Joshua Omatsuli',
+          passwordHash,
+          role: 'SUPER_ADMIN',
+          targetBand: 9.0,
+        },
+      });
+      await prisma.progressStats.create({
+        data: { userId: user.id },
+      });
+      console.log(`[BOOTSTRAP] Auto-seeded SUPER_ADMIN user: ${adminEmail}`);
+    } else {
+      // Just ensure they are SUPER_ADMIN and password matches
+      const passwordHash = await bcrypt.hash('Jos@56567', 10);
+      await prisma.user.update({
+        where: { email: adminEmail },
+        data: { role: 'SUPER_ADMIN', passwordHash },
+      });
+      console.log(`[BOOTSTRAP] Verified SUPER_ADMIN credentials for: ${adminEmail}`);
+    }
+  } catch (err) {
+    console.error('[BOOTSTRAP] Admin auto-seeding skipped or failed:', err);
+  }
 
   const port = configService.get<number>('PORT') || 5000;
   await app.listen(port);
