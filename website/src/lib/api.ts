@@ -1,21 +1,4 @@
-let rawUrl = process.env.NEXT_PUBLIC_API_URL || 'https://bandup-ielts.onrender.com/api';
-
-if (typeof window !== 'undefined') {
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  if (isLocalhost) {
-    rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-  } else {
-    // If running in production but the environment variable contains localhost, override it to the production URL
-    if (rawUrl.includes('localhost') || rawUrl.includes('127.0.0.1')) {
-      rawUrl = 'https://bandup-ielts.onrender.com/api';
-    }
-  }
-}
-
-if (rawUrl && !rawUrl.endsWith('/api') && !rawUrl.endsWith('/api/')) {
-  rawUrl = rawUrl.endsWith('/') ? `${rawUrl}api` : `${rawUrl}/api`;
-}
-const API_BASE_URL = rawUrl;
+const API_BASE_URL = 'https://bandup-ielts.onrender.com/api';
 
 export interface User {
   id: string;
