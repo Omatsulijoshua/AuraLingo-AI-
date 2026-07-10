@@ -41,7 +41,7 @@ async function main() {
     {
       name: 'Basic Preparation Plan',
       code: 'BASIC',
-      price: 19.99,
+      price: 15000.00,
       interval: 'MONTHLY' as const,
       features: ['20 Practice Questions/day', 'Unlimited Lessons', 'Full progress tracking'],
       limitLessons: -1,
@@ -54,7 +54,7 @@ async function main() {
     {
       name: 'Pro AI Intensive Plan',
       code: 'PRO',
-      price: 49.99,
+      price: 35000.00,
       interval: 'MONTHLY' as const,
       features: ['Unlimited Practice & Lessons', 'Unlimited Mock Tests', 'AI writing corrections', 'AI speaking evaluations'],
       limitLessons: -1,
@@ -67,7 +67,7 @@ async function main() {
     {
       name: 'Premium Tutor Plan',
       code: 'PREMIUM',
-      price: 99.99,
+      price: 75000.00,
       interval: 'MONTHLY' as const,
       features: ['Unlimited Practice, Lessons, & AI tools', 'Personalized Study Plans', '1-on-1 human tutor writing & speaking review'],
       limitLessons: -1,

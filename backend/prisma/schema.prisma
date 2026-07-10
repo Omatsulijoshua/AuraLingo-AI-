@@ -157,7 +157,7 @@ model Payment {
   subscriptionId    String?
   subscription      Subscription?   @relation(fields: [subscriptionId], references: [id])
   amount            Decimal
-  currency          String          @default("USD")
+  currency          String          @default("NGN")
   provider          PaymentProvider
   providerReference String          @unique
   status            PaymentStatus   @default(PENDING)

@@ -28,7 +28,7 @@ export default function MarketingLandingPage() {
   const pricingPlans = [
     {
       name: 'Free Starter',
-      price: '$0',
+      price: '₦0',
       description: 'Perfect for exploring the platform and testing your baseline.',
       features: ['5 Practice Questions / Day', '1 Full Mock Test', 'Basic progress analytics', 'Community FAQ Support'],
       cta: 'Start Free Trial',
@@ -37,7 +37,7 @@ export default function MarketingLandingPage() {
     },
     {
       name: 'Basic Preparation',
-      price: '$19.99',
+      price: '₦15,000',
       description: 'Comprehensive practice questions library for self-study.',
       features: ['20 Practice Questions / Day', '3 Full Mock Tests', 'Unlimited lessons access', 'Email Support'],
       cta: 'Choose Basic',
@@ -46,7 +46,7 @@ export default function MarketingLandingPage() {
     },
     {
       name: 'Pro AI Intensive',
-      price: '$49.99',
+      price: '₦35,000',
       description: 'Maximize your band score using instant AI evaluations.',
       features: ['Unlimited Practice & Lessons', 'Unlimited Mock Tests', 'AI Writing corrections', 'AI Speaking evaluations', 'Priority Support'],
       cta: 'Go Pro AI',
@@ -55,7 +55,7 @@ export default function MarketingLandingPage() {
     },
     {
       name: 'Premium Tutor',
-      price: '$99.99',
+      price: '₦75,000',
       description: 'Complete package with personalized tutor review.',
       features: ['Everything in Pro AI', '1-on-1 Tutor feedback', 'Personalized Study Plans', 'Completion Certificates'],
       cta: 'Get Premium',

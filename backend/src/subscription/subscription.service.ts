@@ -120,7 +120,7 @@ export class SubscriptionService {
           userId,
           subscriptionId: subscription.id,
           amount: finalAmount,
-          currency: 'USD',
+          currency: 'NGN',
           provider: dto.paymentProvider,
           providerReference: dto.paymentReference,
           status: 'SUCCESSFUL',
