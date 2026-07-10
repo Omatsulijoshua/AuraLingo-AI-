@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/auth_provider.dart';
-import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(
@@ -17,8 +15,6 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-
     return MaterialApp(
       title: 'BandUp IELTS',
       debugShowCheckedModeBanner: false,
@@ -32,9 +28,7 @@ class MyApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
-      home: authState.isAuthenticated 
-          ? const DashboardScreen() 
-          : const LoginScreen(),
+      home: const SplashScreen(),
     );
   }
 }
