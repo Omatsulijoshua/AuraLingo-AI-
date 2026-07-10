@@ -65,8 +65,54 @@ async function bootstrap() {
       });
       console.log(`[BOOTSTRAP] Verified SUPER_ADMIN credentials for: ${adminEmail}`);
     }
+
+    // Auto-seed default AppSettings if missing
+    const settingsToSeed = [
+      { key: 'ai_enabled', value: 'true', description: 'Global switch to enable/disable AI evaluations' },
+      { key: 'active_ai_provider', value: 'openai', description: 'Active AI API provider: openai, gemini, anthropic, ollama, openrouter' },
+      { key: 'ai_openai_key', value: '', description: 'OpenAI API key (encrypted)' },
+      { key: 'ai_openai_model', value: 'gpt-4o', description: 'Model identifier for OpenAI' },
+      { key: 'ai_openai_url', value: 'https://api.openai.com/v1', description: 'Base URL for OpenAI API' },
+      { key: 'ai_gemini_key', value: '', description: 'Google Gemini API key (encrypted)' },
+      { key: 'ai_gemini_model', value: 'gemini-1.5-pro', description: 'Model identifier for Google Gemini' },
+      { key: 'ai_budget_daily', value: '50.00', description: 'Daily spending limit for AI features in USD' },
+      { key: 'ai_budget_monthly', value: '1500.00', description: 'Monthly spending limit for AI features in USD' },
+      {
+        key: 'manual_bank_payment_details',
+        value: '{"accountName": "Joshua toritseju omatsuli", "bankName": "Opay", "accountNumber": "8158075936"}',
+        description: 'Dynamic manual bank details for student subscription payments'
+      },
+      {
+        key: 'referral_discount_percentage',
+        value: '30',
+        description: 'Automatic percentage discount applied to a referred user’s first month paid subscription'
+      },
+      {
+        key: 'referral_reward_naira',
+        value: '1000',
+        description: 'Amount in Naira rewarded to the referrer upon successful registration of a referred student'
+      },
+      {
+        key: 'referral_commission_type',
+        value: 'FLAT',
+        description: 'Strategy type for recurring referrer rewards on subscription checkouts. Valid values: NONE, FLAT, PERCENT.'
+      },
+      {
+        key: 'referral_commission_value',
+        value: '1000',
+        description: 'The value applied to the referral recurring strategy. Flat amount (in Naira) or percentage depending on strategy.'
+      }
+    ];
+
+    for (const setting of settingsToSeed) {
+      const existing = await prisma.appSettings.findUnique({ where: { key: setting.key } });
+      if (!existing) {
+        await prisma.appSettings.create({ data: setting });
+        console.log(`[BOOTSTRAP] Auto-seeded AppSetting: ${setting.key}`);
+      }
+    }
   } catch (err) {
-    console.error('[BOOTSTRAP] Admin auto-seeding skipped or failed:', err);
+    console.error('[BOOTSTRAP] Admin/Settings auto-seeding skipped or failed:', err);
   }
 
   const port = configService.get<number>('PORT') || 5000;

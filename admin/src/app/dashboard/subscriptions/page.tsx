@@ -16,6 +16,11 @@ export default function SubscriptionSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Form states for manual bank details
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+
   // Edit settings
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState('');
@@ -34,6 +39,20 @@ export default function SubscriptionSettings() {
   useEffect(() => {
     fetchSettings();
   }, []);
+
+  useEffect(() => {
+    const bankSetting = settings.find(s => s.key === 'manual_bank_payment_details');
+    if (bankSetting && bankSetting.value) {
+      try {
+        const parsed = JSON.parse(bankSetting.value);
+        setBankName(parsed.bankName || '');
+        setAccountNumber(parsed.accountNumber || '');
+        setAccountName(parsed.accountName || '');
+      } catch (e) {
+        console.error("Failed to parse bank settings JSON:", e);
+      }
+    }
+  }, [settings]);
 
   const handleUpdate = async (key: string, value: string) => {
     try {
@@ -83,23 +102,50 @@ export default function SubscriptionSettings() {
         {getSetting('manual_bank_payment_details') && (
           <div className="space-y-4">
             {editingKey === 'manual_bank_payment_details' ? (
-              <div className="space-y-4">
-                <textarea
-                  value={editingValue}
-                  onChange={(e) => setEditingValue(e.target.value)}
-                  rows={4}
-                  className="w-full bg-navy/60 border border-gold rounded-lg p-3 text-white text-xs focus:outline-none leading-relaxed font-mono"
-                />
-                <div className="flex gap-2 justify-end">
+              <div className="space-y-4 max-w-md">
+                <div>
+                  <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Bank Name</label>
+                  <input
+                    type="text"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white text-xs focus:outline-none"
+                    placeholder="e.g. Opay"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Account Number</label>
+                  <input
+                    type="text"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white text-xs focus:outline-none"
+                    placeholder="e.g. 8158075936"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Account Name</label>
+                  <input
+                    type="text"
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                    className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white text-xs focus:outline-none"
+                    placeholder="e.g. Joshua toritseju omatsuli"
+                  />
+                </div>
+                <div className="flex gap-2 justify-end pt-2">
                   <button
-                    onClick={() => handleUpdate('manual_bank_payment_details', editingValue)}
-                    className="bg-emerald text-primary font-bold px-4 py-1.5 rounded text-xs cursor-pointer"
+                    onClick={() => {
+                      const combined = JSON.stringify({ bankName, accountNumber, accountName });
+                      handleUpdate('manual_bank_payment_details', combined);
+                    }}
+                    className="bg-emerald text-primary font-bold px-4 py-1.5 rounded text-xs cursor-pointer hover:opacity-90"
                   >
                     Save Details
                   </button>
                   <button
                     onClick={() => setEditingKey(null)}
-                    className="bg-red-500 text-white font-bold px-4 py-1.5 rounded text-xs cursor-pointer"
+                    className="bg-red-500 text-white font-bold px-4 py-1.5 rounded text-xs cursor-pointer hover:opacity-90"
                   >
                     Cancel
                   </button>
@@ -107,15 +153,25 @@ export default function SubscriptionSettings() {
               </div>
             ) : (
               <div className="flex justify-between items-start">
-                <pre className="text-slate-300 text-xs font-mono bg-navy/40 p-4 rounded-lg border border-primary-light/20 whitespace-pre-wrap leading-relaxed flex-1 mr-4">
-                  {getSetting('manual_bank_payment_details')?.value}
-                </pre>
+                <div className="bg-navy/40 p-5 rounded-lg border border-primary-light/20 flex-1 mr-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <span className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Bank Name</span>
+                    <span className="text-white text-sm font-bold mt-1 block">{bankName || '(Not Set)'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Account Number</span>
+                    <span className="text-white text-sm font-mono font-bold mt-1 block">{accountNumber || '(Not Set)'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Account Name</span>
+                    <span className="text-white text-sm font-bold mt-1 block">{accountName || '(Not Set)'}</span>
+                  </div>
+                </div>
                 <button
                   onClick={() => {
                     setEditingKey('manual_bank_payment_details');
-                    setEditingValue(getSetting('manual_bank_payment_details')?.value || '');
                   }}
-                  className="text-xs font-bold text-gold hover:underline cursor-pointer"
+                  className="text-xs font-bold text-gold hover:underline cursor-pointer pt-4"
                 >
                   Edit Bank Config
                 </button>

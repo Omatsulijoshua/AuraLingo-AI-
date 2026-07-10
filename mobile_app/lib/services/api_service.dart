@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS simulator/web
-  static const String _baseUrl = 'http://10.0.2.2:5000/api';
+  static const String _baseUrl = 'https://bandup-ielts.onrender.com/api';
   
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
