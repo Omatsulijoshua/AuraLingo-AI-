@@ -30,7 +30,7 @@ export class SubscriptionController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   @Post('manual-activate')
   async manualActivate(
     @Req() req: any,

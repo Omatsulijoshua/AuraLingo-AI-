@@ -137,6 +137,66 @@ export default function StudentDashboard() {
           </div>
         </div>
 
+        {/* Account Limits & Usage */}
+        <div className="bg-primary/25 border border-primary-light/45 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-4">
+          <h3 className="text-white font-bold text-sm">Account Limits & Usage</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Daily Practice */}
+            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-300 font-medium">Daily Practice Questions</span>
+                <span className="text-gold font-bold">
+                  {sub?.plan.limitDailyPractice === -1 
+                    ? 'Unlimited' 
+                    : `${profile.todayAnswersCount || 0} / ${sub?.plan.limitDailyPractice || 5} Used`}
+                </span>
+              </div>
+              <div className="w-full bg-primary/40 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-gold h-full rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${sub?.plan.limitDailyPractice === -1 
+                      ? 0 
+                      : Math.min(100, ((profile.todayAnswersCount || 0) / (sub?.plan.limitDailyPractice || 5)) * 100)}%` 
+                  }}
+                />
+              </div>
+              <p className="text-[10px] text-slate-500">
+                {sub?.plan.limitDailyPractice === -1 
+                  ? 'Answer as many questions as you like.' 
+                  : `You have ${Math.max(0, (sub?.plan.limitDailyPractice || 5) - (profile.todayAnswersCount || 0))} questions remaining for today.`}
+              </p>
+            </div>
+
+            {/* Mock Exams */}
+            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-3">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-300 font-medium">Full Mock Exams (All sections)</span>
+                <span className="text-emerald font-bold">
+                  {sub?.plan.limitMockTests === -1 
+                    ? 'Unlimited' 
+                    : `${profile.totalMockTestsCount || 0} / ${sub?.plan.limitMockTests || 1} Completed`}
+                </span>
+              </div>
+              <div className="w-full bg-primary/40 rounded-full h-2 overflow-hidden">
+                <div 
+                  className="bg-emerald h-full rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${sub?.plan.limitMockTests === -1 
+                      ? 0 
+                      : Math.min(100, ((profile.totalMockTestsCount || 0) / (sub?.plan.limitMockTests || 1)) * 100)}%` 
+                  }}
+                />
+              </div>
+              <p className="text-[10px] text-slate-500">
+                {sub?.plan.limitMockTests === -1 
+                  ? 'Take unlimited complete mock tests anytime.' 
+                  : `You have ${Math.max(0, (sub?.plan.limitMockTests || 1) - (profile.totalMockTestsCount || 0))} mock exams remaining on your current cycle.`}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Quick Navigation Cards for Mobile Parity */}
         <div className="grid grid-cols-3 gap-3 md:hidden">
           <Link href="/dashboard/progress" className="bg-primary/30 border border-primary-light/45 rounded-xl p-3.5 text-center flex flex-col items-center justify-center space-y-2 hover:border-gold/30 transition-colors">

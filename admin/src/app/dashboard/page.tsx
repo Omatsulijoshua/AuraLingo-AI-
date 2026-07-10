@@ -54,7 +54,7 @@ export default function DashboardOverview() {
     { name: 'Total Students', value: stats.totalUsers, description: 'Registered student accounts', color: 'border-l-blue-500' },
     { name: 'Active Subscriptions', value: stats.activeSubscribers, description: 'Premium tier accounts', color: 'border-l-gold' },
     { name: 'Free Users', value: stats.freeUsers, description: 'Free trial/starter accounts', color: 'border-l-slate-500' },
-    { name: 'Total Revenue', value: `$${stats.totalRevenue.toFixed(2)}`, description: 'Life-time earnings', color: 'border-l-emerald' },
+    { name: 'Total Revenue', value: `₦${stats.totalRevenue.toLocaleString()}`, description: 'Life-time earnings', color: 'border-l-emerald' },
     { name: 'Mock Tests Taken', value: stats.mockTestsTaken, description: 'Completed test runs', color: 'border-l-purple-500' },
     { name: 'Writing Tasks', value: stats.writingSubmissions, description: 'Submitted for grading', color: 'border-l-pink-500' },
     { name: 'Speaking Tasks', value: stats.speakingSubmissions, description: 'Submitted recordings', color: 'border-l-orange-500' },

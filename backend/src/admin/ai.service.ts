@@ -49,6 +49,10 @@ export class AiService {
       apiKey = customKey || this.decryptKey(getVal('ai_gemini_key'));
       model = customModel || getVal('ai_gemini_model') || 'gemini-1.5-pro';
       baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai'; // Google's OpenAI-compatible endpoint
+    } else if (provider === 'groq') {
+      apiKey = customKey || this.decryptKey(getVal('ai_groq_key'));
+      model = customModel || getVal('ai_groq_model') || 'llama-3.3-70b-versatile';
+      baseUrl = 'https://api.groq.com/openai/v1';
     } else if (provider === 'ollama') {
       model = customModel || 'llama3';
       baseUrl = 'http://localhost:11434/v1'; // Local Ollama OpenAI-compatible port
@@ -94,6 +98,9 @@ export class AiService {
       } else if (provider === 'gemini') {
         // Gemini 1.5 Pro: $1.25 / 1M input, $5.00 / 1M output
         cost = (promptTokens * 1.25 + completionTokens * 5) / 1000000;
+      } else if (provider === 'groq') {
+        // Groq Llama 3 70b: $0.59 / 1M input, $0.79 / 1M output
+        cost = (promptTokens * 0.59 + completionTokens * 0.79) / 1000000;
       }
 
       return {

@@ -3,6 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 
+interface PlanItem {
+  id: string;
+  name: string;
+  code: string;
+  price: number;
+}
+
 interface UserItem {
   id: string;
   email: string;
@@ -13,11 +20,12 @@ interface UserItem {
   studyStreak: number;
   isVerified: boolean;
   createdAt: string;
-  subscriptions: Array<{ plan: { name: string; code: string } }>;
+  subscriptions: Array<{ plan: { id: string; name: string; code: string } }>;
 }
 
 export default function UserManagement() {
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [plans, setPlans] = useState<PlanItem[]>([]);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,8 +49,18 @@ export default function UserManagement() {
     }
   };
 
+  const fetchPlans = async () => {
+    try {
+      const data = await api.request<PlanItem[]>('/subscriptions/plans');
+      setPlans(data);
+    } catch (err) {
+      console.error('Failed to fetch subscription plans', err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchPlans();
   }, [roleFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -76,6 +94,23 @@ export default function UserManagement() {
       await fetchUsers();
     } catch (err: any) {
       alert(err.message || 'Failed to update user role');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleActivatePlan = async (studentId: string, planId: string) => {
+    if (!planId) return;
+    setUpdatingId(studentId);
+    try {
+      await api.request('/subscriptions/manual-activate', {
+        method: 'POST',
+        body: JSON.stringify({ studentId, planId, note: 'Activated by Admin' }),
+      });
+      alert('Subscription plan updated successfully!');
+      await fetchUsers();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update subscription plan');
     } finally {
       setUpdatingId(null);
     }
@@ -137,7 +172,7 @@ export default function UserManagement() {
                   <th className="px-6 py-4">User</th>
                   <th className="px-6 py-4">Role</th>
                   <th className="px-6 py-4">Target Exam / Band</th>
-                  <th className="px-6 py-4">Active Subscription</th>
+                  <th className="px-6 py-4">Active Subscription (Privilege)</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
@@ -178,16 +213,22 @@ export default function UserManagement() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        {currentSub ? (
-                          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                            currentSub.plan.code === 'FREE'
-                              ? 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                              : 'bg-gold/15 text-gold border border-gold/30'
-                          }`}>
-                            {currentSub.plan.name}
-                          </span>
+                        {user.role === 'STUDENT' ? (
+                          <select
+                            disabled={updatingId === user.id}
+                            value={currentSub?.plan.id || ''}
+                            onChange={(e) => handleActivatePlan(user.id, e.target.value)}
+                            className="bg-navy/80 border border-primary-light/40 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-gold"
+                          >
+                            <option value="">No Active Plan</option>
+                            {plans.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} ({p.code})
+                              </option>
+                            ))}
+                          </select>
                         ) : (
-                          <span className="text-slate-500 text-xs">No Plan</span>
+                          <span className="text-slate-500 text-xs">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4">

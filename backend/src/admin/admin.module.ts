@@ -6,11 +6,12 @@ import { PrismaService } from '../prisma.service';
 import { AuthModule } from '../auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
+import { QuestionSchedulerService } from './scheduler.service';
 
 @Module({
   imports: [AuthModule, ConfigModule, HttpModule],
   controllers: [AdminController],
-  providers: [AdminService, AiService, PrismaService],
+  providers: [AdminService, AiService, PrismaService, QuestionSchedulerService],
   exports: [AdminService, AiService],
 })
 export class AdminModule {}

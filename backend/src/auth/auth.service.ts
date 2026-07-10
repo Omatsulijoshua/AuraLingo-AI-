@@ -167,8 +167,27 @@ export class AuthService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const todayAnswersCount = await this.prisma.userAnswer.count({
+      where: {
+        userId,
+        createdAt: { gte: startOfDay },
+      },
+    });
+
+    const totalMockTestsCount = await this.prisma.userMockAttempt.count({
+      where: { userId },
+    });
+
     const { passwordHash: _, ...result } = user;
-    return result;
+    return {
+      ...result,
+      todayAnswersCount,
+      totalMockTestsCount,
+    };
   }
 
   async verifyEmail(token: string) {

@@ -75,6 +75,8 @@ async function bootstrap() {
       { key: 'ai_openai_url', value: 'https://api.openai.com/v1', description: 'Base URL for OpenAI API' },
       { key: 'ai_gemini_key', value: '', description: 'Google Gemini API key (encrypted)' },
       { key: 'ai_gemini_model', value: 'gemini-1.5-pro', description: 'Model identifier for Google Gemini' },
+      { key: 'ai_groq_key', value: '', description: 'Groq API key (encrypted)' },
+      { key: 'ai_groq_model', value: 'llama-3.3-70b-versatile', description: 'Model identifier for Groq' },
       { key: 'ai_budget_daily', value: '50.00', description: 'Daily spending limit for AI features in USD' },
       { key: 'ai_budget_monthly', value: '1500.00', description: 'Monthly spending limit for AI features in USD' },
       {

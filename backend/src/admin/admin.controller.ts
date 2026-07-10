@@ -32,7 +32,7 @@ export class AdminController {
   }
 
   @Put('users/:id/status')
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   async updateUserStatus(
     @Param('id') userId: string,
     @Body() body: { isVerified?: boolean; role?: UserRole },
