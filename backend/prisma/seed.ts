@@ -23,6 +23,24 @@ async function main() {
   }
   console.log('[SEED] Default modules seeded.');
 
+  // 1.5 Clean up old subscription plans and related user subscriptions
+  await prisma.subscription.deleteMany({
+    where: {
+      plan: {
+        code: {
+          notIn: ['FREE', 'BASIC', 'PRO', 'PREMIUM'],
+        },
+      },
+    },
+  });
+  await prisma.subscriptionPlan.deleteMany({
+    where: {
+      code: {
+        notIn: ['FREE', 'BASIC', 'PRO', 'PREMIUM'],
+      },
+    },
+  });
+
   // 2. Create Default Subscription Plans
   const plans = [
     {

@@ -1,10 +1,111 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { SubscribeDto } from './dto/subscribe.dto';
 
 @Injectable()
-export class SubscriptionService {
+export class SubscriptionService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
+
+  async onModuleInit() {
+    console.log('[SubscriptionService] Synchronizing subscription plans...');
+    try {
+      // 1. Clean up old subscription plans that are not FREE, BASIC, PRO, or PREMIUM
+      await this.prisma.subscription.deleteMany({
+        where: {
+          plan: {
+            code: {
+              notIn: ['FREE', 'BASIC', 'PRO', 'PREMIUM'],
+            },
+          },
+        },
+      });
+      await this.prisma.subscriptionPlan.deleteMany({
+        where: {
+          code: {
+            notIn: ['FREE', 'BASIC', 'PRO', 'PREMIUM'],
+          },
+        },
+      });
+
+      // 2. Define target plans matching the third image
+      const plans = [
+        {
+          name: 'Free Starter',
+          code: 'FREE',
+          price: 0.0,
+          interval: 'MONTHLY' as const,
+          features: ['5 Practice Questions / Day', '1 Full Mock Test', 'Basic progress analytics', 'Community FAQ Support'],
+          limitLessons: 5,
+          limitDailyPractice: 5,
+          limitMockTests: 1,
+          hasAiWriting: false,
+          hasAiSpeaking: false,
+          hasTutorReview: false,
+        },
+        {
+          name: 'Basic Preparation',
+          code: 'BASIC',
+          price: 15000.00,
+          interval: 'MONTHLY' as const,
+          features: ['20 Practice Questions / Day', '3 Full Mock Tests', 'Unlimited lessons access', 'Email Support'],
+          limitLessons: -1,
+          limitDailyPractice: 20,
+          limitMockTests: 3,
+          hasAiWriting: false,
+          hasAiSpeaking: false,
+          hasTutorReview: false,
+        },
+        {
+          name: 'Pro AI Intensive',
+          code: 'PRO',
+          price: 35000.00,
+          interval: 'MONTHLY' as const,
+          features: ['Unlimited Practice & Lessons', 'Unlimited Mock Tests', 'AI Writing corrections', 'AI Speaking evaluations', 'Priority Support'],
+          limitLessons: -1,
+          limitDailyPractice: -1,
+          limitMockTests: -1,
+          hasAiWriting: true,
+          hasAiSpeaking: true,
+          hasTutorReview: false,
+        },
+        {
+          name: 'Premium Tutor',
+          code: 'PREMIUM',
+          price: 75000.00,
+          interval: 'MONTHLY' as const,
+          features: ['Everything in Pro AI', '1-on-1 Tutor feedback', 'Personalized Study Plans', 'Completion Certificates'],
+          limitLessons: -1,
+          limitDailyPractice: -1,
+          limitMockTests: -1,
+          hasAiWriting: true,
+          hasAiSpeaking: true,
+          hasTutorReview: true,
+        },
+      ];
+
+      // 3. Upsert them in the database
+      for (const plan of plans) {
+        await this.prisma.subscriptionPlan.upsert({
+          where: { code: plan.code },
+          update: {
+            name: plan.name,
+            price: plan.price,
+            features: plan.features,
+            limitLessons: plan.limitLessons,
+            limitDailyPractice: plan.limitDailyPractice,
+            limitMockTests: plan.limitMockTests,
+            hasAiWriting: plan.hasAiWriting,
+            hasAiSpeaking: plan.hasAiSpeaking,
+            hasTutorReview: plan.hasTutorReview,
+          },
+          create: plan,
+        });
+      }
+      console.log('[SubscriptionService] Subscription plans synchronized successfully.');
+    } catch (err) {
+      console.error('[SubscriptionService] Failed to synchronize subscription plans:', err);
+    }
+  }
 
   // --- PLANS ---
   async getActivePlans() {
