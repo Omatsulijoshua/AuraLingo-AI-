@@ -24,6 +24,43 @@ export default function QuestionsBuilder() {
   // Active Tab
   const [activeTab, setActiveTab] = useState<'listening' | 'reading' | 'essays' | 'reports' | 'letters' | 'speaking'>('listening');
 
+  // AutoSpin state and hook
+  const [spinProgress, setSpinProgress] = useState<any>(null);
+
+  const startAutoSpin = async () => {
+    if (spinProgress?.status === 'RUNNING') return;
+    try {
+      await api.request('/admin/ai/auto-spin', { method: 'POST' });
+      setSpinProgress({
+        status: 'RUNNING',
+        percent: 0,
+        currentStep: 'Starting batch generation...',
+        error: null,
+      });
+    } catch (err: any) {
+      alert(err.message || 'Failed to start AutoSpin');
+    }
+  };
+
+  useEffect(() => {
+    let interval: any;
+    if (spinProgress?.status === 'RUNNING') {
+      interval = setInterval(async () => {
+        try {
+          const res = await api.request<any>('/admin/ai/auto-spin/progress');
+          setSpinProgress(res);
+          if (res.status === 'COMPLETED' || res.status === 'FAILED') {
+            clearInterval(interval);
+            loadQuestionsData();
+          }
+        } catch (err) {
+          console.error('Error polling spin progress:', err);
+        }
+      }, 1500);
+    }
+    return () => clearInterval(interval);
+  }, [spinProgress?.status]);
+
   // Modals state
   const [showManualModal, setShowManualModal] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
@@ -281,8 +318,59 @@ export default function QuestionsBuilder() {
           >
             🤖 Generate AI Question
           </button>
+          <button
+            onClick={startAutoSpin}
+            disabled={spinProgress?.status === 'RUNNING'}
+            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-black px-4 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-lg shadow-purple-600/10 flex items-center gap-1.5"
+          >
+            🎡 Auto Spin Questions
+          </button>
         </div>
       </div>
+
+      {/* Auto Spin Progress Card */}
+      {spinProgress && spinProgress.status !== 'IDLE' && (
+        <div className="bg-primary/25 border border-primary-light/45 rounded-xl p-5 shadow-xl backdrop-blur-sm space-y-4">
+          <div className="flex justify-between items-center text-xs font-bold">
+            <span className="text-slate-300">🎡 Auto-Spin Progress: {spinProgress.currentStep}</span>
+            <span className="text-gold">{spinProgress.percent}%</span>
+          </div>
+          <div className="w-full bg-navy/60 rounded-full h-3 overflow-hidden border border-primary-light/10">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                spinProgress.status === 'FAILED'
+                  ? 'bg-red-500'
+                  : spinProgress.status === 'COMPLETED'
+                  ? 'bg-emerald'
+                  : 'bg-gold'
+              }`}
+              style={{ width: `${spinProgress.percent}%` }}
+            />
+          </div>
+          {spinProgress.status === 'COMPLETED' && (
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-emerald font-bold">🎉 Batch generation completed successfully! Questions inserted.</span>
+              <button
+                onClick={() => setSpinProgress(null)}
+                className="text-slate-400 hover:text-white transition-colors underline font-semibold cursor-pointer"
+              >
+                Dismiss Notice
+              </button>
+            </div>
+          )}
+          {spinProgress.status === 'FAILED' && (
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-red-400 font-bold">❌ Generation failed: {spinProgress.error || 'Unknown error'}</span>
+              <button
+                onClick={() => setSpinProgress(null)}
+                className="text-slate-400 hover:text-white transition-colors underline font-semibold cursor-pointer"
+              >
+                Dismiss Notice
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center text-xs">

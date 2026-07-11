@@ -10,6 +10,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { AutoSpinService } from './autospin.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin')
@@ -18,12 +19,13 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly aiService: AiService,
     private readonly prisma: PrismaService,
+    private readonly autoSpinService: AutoSpinService,
   ) {}
 
   @Get('stats')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  async getStats() {
-    return this.adminService.getDashboardStats();
+  async getStats(@Query('month') month?: string) {
+    return this.adminService.getDashboardStats(month);
   }
 
   @Get('users')
@@ -456,5 +458,20 @@ Return a valid JSON object matching this schema. Do not include markdown code bl
       targetRole,
       type,
     });
+  }
+
+  @Post('ai/auto-spin')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  async triggerAutoSpin() {
+    this.autoSpinService.runSpin().catch((err) => {
+      console.error('AutoSpin background execution failed:', err);
+    });
+    return { message: 'AutoSpin generation started in the background.' };
+  }
+
+  @Get('ai/auto-spin/progress')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  async getAutoSpinProgress() {
+    return this.autoSpinService.getProgress();
   }
 }

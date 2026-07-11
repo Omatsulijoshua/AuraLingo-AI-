@@ -5,14 +5,17 @@ import { api } from '@/lib/api';
 
 interface Stats {
   totalUsers: number;
+  monthNewUsers: number;
   activeSubscribers: number;
   freeUsers: number;
   expiredSubscribers: number;
-  totalRevenue: number;
+  lifetimeRevenue: number;
+  monthRevenue: number;
   mockTestsTaken: number;
   writingSubmissions: number;
   speakingSubmissions: number;
   userGrowth: Array<{ month: string; count: number }>;
+  selectedMonth: string;
 }
 
 export default function DashboardOverview() {
@@ -20,10 +23,17 @@ export default function DashboardOverview() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Month selector state
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
+
   useEffect(() => {
     async function fetchStats() {
+      setLoading(true);
       try {
-        const data = await api.request<Stats>('/admin/stats');
+        const data = await api.request<Stats>(`/admin/stats?month=${selectedMonth}`);
         setStats(data);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch admin stats');
@@ -32,11 +42,11 @@ export default function DashboardOverview() {
       }
     }
     fetchStats();
-  }, []);
+  }, [selectedMonth]);
 
   if (loading) {
     return (
-      <div className="h-full w-full flex items-center justify-center">
+      <div className="h-full w-full flex items-center justify-center min-h-[400px]">
         <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -51,17 +61,35 @@ export default function DashboardOverview() {
   }
 
   const statCards = [
-    { name: 'Total Students', value: stats.totalUsers, description: 'Registered student accounts', color: 'border-l-blue-500' },
-    { name: 'Active Subscriptions', value: stats.activeSubscribers, description: 'Premium tier accounts', color: 'border-l-gold' },
-    { name: 'Free Users', value: stats.freeUsers, description: 'Free trial/starter accounts', color: 'border-l-slate-500' },
-    { name: 'Total Revenue', value: `₦${stats.totalRevenue.toLocaleString()}`, description: 'Life-time earnings', color: 'border-l-emerald' },
+    { name: 'Total Students', value: stats.totalUsers, description: 'Life-time registered students', color: 'border-l-blue-500' },
+    { name: 'New Students (This Month)', value: stats.monthNewUsers, description: `Registrations in ${stats.selectedMonth}`, color: 'border-l-indigo-500' },
+    { name: 'Active Subscriptions', value: stats.activeSubscribers, description: 'Premium accounts', color: 'border-l-gold' },
+    { name: 'Free Users', value: stats.freeUsers, description: 'Free starter tier', color: 'border-l-slate-500' },
+    { name: 'Lifetime Revenue', value: `₦${stats.lifetimeRevenue.toLocaleString()}`, description: 'Life-time earnings', color: 'border-l-emerald' },
+    { name: 'Revenue (This Month)', value: `₦${stats.monthRevenue.toLocaleString()}`, description: `Earnings in ${stats.selectedMonth}`, color: 'border-l-teal-500' },
     { name: 'Mock Tests Taken', value: stats.mockTestsTaken, description: 'Completed test runs', color: 'border-l-purple-500' },
-    { name: 'Writing Tasks', value: stats.writingSubmissions, description: 'Submitted for grading', color: 'border-l-pink-500' },
-    { name: 'Speaking Tasks', value: stats.speakingSubmissions, description: 'Submitted recordings', color: 'border-l-orange-500' },
+    { name: 'Writing Tasks', value: stats.writingSubmissions, description: 'Submitted tasks', color: 'border-l-pink-500' },
   ];
 
   return (
     <div className="space-y-8">
+      {/* Month Filter Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-primary/25 border border-primary-light/30 rounded-2xl p-4 shadow-xl">
+        <div>
+          <h2 className="text-white font-extrabold text-lg">Performance Overview</h2>
+          <p className="text-slate-400 text-xs mt-0.5">Filter statistics and monthly revenue breakdown</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="text-slate-400 text-xs font-bold uppercase tracking-wider">Select Month:</label>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="bg-navy border border-primary-light focus:border-gold rounded-lg px-4 py-2 text-xs text-white focus:outline-none cursor-pointer"
+          />
+        </div>
+      </div>
+
       {/* Stats Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card) => (

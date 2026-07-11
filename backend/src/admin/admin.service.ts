@@ -16,8 +16,34 @@ export class AdminService {
   }
 
   // --- STATISTICS ---
-  async getDashboardStats() {
+  async getDashboardStats(monthQuery?: string) {
+    let targetYear: number;
+    let targetMonth: number;
+
+    if (monthQuery && /^\d{4}-\d{2}$/.test(monthQuery)) {
+      const parts = monthQuery.split('-');
+      targetYear = parseInt(parts[0], 10);
+      targetMonth = parseInt(parts[1], 10) - 1;
+    } else {
+      const now = new Date();
+      targetYear = now.getFullYear();
+      targetMonth = now.getMonth();
+    }
+
+    const startOfMonth = new Date(targetYear, targetMonth, 1);
+    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+
     const totalUsers = await this.prisma.user.count({ where: { role: 'STUDENT' } });
+    const monthNewUsers = await this.prisma.user.count({
+      where: {
+        role: 'STUDENT',
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+    });
+
     const activeSubscribers = await this.prisma.subscription.count({
       where: {
         status: 'ACTIVE',
@@ -40,18 +66,30 @@ export class AdminService {
       },
     });
 
-    // Sum revenue
-    const payments = await this.prisma.payment.findMany({
+    // Lifetime Revenue
+    const lifetimePayments = await this.prisma.payment.findMany({
       where: { status: 'SUCCESSFUL' },
       select: { amount: true },
     });
-    const totalRevenue = payments.reduce((acc, p) => acc + Number(p.amount), 0);
+    const lifetimeRevenue = lifetimePayments.reduce((acc, p) => acc + Number(p.amount), 0);
+
+    // Selected Month Revenue
+    const monthPayments = await this.prisma.payment.findMany({
+      where: {
+        status: 'SUCCESSFUL',
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+      select: { amount: true },
+    });
+    const monthRevenue = monthPayments.reduce((acc, p) => acc + Number(p.amount), 0);
 
     const mockTestsTaken = await this.prisma.userMockAttempt.count();
     const writingSubmissions = await this.prisma.writingSubmission.count();
     const speakingSubmissions = await this.prisma.speakingSubmission.count();
 
-    // User growth (simplified, e.g., group by created month)
     const users = await this.prisma.user.findMany({
       where: { role: 'STUDENT' },
       select: { createdAt: true },
@@ -70,14 +108,17 @@ export class AdminService {
 
     return {
       totalUsers,
+      monthNewUsers,
       activeSubscribers,
       freeUsers,
       expiredSubscribers,
-      totalRevenue,
+      lifetimeRevenue,
+      monthRevenue,
       mockTestsTaken,
       writingSubmissions,
       speakingSubmissions,
       userGrowth,
+      selectedMonth: `${targetYear}-${(targetMonth + 1).toString().padStart(2, '0')}`,
     };
   }
 
