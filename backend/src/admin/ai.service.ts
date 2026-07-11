@@ -37,22 +37,27 @@ export class AiService {
     const provider = customProvider || getVal('active_ai_provider');
 
     // 2. Resolve all available candidate providers with fallback routing
-    const candidates: Array<{ providerName: string; apiKey: string; model: string; baseUrl: string }> = [];
+    const candidates: Array<{ providerName: string; apiKey: string; model: string; baseUrl: string; keyIndex: number }> = [];
 
     const addCandidate = (name: string, keyVal: string, modelVal: string, defaultModel: string, defaultUrl: string) => {
-      let key = '';
+      let keysString = '';
       if (customProvider === name && customKey) {
-        key = customKey;
+        keysString = customKey;
       } else {
-        key = this.decryptKey(keyVal);
+        keysString = this.decryptKey(keyVal);
       }
 
-      if (key) {
-        candidates.push({
-          providerName: name,
-          apiKey: key,
-          model: (customProvider === name && customModel) ? customModel : (modelVal || defaultModel),
-          baseUrl: defaultUrl,
+      if (keysString) {
+        // Split by commas to allow multiple keys from different accounts
+        const keysList = keysString.split(',').map(k => k.trim()).filter(Boolean);
+        keysList.forEach((key, index) => {
+          candidates.push({
+            providerName: name,
+            apiKey: key,
+            model: (customProvider === name && customModel) ? customModel : (modelVal || defaultModel),
+            baseUrl: defaultUrl,
+            keyIndex: index + 1,
+          });
         });
       }
     };
@@ -68,6 +73,7 @@ export class AiService {
         apiKey: '',
         model: customModel || getVal('ai_ollama_model') || 'llama3',
         baseUrl: 'http://localhost:11434/v1',
+        keyIndex: 1,
       });
     }
 
@@ -130,7 +136,7 @@ export class AiService {
         };
       } catch (err: any) {
         lastError = err;
-        console.warn(`AI Provider [${candidate.providerName}] failed with: ${err.message || err}. Attempting fallback...`);
+        console.warn(`AI Provider [${candidate.providerName}] Key #${candidate.keyIndex} failed with: ${err.message || err}. Attempting fallback...`);
       }
     }
 
