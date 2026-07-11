@@ -31,17 +31,36 @@ export class AutoSpinService {
     };
   }
 
-  async runSpin() {
+  async runSpin(config: {
+    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+    listeningCount?: number;
+    readingCount?: number;
+    essaysCount?: number;
+    reportsCount?: number;
+    lettersCount?: number;
+    speakingCount?: number;
+  }) {
     if (this.progress.status === 'RUNNING') {
       return;
     }
 
+    const difficulty = config.difficulty || 'INTERMEDIATE';
+    const listeningCount = config.listeningCount !== undefined ? config.listeningCount : 3;
+    const readingCount = config.readingCount !== undefined ? config.readingCount : 3;
+    const essaysCount = config.essaysCount !== undefined ? config.essaysCount : 4;
+    const reportsCount = config.reportsCount !== undefined ? config.reportsCount : 3;
+    const lettersCount = config.lettersCount !== undefined ? config.lettersCount : 3;
+    const speakingCount = config.speakingCount !== undefined ? config.speakingCount : 4;
+
     this.progress = {
       status: 'RUNNING',
       percent: 0,
-      currentStep: 'Initializing AI Generation...',
+      currentStep: 'Initializing Pro AI Generation...',
       error: null,
     };
+
+    // Construct active steps list
+    const activeSteps: Array<{ name: string; action: () => Promise<void> }> = [];
 
     // Common IELTS themes
     const themes = [
@@ -56,20 +75,19 @@ export class AutoSpinService {
       'Science, Innovation and Discovery',
       'Urbanization and Modern Cities',
     ];
-
     const theme = themes[Math.floor(Math.random() * themes.length)];
 
     // Fetch Listening & Reading modules
     const listeningMod = await this.prisma.module.findFirst({ where: { name: 'LISTENING' } });
     const readingMod = await this.prisma.module.findFirst({ where: { name: 'READING' } });
 
-    // Step 1: Listening questions (15%)
-    try {
-      this.progress.currentStep = `Generating Listening Practice Questions on theme: ${theme}...`;
-      this.progress.percent = 5;
-      if (listeningMod) {
-        const prompt = `You are an expert IELTS Question Generator. Generate exactly 3 IELTS practice questions for the module "Listening" on the theme "${theme}".
-Difficulty: INTERMEDIATE. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+    // 1. Listening Questions Step
+    if (listeningCount > 0 && listeningMod) {
+      activeSteps.push({
+        name: `Generating ${listeningCount} Listening Practice Questions (${difficulty}) on theme: ${theme}`,
+        action: async () => {
+          const prompt = `You are an expert IELTS Question Generator. Generate exactly ${listeningCount} IELTS practice questions for the module "Listening" on the theme "${theme}".
+Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 Each object must match this schema:
 {
   "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
@@ -84,51 +102,49 @@ Each object must match this schema:
     { "correctText": "the exact string matches" }
   ]
 }`;
-        const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
-        const questions = JSON.parse(jsonText);
-        for (const q of questions) {
-          await this.prisma.practiceQuestion.create({
-            data: {
-              moduleId: listeningMod.id,
-              questionType: q.questionType,
-              instruction: q.instruction,
-              questionText: q.questionText,
-              explanation: q.explanation,
-              difficulty: 'INTERMEDIATE',
-              options: q.options ? {
-                createMany: {
-                  data: q.options.map((opt: any) => ({
-                    optionText: opt.optionText,
-                    optionLetter: opt.optionLetter || '',
-                    isCorrect: !!opt.isCorrect,
-                  })),
-                }
-              } : undefined,
-              answers: q.answers ? {
-                createMany: {
-                  data: q.answers.map((ans: any) => ({
-                    correctText: ans.correctText,
-                    acceptableTexts: ans.acceptableTexts || [],
-                  })),
-                }
-              } : undefined,
-            },
-          });
+          const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const questions = JSON.parse(jsonText);
+          for (const q of questions) {
+            await this.prisma.practiceQuestion.create({
+              data: {
+                moduleId: listeningMod.id,
+                questionType: q.questionType,
+                instruction: q.instruction,
+                questionText: q.questionText,
+                explanation: q.explanation,
+                difficulty: difficulty,
+                options: q.options ? {
+                  createMany: {
+                    data: q.options.map((opt: any) => ({
+                      optionText: opt.optionText,
+                      optionLetter: opt.optionLetter || '',
+                      isCorrect: !!opt.isCorrect,
+                    })),
+                  }
+                } : undefined,
+                answers: q.answers ? {
+                  createMany: {
+                    data: q.answers.map((ans: any) => ({
+                      correctText: ans.correctText,
+                      acceptableTexts: ans.acceptableTexts || [],
+                    })),
+                  }
+                } : undefined,
+              },
+            });
+          }
         }
-      }
-      this.progress.percent = 15;
-    } catch (err: any) {
-      this.logger.error('AutoSpin Listening generation failed:', err);
+      });
     }
 
-    // Step 2: Reading questions (33%)
-    try {
-      this.progress.currentStep = `Generating Reading Practice Questions on theme: ${theme}...`;
-      this.progress.percent = 20;
-      if (readingMod) {
-        const prompt = `You are an expert IELTS Question Generator. Generate exactly 3 IELTS practice questions for the module "Reading" on the theme "${theme}".
-Difficulty: INTERMEDIATE. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+    // 2. Reading Questions Step
+    if (readingCount > 0 && readingMod) {
+      activeSteps.push({
+        name: `Generating ${readingCount} Reading Practice Questions (${difficulty}) on theme: ${theme}`,
+        action: async () => {
+          const prompt = `You are an expert IELTS Question Generator. Generate exactly ${readingCount} IELTS practice questions for the module "Reading" on the theme "${theme}".
+Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 Each object must match this schema:
 {
   "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
@@ -143,174 +159,191 @@ Each object must match this schema:
     { "correctText": "the exact string matches" }
   ]
 }`;
-        const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
-        const questions = JSON.parse(jsonText);
-        for (const q of questions) {
-          await this.prisma.practiceQuestion.create({
-            data: {
-              moduleId: readingMod.id,
-              questionType: q.questionType,
-              instruction: q.instruction,
-              questionText: q.questionText,
-              explanation: q.explanation,
-              difficulty: 'INTERMEDIATE',
-              options: q.options ? {
-                createMany: {
-                  data: q.options.map((opt: any) => ({
-                    optionText: opt.optionText,
-                    optionLetter: opt.optionLetter || '',
-                    isCorrect: !!opt.isCorrect,
-                  })),
-                }
-              } : undefined,
-              answers: q.answers ? {
-                createMany: {
-                  data: q.answers.map((ans: any) => ({
-                    correctText: ans.correctText,
-                    acceptableTexts: ans.acceptableTexts || [],
-                  })),
-                }
-              } : undefined,
-            },
-          });
+          const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const questions = JSON.parse(jsonText);
+          for (const q of questions) {
+            await this.prisma.practiceQuestion.create({
+              data: {
+                moduleId: readingMod.id,
+                questionType: q.questionType,
+                instruction: q.instruction,
+                questionText: q.questionText,
+                explanation: q.explanation,
+                difficulty: difficulty,
+                options: q.options ? {
+                  createMany: {
+                    data: q.options.map((opt: any) => ({
+                      optionText: opt.optionText,
+                      optionLetter: opt.optionLetter || '',
+                      isCorrect: !!opt.isCorrect,
+                    })),
+                  }
+                } : undefined,
+                answers: q.answers ? {
+                  createMany: {
+                    data: q.answers.map((ans: any) => ({
+                      correctText: ans.correctText,
+                      acceptableTexts: ans.acceptableTexts || [],
+                    })),
+                  }
+                } : undefined,
+              },
+            });
+          }
         }
-      }
-      this.progress.percent = 33;
-    } catch (err: any) {
-      this.logger.error('AutoSpin Reading generation failed:', err);
+      });
     }
 
-    // Step 3: Writing Essays (50%)
-    try {
-      this.progress.currentStep = `Generating Writing Essays Prompts on theme: ${theme}...`;
-      this.progress.percent = 40;
-      const prompt = `You are an expert IELTS Writing Generator. Generate exactly 4 IELTS Writing Task 2 Essay prompts (agree/disagree, discuss both views, advantage/disadvantage) on the theme "${theme}".
-Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+    // 3. Writing Essays Step
+    if (essaysCount > 0) {
+      activeSteps.push({
+        name: `Generating ${essaysCount} Writing Task 2 Essay prompts (${difficulty}) on theme: ${theme}`,
+        action: async () => {
+          const prompt = `You are an expert IELTS Writing Generator. Generate exactly ${essaysCount} IELTS Writing Task 2 Essay prompts (agree/disagree, discuss both views, advantage/disadvantage) on the theme "${theme}".
+Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 Each object must match this schema:
 {
   "title": "Short descriptive title of essay",
   "promptText": "Detailed instructions stating the essay question prompt"
 }`;
-      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
-      const prompts = JSON.parse(jsonText);
-      for (const p of prompts) {
-        await this.prisma.writingPrompt.create({
-          data: {
-            title: p.title,
-            promptText: p.promptText,
-            examType: 'ACADEMIC',
-            taskType: 'TASK_2',
-            difficulty: 'INTERMEDIATE',
-          },
-        });
-      }
-      this.progress.percent = 50;
-    } catch (err: any) {
-      this.logger.error('AutoSpin Writing Essays generation failed:', err);
+          const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const prompts = JSON.parse(jsonText);
+          for (const p of prompts) {
+            await this.prisma.writingPrompt.create({
+              data: {
+                title: p.title,
+                promptText: p.promptText,
+                examType: 'ACADEMIC',
+                taskType: 'TASK_2',
+                difficulty: difficulty,
+              },
+            });
+          }
+        }
+      });
     }
 
-    // Step 4: Writing Reports (TASK 1 Academic) (66%)
-    try {
-      this.progress.currentStep = `Generating Writing Reports (Academic Task 1) Prompts on theme: ${theme}...`;
-      this.progress.percent = 58;
-      const prompt = `You are an expert IELTS Writing Generator. Generate exactly 3 IELTS Writing Task 1 Academic (Report description of chart/graph/map/diagram) prompts on the theme "${theme}".
-Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+    // 4. Writing Reports Step
+    if (reportsCount > 0) {
+      activeSteps.push({
+        name: `Generating ${reportsCount} Writing Task 1 Academic Reports (${difficulty}) on theme: ${theme}`,
+        action: async () => {
+          const prompt = `You are an expert IELTS Writing Generator. Generate exactly ${reportsCount} IELTS Writing Task 1 Academic (Report description of chart/graph/map/diagram) prompts on the theme "${theme}".
+Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 Each object must match this schema:
 {
   "title": "Short descriptive title of chart",
   "promptText": "Detailed instructions asking the student to summarize the key features of the visual chart"
 }`;
-      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
-      const prompts = JSON.parse(jsonText);
-      for (const p of prompts) {
-        await this.prisma.writingPrompt.create({
-          data: {
-            title: p.title,
-            promptText: p.promptText,
-            examType: 'ACADEMIC',
-            taskType: 'TASK_1',
-            difficulty: 'INTERMEDIATE',
-          },
-        });
-      }
-      this.progress.percent = 66;
-    } catch (err: any) {
-      this.logger.error('AutoSpin Writing Reports generation failed:', err);
+          const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const prompts = JSON.parse(jsonText);
+          for (const p of prompts) {
+            await this.prisma.writingPrompt.create({
+              data: {
+                title: p.title,
+                promptText: p.promptText,
+                examType: 'ACADEMIC',
+                taskType: 'TASK_1',
+                difficulty: difficulty,
+              },
+            });
+          }
+        }
+      });
     }
 
-    // Step 5: Writing Letters (TASK 1 General) (83%)
-    try {
-      this.progress.currentStep = `Generating Writing Letters (General Task 1) Prompts on theme: ${theme}...`;
-      this.progress.percent = 75;
-      const prompt = `You are an expert IELTS Writing Generator. Generate exactly 3 IELTS Writing Task 1 General (Letter description requesting details, complaining or thanking) prompts on the theme "${theme}".
-Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+    // 5. Writing Letters Step
+    if (lettersCount > 0) {
+      activeSteps.push({
+        name: `Generating ${lettersCount} Writing Task 1 General Letters (${difficulty}) on theme: ${theme}`,
+        action: async () => {
+          const prompt = `You are an expert IELTS Writing Generator. Generate exactly ${lettersCount} IELTS Writing Task 1 General (Letter description requesting details, complaining or thanking) prompts on the theme "${theme}".
+Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 Each object must match this schema:
 {
   "title": "Short descriptive title of letter request",
   "promptText": "Detailed instructions outlining bullet points the student must include in their formal/informal letter response"
 }`;
-      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
-      const prompts = JSON.parse(jsonText);
-      for (const p of prompts) {
-        await this.prisma.writingPrompt.create({
-          data: {
-            title: p.title,
-            promptText: p.promptText,
-            examType: 'GENERAL',
-            taskType: 'TASK_1',
-            difficulty: 'INTERMEDIATE',
-          },
-        });
-      }
-      this.progress.percent = 83;
-    } catch (err: any) {
-      this.logger.error('AutoSpin Writing Letters generation failed:', err);
+          const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const prompts = JSON.parse(jsonText);
+          for (const p of prompts) {
+            await this.prisma.writingPrompt.create({
+              data: {
+                title: p.title,
+                promptText: p.promptText,
+                examType: 'GENERAL',
+                taskType: 'TASK_1',
+                difficulty: difficulty,
+              },
+            });
+          }
+        }
+      });
     }
 
-    // Step 6: Speaking cue cards (100%)
-    try {
-      this.progress.currentStep = `Generating Speaking Module Cue Cards on theme: ${theme}...`;
-      this.progress.percent = 92;
-      const prompt = `You are an expert IELTS Speaking Generator. Generate exactly 4 IELTS Speaking Part 2 Cue Cards prompts on the theme "${theme}".
-Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+    // 6. Speaking Step
+    if (speakingCount > 0) {
+      activeSteps.push({
+        name: `Generating ${speakingCount} Speaking Cue Cards (${difficulty}) on theme: ${theme}`,
+        action: async () => {
+          const prompt = `You are an expert IELTS Speaking Generator. Generate exactly ${speakingCount} IELTS Speaking Part 2 Cue Cards prompts on the theme "${theme}".
+Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 Each object must match this schema:
 {
   "topic": "Descriptive short title of cue card",
   "cueCardText": "Describe a place, object or person context outline",
   "followUpQuestions": ["List of 3 follow up questions for Part 3 based on this cue card"]
 }`;
-      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
-      const prompts = JSON.parse(jsonText);
-      for (const p of prompts) {
-        await this.prisma.speakingPrompt.create({
-          data: {
-            part: 2,
-            topic: p.topic,
-            cueCardText: p.cueCardText,
-            followUpQuestions: p.followUpQuestions || [],
-            difficulty: 'INTERMEDIATE',
-          },
-        });
-      }
+          const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const prompts = JSON.parse(jsonText);
+          for (const p of prompts) {
+            await this.prisma.speakingPrompt.create({
+              data: {
+                part: 2,
+                topic: p.topic,
+                cueCardText: p.cueCardText,
+                followUpQuestions: p.followUpQuestions || [],
+                difficulty: difficulty,
+              },
+            });
+          }
+        }
+      });
+    }
+
+    // Execute steps and update progress bar
+    if (activeSteps.length === 0) {
       this.progress = {
         status: 'COMPLETED',
         percent: 100,
-        currentStep: 'Successfully generated IELTS questions across all modules!',
+        currentStep: 'Completed. No sections selected for generation.',
         error: null,
       };
-    } catch (err: any) {
-      this.logger.error('AutoSpin Speaking Cue Cards generation failed:', err);
-      this.progress = {
-        status: 'FAILED',
-        percent: 100,
-        currentStep: 'Error generating Speaking module cue cards.',
-        error: err.message || 'AutoSpin process encountered an error.',
-      };
+      return;
     }
+
+    let completedSteps = 0;
+    for (const step of activeSteps) {
+      try {
+        this.progress.currentStep = step.name;
+        this.progress.percent = Math.round((completedSteps / activeSteps.length) * 100);
+        await step.action();
+        completedSteps++;
+      } catch (err: any) {
+        this.logger.error(`Error executing generation step [${step.name}]:`, err);
+      }
+    }
+
+    this.progress = {
+      status: 'COMPLETED',
+      percent: 100,
+      currentStep: `Successfully generated and inserted questions across ${completedSteps}/${activeSteps.length} sections!`,
+      error: null,
+    };
   }
 }

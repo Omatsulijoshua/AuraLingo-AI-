@@ -466,8 +466,24 @@ Return a valid JSON object matching this schema. Do not include markdown code bl
 
   @Post('ai/auto-spin')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  async triggerAutoSpin() {
-    this.autoSpinService.runSpin().catch((err) => {
+  async triggerAutoSpin(
+    @Body('difficulty') difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
+    @Body('listeningCount') listeningCount?: number,
+    @Body('readingCount') readingCount?: number,
+    @Body('essaysCount') essaysCount?: number,
+    @Body('reportsCount') reportsCount?: number,
+    @Body('lettersCount') lettersCount?: number,
+    @Body('speakingCount') speakingCount?: number,
+  ) {
+    this.autoSpinService.runSpin({
+      difficulty,
+      listeningCount,
+      readingCount,
+      essaysCount,
+      reportsCount,
+      lettersCount,
+      speakingCount,
+    }).catch((err) => {
       console.error('AutoSpin background execution failed:', err);
     });
     return { message: 'AutoSpin generation started in the background.' };

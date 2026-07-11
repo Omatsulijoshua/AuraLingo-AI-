@@ -26,17 +26,37 @@ export default function QuestionsBuilder() {
 
   // AutoSpin state and hook
   const [spinProgress, setSpinProgress] = useState<any>(null);
+  const [showProSpinModal, setShowProSpinModal] = useState(false);
+  const [spinDifficulty, setSpinDifficulty] = useState<'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'>('INTERMEDIATE');
+  const [spinListeningCount, setSpinListeningCount] = useState(3);
+  const [spinReadingCount, setSpinReadingCount] = useState(3);
+  const [spinEssaysCount, setSpinEssaysCount] = useState(4);
+  const [spinReportsCount, setSpinReportsCount] = useState(3);
+  const [spinLettersCount, setSpinLettersCount] = useState(3);
+  const [spinSpeakingCount, setSpinSpeakingCount] = useState(4);
 
   const startAutoSpin = async () => {
     if (spinProgress?.status === 'RUNNING') return;
     try {
-      await api.request('/admin/ai/auto-spin', { method: 'POST' });
+      await api.request('/admin/ai/auto-spin', {
+        method: 'POST',
+        body: JSON.stringify({
+          difficulty: spinDifficulty,
+          listeningCount: spinListeningCount,
+          readingCount: spinReadingCount,
+          essaysCount: spinEssaysCount,
+          reportsCount: spinReportsCount,
+          lettersCount: spinLettersCount,
+          speakingCount: spinSpeakingCount,
+        }),
+      });
       setSpinProgress({
         status: 'RUNNING',
         percent: 0,
-        currentStep: 'Starting batch generation...',
+        currentStep: 'Starting pro batch generation...',
         error: null,
       });
+      setShowProSpinModal(false);
     } catch (err: any) {
       alert(err.message || 'Failed to start AutoSpin');
     }
@@ -319,7 +339,7 @@ export default function QuestionsBuilder() {
             🤖 Generate AI Question
           </button>
           <button
-            onClick={startAutoSpin}
+            onClick={() => setShowProSpinModal(true)}
             disabled={spinProgress?.status === 'RUNNING'}
             className="bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white font-black px-4 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-lg shadow-purple-600/10 flex items-center gap-1.5"
           >
@@ -429,6 +449,121 @@ export default function QuestionsBuilder() {
         )}
 
       </div>
+
+      {/* PRO AUTO-SPIN WIZARD MODAL */}
+      {showProSpinModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-primary border border-primary-light rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-6">
+            <div>
+              <h3 className="text-white font-bold text-base">🎡 Pro Auto-Spin Questions</h3>
+              <p className="text-slate-400 text-xs mt-1">Configure your AI batch generation parameters. Section counts set to 0 will be skipped.</p>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Difficulty */}
+              <div>
+                <label className="block text-slate-400 font-bold uppercase tracking-wider mb-1.5">Questions Difficulty</label>
+                <select
+                  value={spinDifficulty}
+                  onChange={(e: any) => setSpinDifficulty(e.target.value)}
+                  className="w-full bg-navy border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                >
+                  <option value="BEGINNER">Beginner (Easy)</option>
+                  <option value="INTERMEDIATE">Intermediate (Medium)</option>
+                  <option value="ADVANCED">Advanced (Hard)</option>
+                </select>
+              </div>
+
+              {/* Counts Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-1.5">Listening Questions</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={spinListeningCount}
+                    onChange={(e) => setSpinListeningCount(parseInt(e.target.value) || 0)}
+                    className="w-full bg-navy border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-1.5">Reading Questions</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={spinReadingCount}
+                    onChange={(e) => setSpinReadingCount(parseInt(e.target.value) || 0)}
+                    className="w-full bg-navy border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-1.5">Writing Essays (Task 2)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={spinEssaysCount}
+                    onChange={(e) => setSpinEssaysCount(parseInt(e.target.value) || 0)}
+                    className="w-full bg-navy border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-1.5">Writing Reports (Task 1 Academic)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={spinReportsCount}
+                    onChange={(e) => setSpinReportsCount(parseInt(e.target.value) || 0)}
+                    className="w-full bg-navy border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-1.5">Writing Letters (Task 1 General)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={spinLettersCount}
+                    onChange={(e) => setSpinLettersCount(parseInt(e.target.value) || 0)}
+                    className="w-full bg-navy border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase tracking-wider mb-1.5">Speaking Cue Cards</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={spinSpeakingCount}
+                    onChange={(e) => setSpinSpeakingCount(parseInt(e.target.value) || 0)}
+                    className="w-full bg-navy border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-primary-light/20">
+              <button
+                type="button"
+                onClick={() => setShowProSpinModal(false)}
+                className="bg-primary-light/40 hover:bg-primary-light/60 border border-primary-light text-slate-300 font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={startAutoSpin}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-black px-6 py-2 rounded-lg transition-all cursor-pointer shadow-lg shadow-purple-600/10 flex items-center gap-1.5"
+              >
+                🔥 Start Pro Spin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI GENERATION MODAL */}
       {showAiModal && (
