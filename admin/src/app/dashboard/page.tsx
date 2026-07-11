@@ -85,7 +85,7 @@ export default function DashboardOverview() {
             type="month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-navy border border-primary-light focus:border-gold rounded-lg px-4 py-2 text-xs text-white focus:outline-none cursor-pointer"
+            className="bg-primary-light/45 border border-primary-light/80 hover:border-gold/60 focus:border-gold rounded-lg px-4 py-2 text-sm font-bold text-white focus:outline-none cursor-pointer transition-all"
           />
         </div>
       </div>
