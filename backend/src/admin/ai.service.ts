@@ -35,84 +35,107 @@ export class AiService {
     }
 
     const provider = customProvider || getVal('active_ai_provider');
-    
-    let apiKey = '';
-    let model = '';
-    let baseUrl = '';
 
-    // 2. Resolve provider credentials
-    if (provider === 'openai') {
-      apiKey = customKey || this.decryptKey(getVal('ai_openai_key'));
-      model = customModel || getVal('ai_openai_model') || 'gpt-4o';
-      baseUrl = getVal('ai_openai_url') || 'https://api.openai.com/v1';
-    } else if (provider === 'gemini') {
-      apiKey = customKey || this.decryptKey(getVal('ai_gemini_key'));
-      model = customModel || getVal('ai_gemini_model') || 'gemini-1.5-pro';
-      baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai'; // Google's OpenAI-compatible endpoint
-    } else if (provider === 'groq') {
-      apiKey = customKey || this.decryptKey(getVal('ai_groq_key'));
-      model = customModel || getVal('ai_groq_model') || 'llama-3.3-70b-versatile';
-      baseUrl = 'https://api.groq.com/openai/v1';
-    } else if (provider === 'ollama') {
-      model = customModel || 'llama3';
-      baseUrl = 'http://localhost:11434/v1'; // Local Ollama OpenAI-compatible port
-    } else {
-      throw new BadRequestException(`AI Provider ${provider} is not supported or not configured`);
-    }
+    // 2. Resolve all available candidate providers with fallback routing
+    const candidates: Array<{ providerName: string; apiKey: string; model: string; baseUrl: string }> = [];
 
-    if (!apiKey && provider !== 'ollama') {
-      throw new BadRequestException(`API Key for provider [${provider}] is missing or not configured`);
-    }
-
-    // 3. Make HTTP request (OpenAI-compatible request body format)
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(
-          `${baseUrl}/chat/completions`,
-          {
-            model: model,
-            messages: messages,
-            temperature: 0.3,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
-            },
-            timeout: 30000, // 30s timeout
-          },
-        ),
-      );
-
-      const timeMs = Date.now() - start;
-      const text = response.data.choices[0].message.content;
-      const promptTokens = response.data.usage?.prompt_tokens || 0;
-      const completionTokens = response.data.usage?.completion_tokens || 0;
-      const tokensUsed = promptTokens + completionTokens;
-
-      // 4. Calculate estimated pricing
-      let cost = 0;
-      if (provider === 'openai') {
-        // GPT-4o: $5.00 / 1M input tokens, $15.00 / 1M output tokens
-        cost = (promptTokens * 5 + completionTokens * 15) / 1000000;
-      } else if (provider === 'gemini') {
-        // Gemini 1.5 Pro: $1.25 / 1M input, $5.00 / 1M output
-        cost = (promptTokens * 1.25 + completionTokens * 5) / 1000000;
-      } else if (provider === 'groq') {
-        // Groq Llama 3 70b: $0.59 / 1M input, $0.79 / 1M output
-        cost = (promptTokens * 0.59 + completionTokens * 0.79) / 1000000;
+    const addCandidate = (name: string, keyVal: string, modelVal: string, defaultModel: string, defaultUrl: string) => {
+      let key = '';
+      if (customProvider === name && customKey) {
+        key = customKey;
+      } else {
+        key = this.decryptKey(keyVal);
       }
 
-      return {
-        text,
-        tokensUsed,
-        cost,
-        timeMs,
-      };
-    } catch (error: any) {
-      const errMsg = error.response?.data?.error?.message || error.message || 'AI request failed';
-      throw new BadRequestException(`AI Engine Error: ${errMsg}`);
+      if (key) {
+        candidates.push({
+          providerName: name,
+          apiKey: key,
+          model: (customProvider === name && customModel) ? customModel : (modelVal || defaultModel),
+          baseUrl: defaultUrl,
+        });
+      }
+    };
+
+    addCandidate('gemini', getVal('ai_gemini_key'), getVal('ai_gemini_model'), 'gemini-1.5-flash', 'https://generativelanguage.googleapis.com/v1beta/openai');
+    addCandidate('groq', getVal('ai_groq_key'), getVal('ai_groq_model'), 'llama-3.3-70b-versatile', 'https://api.groq.com/openai/v1');
+    addCandidate('openrouter', getVal('ai_openrouter_key'), getVal('ai_openrouter_model'), 'google/gemini-2.5-flash:free', 'https://openrouter.ai/api/v1');
+    addCandidate('openai', getVal('ai_openai_key'), getVal('ai_openai_model'), 'gpt-4o', 'https://api.openai.com/v1');
+
+    if (provider === 'ollama') {
+      candidates.push({
+        providerName: 'ollama',
+        apiKey: '',
+        model: customModel || getVal('ai_ollama_model') || 'llama3',
+        baseUrl: 'http://localhost:11434/v1',
+      });
     }
+
+    candidates.sort((a, b) => {
+      if (a.providerName === provider) return -1;
+      if (b.providerName === provider) return 1;
+      return 0;
+    });
+
+    if (candidates.length === 0) {
+      throw new BadRequestException('No AI provider credentials or API keys are configured in the settings');
+    }
+
+    // 3. Try candidates in sequence (Fallback Router)
+    let lastError: any = null;
+    for (const candidate of candidates) {
+      try {
+        const response = await firstValueFrom(
+          this.httpService.post(
+            `${candidate.baseUrl}/chat/completions`,
+            {
+              model: candidate.model,
+              messages: messages,
+              temperature: 0.3,
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                ...(candidate.apiKey ? { Authorization: `Bearer ${candidate.apiKey}` } : {}),
+                ...(candidate.providerName === 'openrouter' ? {
+                  'HTTP-Referer': 'https://bandup-ielts.com',
+                  'X-Title': 'BandUp IELTS',
+                } : {}),
+              },
+              timeout: 30000,
+            },
+          ),
+        );
+
+        const timeMs = Date.now() - start;
+        const text = response.data.choices[0].message.content;
+        const promptTokens = response.data.usage?.prompt_tokens || 0;
+        const completionTokens = response.data.usage?.completion_tokens || 0;
+        const tokensUsed = promptTokens + completionTokens;
+
+        let cost = 0;
+        if (candidate.providerName === 'openai') {
+          cost = (promptTokens * 5 + completionTokens * 15) / 1000000;
+        } else if (candidate.providerName === 'gemini') {
+          cost = (promptTokens * 0.075 + completionTokens * 0.3) / 1000000;
+        } else if (candidate.providerName === 'groq') {
+          cost = (promptTokens * 0.59 + completionTokens * 0.79) / 1000000;
+        }
+
+        return {
+          text,
+          tokensUsed,
+          cost,
+          timeMs,
+        };
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`AI Provider [${candidate.providerName}] failed with: ${err.message || err}. Attempting fallback...`);
+      }
+    }
+
+    const errMsg = lastError?.response?.data?.error?.message || lastError?.message || lastError;
+    throw new BadRequestException(`All configured AI Providers failed. Last error: ${errMsg}`);
   }
 
   private decryptKey(val: string): string {
