@@ -151,6 +151,7 @@ export default function AiConfiguration() {
                   onChange={(e) => handleUpdate('active_ai_provider', e.target.value)}
                   className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-4 py-2.5 text-white focus:outline-none text-sm transition-colors duration-200"
                 >
+                  <option value="fallback">🔄 Automatic Fallback Routing (All Configured APIs)</option>
                   <option value="openai">OpenAI (GPT Models)</option>
                   <option value="gemini">Google Gemini</option>
                   <option value="groq">Groq Cloud API</option>
