@@ -112,6 +112,7 @@ model User {
   progressStats      ProgressStats?
   notifications      Notification[]
   auditLogs          AdminAuditLog[]
+  supportTickets     SupportTicket[]
 }
 
 model SubscriptionPlan {
@@ -481,4 +482,16 @@ model ReferralWithdrawal {
   status             String   // PROCESSING, PROCESSED, FAILED
   transactionSlipUrl String?
   createdAt          DateTime @default(now())
+}
+
+model SupportTicket {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String   @db.Text
+  status    String   @default("OPEN") // OPEN, RESOLVED, CLOSED
+  reply     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

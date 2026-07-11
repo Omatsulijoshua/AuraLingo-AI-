@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import 'writing_practice_screen.dart';
 import 'referrals_screen.dart';
 import 'subscription_screen.dart';
+import 'support_screen.dart';
 import 'history_screen.dart';
 import 'progress_report_screen.dart';
 
@@ -26,7 +27,16 @@ class DashboardScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFFD4AF37)),
+            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFFD4AF37)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SupportScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white70),
             onPressed: () {
               ref.read(authProvider.notifier).logout();
             },
@@ -179,6 +189,32 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  (() {
+                    final subs = user?['subscriptions'] as List?;
+                    final Map<String, dynamic>? sub = subs != null && subs.isNotEmpty ? Map<String, dynamic>.from(subs[0]) : null;
+                    final planName = sub != null ? (sub['plan']?['name'] ?? 'Free Starter') : 'Free Starter';
+                    
+                    String subCountdown = '';
+                    if (sub != null && sub['status'] == 'ACTIVE' && sub['endDate'] != null) {
+                      final end = DateTime.tryParse(sub['endDate']);
+                      if (end != null) {
+                        final diff = end.difference(DateTime.now()).inDays + 1;
+                        subCountdown = diff > 0 ? ' (Ends in $diff days)' : ' (Expires today)';
+                      }
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Plan: $planName$subCountdown',
+                        style: const TextStyle(
+                          color: Color(0xFF10B981),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  })(),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

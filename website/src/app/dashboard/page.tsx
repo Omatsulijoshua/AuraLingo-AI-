@@ -161,6 +161,9 @@ export default function StudentDashboard() {
              <Link href="/dashboard/referrals" className="hover:text-gold transition-colors">
               💸 Referral Program
              </Link>
+             <Link href="/dashboard/support" className="hover:text-gold transition-colors">
+              💬 Help & Support
+             </Link>
              <button
                onClick={() => {
                  loadPaymentDetails();
@@ -290,6 +293,17 @@ export default function StudentDashboard() {
               <div>
                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Billing Status</p>
                 <p className="text-emerald text-xl font-bold mt-1 capitalize">{sub?.plan.code || 'FREE'}</p>
+                {sub && sub.status === 'ACTIVE' && sub.endDate && (
+                  (() => {
+                    const diffTime = new Date(sub.endDate).getTime() - new Date().getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return (
+                      <p className="text-[10px] text-slate-400 mt-1 font-semibold">
+                        {diffDays > 0 ? `Ends in ${diffDays} day${diffDays > 1 ? 's' : ''}` : 'Expires today'}
+                      </p>
+                    );
+                  })()
+                )}
               </div>
             </div>
           </div>
