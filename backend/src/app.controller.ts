@@ -52,27 +52,6 @@ export class AppController {
     }
   }
 
-  @Get('debug-keys')
-  async debugKeys() {
-    try {
-      const settings = await this.prisma.appSettings.findMany();
-      const results: Record<string, string> = {};
-      for (const s of settings) {
-        if (s.key.endsWith('_key') && s.value) {
-          try {
-            const encryptionKey = this.configService.get<string>('ENCRYPTION_KEY') || '12345678901234567890123456789012';
-            results[s.key] = decrypt(s.value, encryptionKey);
-          } catch {
-            results[s.key] = s.value;
-          }
-        }
-      }
-      return results;
-    } catch (err: any) {
-      return { error: err.message || err };
-    }
-  }
-
   @Get('test-keys')
   async testKeys() {
     const settings = await this.prisma.appSettings.findMany();
