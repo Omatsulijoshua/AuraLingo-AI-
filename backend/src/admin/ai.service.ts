@@ -149,7 +149,7 @@ export class AiService {
     try {
       return decrypt(val, this.encryptionKey);
     } catch {
-      return '';
+      return val; // Fallback: if decryption fails (e.g. plain text key), return it as-is
     }
   }
 }

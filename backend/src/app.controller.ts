@@ -71,8 +71,7 @@ export class AppController {
         const encryptionKey = this.configService.get<string>('ENCRYPTION_KEY') || '12345678901234567890123456789012';
         decryptedKey = decrypt(key, encryptionKey);
       } catch (err: any) {
-        results[name] = { status: 'DECRYPTION_FAILED', error: err.message || err };
-        return;
+        decryptedKey = key;
       }
 
       if (!decryptedKey) {
