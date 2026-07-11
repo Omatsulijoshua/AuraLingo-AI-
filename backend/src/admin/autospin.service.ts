@@ -137,24 +137,24 @@ Each object must match this schema:
             await this.prisma.practiceQuestion.create({
               data: {
                 moduleId: listeningMod.id,
-                questionType: q.questionType,
-                instruction: q.instruction,
-                questionText: q.questionText,
-                explanation: q.explanation,
+                questionType: q.questionType || 'MULTIPLE_CHOICE',
+                instruction: q.instruction || q.instructions || q.info || '',
+                questionText: q.questionText || q.text || q.question || '',
+                explanation: q.explanation || q.reason || q.explanationText || '',
                 difficulty: difficulty,
                 options: q.options ? {
                   createMany: {
                     data: q.options.map((opt: any) => ({
-                      optionText: opt.optionText,
+                      optionText: opt.optionText || opt.text || '',
                       optionLetter: opt.optionLetter || '',
-                      isCorrect: !!opt.isCorrect,
+                      isCorrect: opt.isCorrect !== undefined ? !!opt.isCorrect : false,
                     })),
                   }
                 } : undefined,
                 answers: q.answers ? {
                   createMany: {
                     data: q.answers.map((ans: any) => ({
-                      correctText: ans.correctText,
+                      correctText: ans.correctText || ans.text || '',
                       acceptableTexts: ans.acceptableTexts || [],
                     })),
                   }
@@ -194,24 +194,24 @@ Each object must match this schema:
             await this.prisma.practiceQuestion.create({
               data: {
                 moduleId: readingMod.id,
-                questionType: q.questionType,
-                instruction: q.instruction,
-                questionText: q.questionText,
-                explanation: q.explanation,
+                questionType: q.questionType || 'MULTIPLE_CHOICE',
+                instruction: q.instruction || q.instructions || q.info || '',
+                questionText: q.questionText || q.text || q.question || '',
+                explanation: q.explanation || q.reason || q.explanationText || '',
                 difficulty: difficulty,
                 options: q.options ? {
                   createMany: {
                     data: q.options.map((opt: any) => ({
-                      optionText: opt.optionText,
+                      optionText: opt.optionText || opt.text || '',
                       optionLetter: opt.optionLetter || '',
-                      isCorrect: !!opt.isCorrect,
+                      isCorrect: opt.isCorrect !== undefined ? !!opt.isCorrect : false,
                     })),
                   }
                 } : undefined,
                 answers: q.answers ? {
                   createMany: {
                     data: q.answers.map((ans: any) => ({
-                      correctText: ans.correctText,
+                      correctText: ans.correctText || ans.text || '',
                       acceptableTexts: ans.acceptableTexts || [],
                     })),
                   }
@@ -241,8 +241,8 @@ Each object must match this schema:
           for (const p of prompts) {
             await this.prisma.writingPrompt.create({
               data: {
-                title: p.title,
-                promptText: p.promptText,
+                title: p.title || p.topic || p.subject || p.name || 'Untitled Essay Prompt',
+                promptText: p.promptText || p.prompt || p.text || p.prompt_text || p.description || '',
                 examType: 'ACADEMIC',
                 taskType: 'TASK_2',
                 difficulty: difficulty,
@@ -271,8 +271,8 @@ Each object must match this schema:
           for (const p of prompts) {
             await this.prisma.writingPrompt.create({
               data: {
-                title: p.title,
-                promptText: p.promptText,
+                title: p.title || p.topic || p.subject || p.name || 'Untitled Report Prompt',
+                promptText: p.promptText || p.prompt || p.text || p.prompt_text || p.description || '',
                 examType: 'ACADEMIC',
                 taskType: 'TASK_1',
                 difficulty: difficulty,
@@ -301,8 +301,8 @@ Each object must match this schema:
           for (const p of prompts) {
             await this.prisma.writingPrompt.create({
               data: {
-                title: p.title,
-                promptText: p.promptText,
+                title: p.title || p.topic || p.subject || p.name || 'Untitled Letter Prompt',
+                promptText: p.promptText || p.prompt || p.text || p.prompt_text || p.description || '',
                 examType: 'GENERAL',
                 taskType: 'TASK_1',
                 difficulty: difficulty,
@@ -333,9 +333,9 @@ Each object must match this schema:
             await this.prisma.speakingPrompt.create({
               data: {
                 part: 2,
-                topic: p.topic,
-                cueCardText: p.cueCardText,
-                followUpQuestions: p.followUpQuestions || [],
+                topic: p.topic || p.title || p.subject || 'Untitled Speaking Prompt',
+                cueCardText: p.cueCardText || p.cueCard || p.text || p.cardText || p.promptText || '',
+                followUpQuestions: p.followUpQuestions || p.questions || p.followUps || [],
                 difficulty: difficulty,
               },
             });
