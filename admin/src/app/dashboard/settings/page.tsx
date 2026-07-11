@@ -155,6 +155,7 @@ export default function AiConfiguration() {
                   <option value="gemini">Google Gemini</option>
                   <option value="groq">Groq Cloud API</option>
                   <option value="openrouter">OpenRouter (Free/Paid Models)</option>
+                  <option value="nvidia">NVIDIA NIM (LLM Hub)</option>
                   <option value="ollama">Local LLM (Ollama)</option>
                 </select>
               )}
@@ -232,6 +233,7 @@ export default function AiConfiguration() {
                   <option value="gemini">Google Gemini</option>
                   <option value="groq">Groq API</option>
                   <option value="openrouter">OpenRouter</option>
+                  <option value="nvidia">NVIDIA NIM</option>
                   <option value="ollama">Ollama</option>
                 </select>
               </div>

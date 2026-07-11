@@ -48,7 +48,6 @@ export class AiService {
       }
 
       if (keysString) {
-        // Split by commas to allow multiple keys from different accounts
         const keysList = keysString.split(',').map(k => k.trim()).filter(Boolean);
         keysList.forEach((key, index) => {
           candidates.push({
@@ -64,6 +63,7 @@ export class AiService {
 
     addCandidate('gemini', getVal('ai_gemini_key'), getVal('ai_gemini_model'), 'gemini-1.5-flash', 'https://generativelanguage.googleapis.com/v1beta/openai');
     addCandidate('groq', getVal('ai_groq_key'), getVal('ai_groq_model'), 'llama-3.3-70b-versatile', 'https://api.groq.com/openai/v1');
+    addCandidate('nvidia', getVal('ai_nvidia_key'), getVal('ai_nvidia_model'), 'nvidia/llama-3.1-nemotron-70b-instruct', 'https://integrate.api.nvidia.com/v1');
     addCandidate('openrouter', getVal('ai_openrouter_key'), getVal('ai_openrouter_model'), 'google/gemini-2.5-flash:free', 'https://openrouter.ai/api/v1');
     addCandidate('openai', getVal('ai_openai_key'), getVal('ai_openai_model'), 'gpt-4o', 'https://api.openai.com/v1');
 

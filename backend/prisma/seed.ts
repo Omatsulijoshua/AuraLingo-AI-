@@ -213,6 +213,8 @@ async function main() {
     { key: 'ai_groq_model', value: 'llama-3.3-70b-versatile', description: 'Model identifier for Groq' },
     { key: 'ai_openrouter_key', value: '', description: 'OpenRouter API key (encrypted)' },
     { key: 'ai_openrouter_model', value: 'google/gemini-2.5-flash:free', description: 'Model identifier for OpenRouter' },
+    { key: 'ai_nvidia_key', value: '', description: 'NVIDIA NIM API key (encrypted)' },
+    { key: 'ai_nvidia_model', value: 'nvidia/llama-3.1-nemotron-70b-instruct', description: 'Model identifier for NVIDIA NIM' },
     { key: 'ai_budget_daily', value: '50.00', description: 'Daily spending limit for AI features in USD' },
     { key: 'ai_budget_monthly', value: '1500.00', description: 'Monthly spending limit for AI features in USD' },
     
