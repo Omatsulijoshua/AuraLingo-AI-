@@ -466,9 +466,12 @@ export default function StudentDashboard() {
             <h4 className="text-white font-bold text-sm">Full Mock Exam</h4>
             <p className="text-slate-400 text-xs leading-relaxed">Take a timed 2.5-hour complete mock exam to simulate the official test conditions.</p>
             
-            <button className="w-full bg-gold hover:bg-gold-dark text-primary font-bold py-2.5 rounded-lg text-xs transition-colors duration-200 cursor-pointer shadow-lg shadow-gold/10">
+            <Link 
+              href="/dashboard/mock-exam"
+              className="block w-full text-center bg-gold hover:bg-gold-dark text-primary font-bold py-2.5 rounded-lg text-xs transition-colors duration-200 cursor-pointer shadow-lg shadow-gold/10"
+            >
               Start Full Mock Exam
-            </button>
+            </Link>
           </div>
         </div>
 
