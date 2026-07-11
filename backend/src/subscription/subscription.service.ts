@@ -315,6 +315,16 @@ export class SubscriptionService implements OnModuleInit {
         },
       });
 
+      // Create user notification
+      await tx.notification.create({
+        data: {
+          userId: studentId,
+          title: 'Subscription Activated! 🎉',
+          message: `An administrator has manually activated your ${plan.name} plan. Enjoy full premium access!`,
+          type: 'PAYMENT',
+        },
+      });
+
       // Audit log admin action
       await tx.adminAuditLog.create({
         data: {
@@ -476,6 +486,16 @@ export class SubscriptionService implements OnModuleInit {
         data: {
           status: 'SUCCESSFUL',
           subscriptionId: subscription.id,
+        },
+      });
+
+      // Create user notification
+      await tx.notification.create({
+        data: {
+          userId: payment.userId,
+          title: 'Subscription Activated! 🎉',
+          message: `Your payment for ${plan.name} has been approved. Your account is now upgraded to Premium until ${endDate.toLocaleDateString()}. Enjoy practicing!`,
+          type: 'PAYMENT',
         },
       });
 

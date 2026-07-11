@@ -127,7 +127,7 @@ export default function StudentDashboard() {
     );
   }
 
-  const sub = profile.subscriptions?.[0];
+  const sub = profile.subscriptions?.find((s: any) => s.status === 'ACTIVE') || profile.subscriptions?.[0];
   const stats = profile.progressStats || {
     overallBandEstimate: 0,
     timeSpentStudying: 0,

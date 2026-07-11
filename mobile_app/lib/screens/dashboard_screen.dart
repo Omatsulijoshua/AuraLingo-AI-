@@ -51,7 +51,14 @@ class DashboardScreen extends ConsumerWidget {
             // Global Expiry/Upgrade Notification Bar
             (() {
               final subs = user?['subscriptions'] as List?;
-              final Map<String, dynamic>? sub = subs != null && subs.isNotEmpty ? Map<String, dynamic>.from(subs[0]) : null;
+              final Map<String, dynamic>? sub = (() {
+                if (subs == null || subs.isEmpty) return null;
+                final activeSub = subs.firstWhere(
+                  (s) => s['status'] == 'ACTIVE',
+                  orElse: () => subs[0],
+                );
+                return Map<String, dynamic>.from(activeSub);
+              })();
               final planCode = sub != null ? (sub['plan']?['code'] ?? 'FREE') : 'FREE';
               
               if (planCode == 'FREE') {
@@ -191,7 +198,14 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   (() {
                     final subs = user?['subscriptions'] as List?;
-                    final Map<String, dynamic>? sub = subs != null && subs.isNotEmpty ? Map<String, dynamic>.from(subs[0]) : null;
+                    final Map<String, dynamic>? sub = (() {
+                      if (subs == null || subs.isEmpty) return null;
+                      final activeSub = subs.firstWhere(
+                        (s) => s['status'] == 'ACTIVE',
+                        orElse: () => subs[0],
+                      );
+                      return Map<String, dynamic>.from(activeSub);
+                    })();
                     final planName = sub != null ? (sub['plan']?['name'] ?? 'Free Starter') : 'Free Starter';
                     
                     String subCountdown = '';
