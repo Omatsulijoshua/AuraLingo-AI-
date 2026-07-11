@@ -13,6 +13,9 @@ export default function WritingPractice() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<any>(null);
   const [examSuccess, setExamSuccess] = useState(false);
+  const [customQuestionText, setCustomQuestionText] = useState('');
+  const [customTaskType, setCustomTaskType] = useState('TASK_2');
+  const [customExamType, setCustomExamType] = useState('ACADEMIC');
 
   // Timer for Exam Mode (40 minutes = 2400 seconds)
   const [timeLeft, setTimeLeft] = useState(2400);
@@ -38,8 +41,17 @@ export default function WritingPractice() {
   const fetchPrompts = async () => {
     try {
       const data = await api.request<any[]>('/content/writing/prompts');
-      setPrompts(data);
-      if (data.length > 0) setSelectedPrompt(data[0]);
+      const customOption = {
+        id: 'CUSTOM',
+        title: '✍️ Write on my own Topic',
+        promptText: 'Type your custom question topic in the input box below to start practicing.',
+        taskType: 'TASK_2',
+        difficulty: 'CUSTOM',
+        examType: 'ACADEMIC'
+      };
+      const list = [...data, customOption];
+      setPrompts(list);
+      if (list.length > 0) setSelectedPrompt(list[0]);
     } catch (err) {
       console.error('Failed to fetch writing prompts', err);
     } finally {
@@ -71,6 +83,9 @@ export default function WritingPractice() {
           promptId: selectedPrompt.id,
           userText,
           mode,
+          customQuestionText: selectedPrompt.id === 'CUSTOM' ? customQuestionText : undefined,
+          customTaskType: selectedPrompt.id === 'CUSTOM' ? customTaskType : undefined,
+          customExamType: selectedPrompt.id === 'CUSTOM' ? customExamType : undefined,
         }),
       });
 
@@ -198,10 +213,50 @@ export default function WritingPractice() {
                 {selectedPrompt.promptText}
               </p>
 
+              {selectedPrompt.id === 'CUSTOM' && !timerActive && !feedback && !examSuccess && (
+                <div className="space-y-4 p-4 bg-navy/40 rounded-xl border border-primary-light/10 text-xs">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Task Type</label>
+                      <select
+                        value={customTaskType}
+                        onChange={(e) => setCustomTaskType(e.target.value)}
+                        className="w-full bg-navy border border-primary-light/40 focus:border-gold rounded px-3 py-2 text-white focus:outline-none"
+                      >
+                        <option value="TASK_1">Task 1 (Report or Letter)</option>
+                        <option value="TASK_2">Task 2 (Essay)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 font-semibold mb-1">Exam Format</label>
+                      <select
+                        value={customExamType}
+                        onChange={(e) => setCustomExamType(e.target.value)}
+                        className="w-full bg-navy border border-primary-light/40 focus:border-gold rounded px-3 py-2 text-white focus:outline-none"
+                      >
+                        <option value="ACADEMIC">Academic</option>
+                        <option value="GENERAL">General</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-slate-400 font-semibold mb-1">Input Custom Question/Topic</label>
+                    <textarea
+                      rows={4}
+                      placeholder="e.g. In many countries, university education is free. Discuss the advantages and disadvantages."
+                      value={customQuestionText}
+                      onChange={(e) => setCustomQuestionText(e.target.value)}
+                      className="w-full bg-navy border border-primary-light/40 focus:border-gold rounded p-3 text-white focus:outline-none resize-none"
+                    />
+                  </div>
+                </div>
+              )}
+
               {!timerActive && !feedback && !examSuccess ? (
                 <button
                   onClick={handleStartPractice}
-                  className="bg-gold hover:bg-gold-dark text-primary font-bold px-6 py-2.5 rounded-lg text-xs tracking-wider cursor-pointer transition-colors"
+                  disabled={selectedPrompt.id === 'CUSTOM' && !customQuestionText.trim()}
+                  className="bg-gold hover:bg-gold-dark text-primary font-bold px-6 py-2.5 rounded-lg text-xs tracking-wider cursor-pointer transition-colors disabled:opacity-40"
                 >
                   {mode === 'EXAM' ? 'Start Exam Timer' : 'Start Practice'}
                 </button>

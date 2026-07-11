@@ -121,8 +121,9 @@ export class ContentController {
     @Body('audioUrl') audioUrl: string,
     @Body('transcription') transcription?: string,
     @Body('mode') mode?: string,
+    @Body('customQuestionText') customQuestionText?: string,
   ) {
-    return this.contentService.submitSpeaking(req.user.sub, promptId, audioUrl, transcription, mode);
+    return this.contentService.submitSpeaking(req.user.sub, promptId, audioUrl, transcription, mode, customQuestionText);
   }
 
   @UseGuards(JwtAuthGuard)

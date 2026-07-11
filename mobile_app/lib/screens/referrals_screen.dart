@@ -121,8 +121,8 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final refLink = _stats != null && _stats['referralsList'] != null && _stats['referralsList'].isNotEmpty
-        ? 'https://bandup-ielts.com/auth/register?ref=${_stats['referralsList'][0]['id']}'
+    final refLink = _stats != null && _stats['userId'] != null
+        ? 'https://bandup-ielts.com/auth/register?ref=${_stats['userId']}'
         : 'https://bandup-ielts.com/auth/register?ref=your-id';
 
     return Scaffold(
@@ -226,6 +226,19 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                   if (_stats?['isReferralVerified'] == true) ...[
                     const Text('Request Payout', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withAlpha(50)),
+                      ),
+                      child: const Text(
+                        'ℹ️ Payout Schedule Notice: Payout requests are verified and paid on the 21st of every month. You can only request one payout at a time.',
+                        style: TextStyle(color: Colors.blueAccent, fontSize: 10, height: 1.4),
+                      ),
+                    ),
                     _buildTextField(_amountController, 'Amount (₦)', keyboardType: TextInputType.number),
                     const SizedBox(height: 12),
                     ElevatedButton(

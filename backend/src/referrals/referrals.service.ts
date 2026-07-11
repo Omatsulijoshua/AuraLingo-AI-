@@ -60,6 +60,7 @@ export class ReferralsService {
       totalReferralsCount: user.referrals.length,
       referralsList: referralsFormatted,
       withdrawalsHistory: user.withdrawals,
+      userId: user.id,
     };
   }
 
@@ -103,6 +104,19 @@ export class ReferralsService {
 
     if (!user.isReferralVerified) {
       throw new BadRequestException('Referral account must be verified before requesting withdrawal');
+    }
+
+    // Check if there is already a pending withdrawal
+    const pendingWithdrawal = await this.prisma.referralWithdrawal.findFirst({
+      where: {
+        userId,
+        status: 'PROCESSING',
+      },
+    });
+    if (pendingWithdrawal) {
+      throw new BadRequestException(
+        'You already have a pending payout request in progress. You can only request one payout at a time.'
+      );
     }
 
     const unpaidCount = user.referrals.filter(r => r.payments.length === 0).length;

@@ -11,10 +11,27 @@ interface AppSetting {
   isEncrypted: boolean;
 }
 
+interface PendingPayment {
+  id: string;
+  amount: number;
+  providerReference: string;
+  receiptUrl: string | null;
+  status: 'PENDING' | 'SUCCESSFUL' | 'FAILED';
+  createdAt: string;
+  user: {
+    name: string;
+    email: string;
+  };
+}
+
 export default function SubscriptionSettings() {
   const [settings, setSettings] = useState<AppSetting[]>([]);
+  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Receipts tab state
+  const [receiptsTab, setReceiptsTab] = useState<'untreated' | 'treated'>('untreated');
 
   // Form states for manual bank details
   const [bankName, setBankName] = useState('');
@@ -31,13 +48,26 @@ export default function SubscriptionSettings() {
       setSettings(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load subscription settings');
-    } finally {
-      setLoading(false);
     }
   };
 
+  const fetchPendingPayments = async () => {
+    try {
+      const data = await api.request<PendingPayment[]>('/subscriptions/all-manual');
+      setPendingPayments(data);
+    } catch (err) {
+      console.error('Failed to fetch manual payments', err);
+    }
+  };
+
+  const loadData = async () => {
+    setLoading(true);
+    await Promise.all([fetchSettings(), fetchPendingPayments()]);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    fetchSettings();
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -68,6 +98,20 @@ export default function SubscriptionSettings() {
     }
   };
 
+  const handleApprovePayment = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to approve this manual payment receipt and activate the student subscription?')) return;
+    try {
+      await api.request('/subscriptions/manual-approve', {
+        method: 'POST',
+        body: JSON.stringify({ paymentId }),
+      });
+      alert('Subscription manually activated successfully!');
+      await fetchPendingPayments();
+    } catch (err: any) {
+      alert(err.message || 'Failed to approve payment');
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full w-full flex items-center justify-center">
@@ -77,6 +121,10 @@ export default function SubscriptionSettings() {
   }
 
   const getSetting = (key: string) => settings.find((s) => s.key === key);
+
+  const untreatedReceipts = pendingPayments.filter(p => p.status === 'PENDING');
+  const treatedReceipts = pendingPayments.filter(p => p.status !== 'PENDING');
+  const activeReceipts = receiptsTab === 'untreated' ? untreatedReceipts : treatedReceipts;
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -370,6 +418,105 @@ export default function SubscriptionSettings() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Student Payment Receipts Section */}
+      <div className="bg-primary/25 border border-primary-light/40 rounded-xl p-6 shadow-xl backdrop-blur-sm space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-white font-bold text-base">Student Payment Receipts</h3>
+            <p className="text-slate-400 text-xs mt-1">Review manual bank transfer receipts submitted by students to activate paid accounts.</p>
+          </div>
+        </div>
+
+        {/* Tabs Headers */}
+        <div className="flex border-b border-primary-light/25">
+          <button
+            onClick={() => setReceiptsTab('untreated')}
+            className={`px-4 py-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+              receiptsTab === 'untreated'
+                ? 'border-gold text-gold font-extrabold'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Untreated Receipts ({untreatedReceipts.length})
+          </button>
+          <button
+            onClick={() => setReceiptsTab('treated')}
+            className={`px-4 py-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+              receiptsTab === 'treated'
+                ? 'border-gold text-gold font-extrabold'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Treated Receipts ({treatedReceipts.length})
+          </button>
+        </div>
+
+        {activeReceipts.length === 0 ? (
+          <p className="text-slate-500 text-xs py-8 text-center bg-navy/20 rounded-lg border border-primary-light/10">
+            No receipts found in this section.
+          </p>
+        ) : (
+          <div className="overflow-hidden border border-primary-light/20 rounded-lg">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="text-[10px] uppercase text-slate-400 bg-primary/40 border-b border-primary-light/40 font-bold">
+                <tr>
+                  <th className="px-4 py-3">Student</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">Reference / Slip</th>
+                  <th className="px-4 py-3 text-right">Status / Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-primary-light/15 bg-navy/20">
+                {activeReceipts.map((pmt) => (
+                  <tr key={pmt.id} className="hover:bg-primary-light/5 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="text-white font-bold">{pmt.user?.name || 'Unknown'}</p>
+                      <p className="text-slate-500 text-[10px]">{pmt.user?.email}</p>
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-gold">
+                      ₦{pmt.amount.toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-slate-400 text-[10px] font-mono">{pmt.providerReference}</p>
+                      {pmt.receiptUrl && (
+                        <a
+                          href={pmt.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gold hover:underline font-bold mt-1 inline-block text-[10px]"
+                        >
+                          📄 View Uploaded Receipt
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {pmt.status === 'PENDING' ? (
+                        <button
+                          onClick={() => handleApprovePayment(pmt.id)}
+                          className="bg-emerald text-primary font-bold px-3 py-1.5 rounded text-[10px] hover:opacity-90 transition-opacity cursor-pointer"
+                        >
+                          Approve Activation
+                        </button>
+                      ) : (
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${
+                            pmt.status === 'SUCCESSFUL'
+                              ? 'bg-emerald/10 text-emerald border border-emerald/20'
+                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}
+                        >
+                          {pmt.status}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

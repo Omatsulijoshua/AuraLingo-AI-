@@ -163,6 +163,7 @@ model Payment {
   status            PaymentStatus   @default(PENDING)
   couponId          String?
   coupon            Coupon?         @relation(fields: [couponId], references: [id])
+  receiptUrl        String?
   createdAt         DateTime        @default(now())
 }
 

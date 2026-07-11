@@ -54,7 +54,7 @@ export class AuthService {
           name: dto.name,
           role: dto.role || 'STUDENT',
           targetExam: dto.targetExam || 'ACADEMIC',
-          targetBand: 7.0,
+          targetBand: dto.targetBand ? Number(dto.targetBand) : 7.0,
           isVerified: false,
           verificationToken: crypto.randomBytes(32).toString('hex'),
           referredById: referrerId,
@@ -274,6 +274,13 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async updateTargetBand(userId: string, targetBand: number) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { targetBand },
+    });
   }
 }
 

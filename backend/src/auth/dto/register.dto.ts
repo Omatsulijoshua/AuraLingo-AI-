@@ -23,6 +23,9 @@ export class RegisterDto {
   @IsOptional()
   targetExam?: ExamType;
 
+  @IsOptional()
+  targetBand?: number;
+
   @IsString()
   @IsOptional()
   referralCode?: string;

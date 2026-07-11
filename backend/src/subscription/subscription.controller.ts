@@ -46,6 +46,48 @@ export class SubscriptionController {
     );
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT)
+  @Post('manual-request')
+  async manualRequest(
+    @Req() req: any,
+    @Body('planId') planId: string,
+    @Body('receiptUrl') receiptUrl: string,
+  ) {
+    return this.subscriptionService.createManualPaymentRequest(
+      req.user.sub,
+      planId,
+      receiptUrl,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Post('manual-approve')
+  async manualApprove(
+    @Req() req: any,
+    @Body('paymentId') paymentId: string,
+  ) {
+    return this.subscriptionService.approveManualPayment(
+      req.user.sub,
+      paymentId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Get('pending-manual')
+  async getPendingManual() {
+    return this.subscriptionService.getPendingManualPayments();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @Get('all-manual')
+  async getAllManual() {
+    return this.subscriptionService.getAllManualPayments();
+  }
+
   @Get('payment-info')
   async getPaymentInfo() {
     return this.subscriptionService.getPaymentInfo();

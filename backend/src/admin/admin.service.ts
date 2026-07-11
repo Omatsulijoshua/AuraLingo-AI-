@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma.service';
 import { encrypt, decrypt } from '../utils/crypto';
 import { ConfigService } from '@nestjs/config';
+import { NotificationType, UserRole } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
@@ -243,5 +244,53 @@ export class AdminService {
         },
       });
     });
+  }
+
+  async getUnattendedCounts() {
+    const unattendedPayouts = await this.prisma.referralWithdrawal.count({
+      where: { status: 'PROCESSING' },
+    });
+    const unattendedSubscriptions = await this.prisma.payment.count({
+      where: {
+        provider: 'MANUAL',
+        status: 'PENDING',
+      },
+    });
+    return {
+      unattendedPayouts,
+      unattendedSubscriptions,
+    };
+  }
+
+  async sendBroadcastNotification(data: {
+    title: string;
+    message: string;
+    targetRole?: UserRole | 'ALL';
+    type: NotificationType;
+  }) {
+    const users = await this.prisma.user.findMany({
+      where: data.targetRole && data.targetRole !== 'ALL'
+        ? { role: data.targetRole as UserRole }
+        : {},
+      select: { id: true },
+    });
+
+    const notificationsData = users.map((u) => ({
+      userId: u.id,
+      title: data.title,
+      message: data.message,
+      type: data.type,
+    }));
+
+    if (notificationsData.length > 0) {
+      await this.prisma.notification.createMany({
+        data: notificationsData,
+      });
+    }
+
+    return {
+      success: true,
+      message: `Broadcasted notification to ${users.length} users.`,
+    };
   }
 }

@@ -15,6 +15,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String _targetExam = 'ACADEMIC';
+  double _targetBand = 7.0;
 
   @override
   void dispose() {
@@ -32,13 +33,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
           targetExam: _targetExam,
+          targetBand: _targetBand,
         );
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Registration successful! Please login.'),
-          backgroundColor: Colors.green,
+          content: Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: Color(0xFFD4AF37)),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '🎉 Account created successfully! Please sign in.',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Color(0xFF0F1E36),
+          duration: Duration(seconds: 4),
         ),
       );
       Navigator.pop(context); // Go back to Login screen
@@ -248,6 +262,40 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Target Band Score',
+                    style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0B1E36),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF1E3E6E)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<double>(
+                        value: _targetBand,
+                        dropdownColor: const Color(0xFF0B1E36),
+                        iconEnabledColor: const Color(0xFFD4AF37),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                        isExpanded: true,
+                        items: [4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((band) {
+                          return DropdownMenuItem<double>(
+                            value: band,
+                            child: Text('Band $band'),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _targetBand = val);
+                          }
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 36),
 

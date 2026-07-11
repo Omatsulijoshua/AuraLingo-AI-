@@ -315,4 +315,117 @@ export class SubscriptionService {
     }
     return JSON.parse(setting.value);
   }
+
+  async createManualPaymentRequest(studentId: string, planId: string, receiptUrl: string) {
+    const student = await this.prisma.user.findUnique({ where: { id: studentId } });
+    if (!student) throw new NotFoundException('Student account not found');
+
+    const plan = await this.prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Subscription plan not found');
+
+    const ref = `MANUAL_REQ:${plan.id}:${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    return this.prisma.payment.create({
+      data: {
+        userId: studentId,
+        amount: plan.price,
+        provider: 'MANUAL',
+        providerReference: ref,
+        status: 'PENDING',
+        receiptUrl,
+      },
+    });
+  }
+
+  async approveManualPayment(adminId: string, paymentId: string) {
+    const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
+    if (!payment) throw new NotFoundException('Payment record not found');
+    if (payment.status !== 'PENDING') throw new BadRequestException('Payment is not pending');
+
+    const parts = payment.providerReference.split(':');
+    if (parts[0] !== 'MANUAL_REQ') throw new BadRequestException('Invalid manual payment request');
+    const planId = parts[1];
+
+    const plan = await this.prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+    if (!plan) throw new NotFoundException('Requested subscription plan not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      // Deactivate old active subscriptions
+      await tx.subscription.updateMany({
+        where: { userId: payment.userId, status: 'ACTIVE' },
+        data: { status: 'CANCELLED' },
+      });
+
+      // 30 days
+      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+      const subscription = await tx.subscription.create({
+        data: {
+          userId: payment.userId,
+          planId: plan.id,
+          status: 'ACTIVE',
+          startDate: new Date(),
+          endDate,
+          autoRenew: false,
+        },
+      });
+
+      // Update payment record to successful
+      const updatedPayment = await tx.payment.update({
+        where: { id: paymentId },
+        data: {
+          status: 'SUCCESSFUL',
+          subscriptionId: subscription.id,
+        },
+      });
+
+      // Audit log admin action
+      await tx.adminAuditLog.create({
+        data: {
+          adminId,
+          action: 'MANUAL_APPROVE',
+          target: `User ID: ${payment.userId}, Plan: ${plan.code}`,
+          details: `Approved manual payment of ${payment.amount} NGN for student ID ${payment.userId} and activated plan ${plan.name}`,
+        },
+      });
+
+      return updatedPayment;
+    });
+  }
+
+  async getPendingManualPayments() {
+    return this.prisma.payment.findMany({
+      where: {
+        provider: 'MANUAL',
+        status: 'PENDING',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getAllManualPayments() {
+    return this.prisma.payment.findMany({
+      where: {
+        provider: 'MANUAL',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

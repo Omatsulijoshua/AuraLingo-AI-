@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api, User } from '@/lib/api';
+import { api } from '@/lib/api';
 
 interface Stats {
   overallBandEstimate: number;
@@ -18,19 +18,92 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadProfile() {
-      try {
-        const data = await api.request('/auth/profile');
-        setProfile(data);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load user profile');
-      } finally {
-        setLoading(false);
-      }
+  // Manual payment modal states
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState<any>(null);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState('');
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+
+  const loadProfile = async () => {
+    try {
+      const data = await api.request('/auth/profile');
+      setProfile(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load user profile');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadProfile();
   }, []);
+
+  const loadPaymentDetails = async () => {
+    try {
+      const [info, activePlans] = await Promise.all([
+        api.request('/subscriptions/payment-info'),
+        api.request('/subscriptions/plans'),
+      ]);
+      setPaymentInfo(info);
+      const filtered = activePlans.filter((p: any) => p.code !== 'FREE');
+      setPlans(filtered);
+      if (filtered.length > 0) {
+        setSelectedPlanId(filtered[0].id);
+      }
+    } catch (err) {
+      console.error('Failed to load payment coordinates', err);
+    }
+  };
+
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingReceipt(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const data = await api.request<{ url: string }>('/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      setUploadedReceiptUrl(data.url);
+      alert('Receipt uploaded successfully!');
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload receipt file');
+    } finally {
+      setUploadingReceipt(false);
+    }
+  };
+
+  const handleSubmitReceipt = async () => {
+    if (!selectedPlanId) return alert('Please select a plan');
+    if (!uploadedReceiptUrl) return alert('Please upload your payment receipt');
+
+    setSubmittingRequest(true);
+    try {
+      await api.request('/subscriptions/manual-request', {
+        method: 'POST',
+        body: JSON.stringify({
+          planId: selectedPlanId,
+          receiptUrl: uploadedReceiptUrl,
+        }),
+      });
+      alert('Proof of payment submitted successfully! Tutors will review and activate your account shortly.');
+      setShowPaymentModal(false);
+      setUploadedReceiptUrl('');
+      await loadProfile();
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit receipt request');
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -85,9 +158,18 @@ export default function StudentDashboard() {
             <Link href="/dashboard/history" className="hover:text-gold transition-colors">
               📜 Attempt History
             </Link>
-            <Link href="/dashboard/referrals" className="hover:text-gold transition-colors">
+             <Link href="/dashboard/referrals" className="hover:text-gold transition-colors">
               💸 Referral Program
-            </Link>
+             </Link>
+             <button
+               onClick={() => {
+                 loadPaymentDetails();
+                 setShowPaymentModal(true);
+               }}
+               className="bg-gold hover:bg-gold-dark text-primary font-black px-3.5 py-1.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
+             >
+               💳 Upgrade Premium
+             </button>
           </nav>
         </div>
         <div className="flex items-center gap-6">
@@ -109,21 +191,97 @@ export default function StudentDashboard() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-5xl w-full mx-auto p-8 space-y-8">
-        
+        {/* Global Expiry/Upgrade Notification Bar */}
+        {(!sub || sub.plan.code === 'FREE') ? (
+          <div className="bg-gradient-to-r from-amber-500/10 to-gold/15 border border-gold/30 rounded-xl p-4 flex items-center justify-between shadow-lg text-xs md:text-sm">
+            <div className="flex items-center gap-2 text-gold font-bold">
+              <span>✨</span>
+              <span>You are currently on the Free Starter plan. Upgrade to Premium for unlimited AI writing/speaking evaluations and full mock tests!</span>
+            </div>
+            <button
+              onClick={() => {
+                loadPaymentDetails();
+                setShowPaymentModal(true);
+              }}
+              className="bg-gold hover:bg-gold-dark text-primary font-black px-3.5 py-1.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        ) : (() => {
+          const daysLeft = Math.ceil((new Date(sub.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          if (daysLeft <= 3) {
+            return (
+              <div className="bg-gradient-to-r from-red-500/10 to-rose-600/15 border border-red-500/35 rounded-xl p-4 flex items-center justify-between shadow-lg text-xs md:text-sm">
+                <div className="flex items-center gap-2 text-red-400 font-bold">
+                  <span>⚠️</span>
+                  <span>Your premium subscription is about to end in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}! Renew now to keep your study progress active.</span>
+                </div>
+                <button
+                  onClick={() => {
+                    loadPaymentDetails();
+                    setShowPaymentModal(true);
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white font-black px-3.5 py-1.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Renew Subscription
+                </button>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         {/* Welcome Banner */}
         <div className="bg-gradient-to-r from-primary to-primary-light border border-primary-light/40 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
           <div className="relative z-10 space-y-4">
-            <h2 className="text-2xl md:text-3xl font-black">Welcome back, {profile.name}!</h2>
-            <p className="text-slate-300 text-sm max-w-md">Your target exam is <span className="text-gold font-bold uppercase">{profile.targetExam}</span>. Let's practice to hit your goal!</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black">Welcome back, {profile.name}!</h2>
+                <p className="text-slate-300 text-sm mt-1">Your target exam is <span className="text-gold font-bold uppercase">{profile.targetExam}</span>. Let's practice to hit your goal!</p>
+              </div>
+              <div className="bg-navy/55 border border-primary-light/35 rounded-xl px-4 py-2 text-xs flex items-center gap-2 max-w-sm self-start md:self-auto">
+                <span className="text-slate-400">ID:</span>
+                <span className="font-mono text-white text-[10px] select-all">{profile.id}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(profile.id);
+                    alert('Your Personal ID has been copied to your clipboard!');
+                  }}
+                  className="text-gold hover:text-white transition-colors font-bold px-1 ml-1"
+                >
+                  📋 Copy
+                </button>
+              </div>
+            </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-primary-light/40">
               <div>
                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Target Band</p>
-                <p className="text-white text-xl font-bold mt-1">Band {profile.targetBand}</p>
+                <select
+                  value={profile.targetBand}
+                  onChange={async (e) => {
+                    const newBand = parseFloat(e.target.value);
+                    setProfile({ ...profile, targetBand: newBand });
+                    try {
+                      await api.request('/auth/update-target-band', {
+                        method: 'PUT',
+                        body: JSON.stringify({ targetBand: newBand }),
+                      });
+                    } catch (err: any) {
+                      alert('Failed to update target band');
+                    }
+                  }}
+                  className="bg-navy/70 border border-primary-light/50 text-white rounded px-2 py-0.5 text-xs font-bold mt-1 focus:outline-none focus:border-gold transition-colors cursor-pointer"
+                >
+                  {[4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((b) => (
+                    <option key={b} value={b}>Band {b}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Current Estimate</p>
-                <p className="text-gold text-xl font-bold mt-1">Band {stats.overallBandEstimate || '6.5'}</p>
+                <p className="text-gold text-xl font-bold mt-1">Band {stats.overallBandEstimate > 0 ? stats.overallBandEstimate.toFixed(1) : '0.0'}</p>
               </div>
               <div>
                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Completed Lessons</p>
@@ -194,6 +352,18 @@ export default function StudentDashboard() {
                   : `You have ${Math.max(0, (sub?.plan.limitMockTests || 1) - (profile.totalMockTestsCount || 0))} mock exams remaining on your current cycle.`}
               </p>
             </div>
+          </div>
+
+          <div className="pt-4 border-t border-primary-light/20 flex justify-end">
+            <button
+              onClick={() => {
+                loadPaymentDetails();
+                setShowPaymentModal(true);
+              }}
+              className="bg-gold hover:bg-gold-dark text-primary font-bold px-4 py-2 rounded-lg text-xs transition-colors cursor-pointer"
+            >
+              💸 Upgrade via Manual Bank Transfer
+            </button>
           </div>
         </div>
 
@@ -270,6 +440,99 @@ export default function StudentDashboard() {
         </div>
 
       </main>
+
+      {/* Manual Payment Request Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-primary border border-primary-light rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-white font-bold text-base">Manual Bank Transfer Upgrade</h3>
+                <p className="text-slate-400 text-xs mt-1">Submit your transfer receipt details to activate your plan.</p>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-slate-400 hover:text-white text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {paymentInfo && (
+              <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/10 space-y-2">
+                <p className="text-gold text-[10px] font-bold uppercase tracking-wider">Bank Payment Coordinates</p>
+                <div className="text-xs space-y-1.5 text-slate-300">
+                  <p><span className="text-slate-500">Bank Name:</span> {paymentInfo.bankName}</p>
+                  <p><span className="text-slate-500">Account Number:</span> <span className="font-mono font-bold text-white">{paymentInfo.accountNumber}</span></p>
+                  <p><span className="text-slate-500">Account Name:</span> {paymentInfo.accountName}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1.5">Select Plan Paid For</label>
+                <select
+                  value={selectedPlanId}
+                  onChange={(e) => setSelectedPlanId(e.target.value)}
+                  className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white focus:outline-none"
+                >
+                  {plans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — ₦{p.price.toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-semibold mb-1.5">Upload Payment Receipt / Screenshot</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Receipt URL (Uploaded)"
+                    value={uploadedReceiptUrl}
+                    readOnly
+                    className="flex-1 bg-navy/60 border border-primary-light/60 rounded-lg px-3 py-2 text-slate-400 placeholder-slate-600 focus:outline-none"
+                  />
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleReceiptUpload}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      disabled={uploadingReceipt}
+                    />
+                    <button
+                      type="button"
+                      className="bg-primary-light/35 border border-primary-light text-slate-200 hover:text-white px-3 py-2 rounded-lg font-bold whitespace-nowrap cursor-pointer"
+                      disabled={uploadingReceipt}
+                    >
+                      {uploadingReceipt ? 'Uploading...' : '📁 Choose File'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-4 border-t border-primary-light/20">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="bg-primary-light/35 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs hover:text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitReceipt}
+                disabled={submittingRequest || uploadingReceipt || !uploadedReceiptUrl}
+                className="bg-gold hover:bg-gold-dark text-primary font-bold px-4 py-2 rounded-lg text-xs disabled:opacity-50 cursor-pointer"
+              >
+                {submittingRequest ? 'Submitting...' : 'Confirm & Submit Receipt'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

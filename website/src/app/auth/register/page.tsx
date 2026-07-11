@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [targetExam, setTargetExam] = useState<'ACADEMIC' | 'GENERAL'>('ACADEMIC');
+  const [targetBand, setTargetBand] = useState<number>(7.0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +29,9 @@ export default function RegisterPage() {
           email,
           password,
           targetExam,
+          targetBand,
           role: 'STUDENT',
+          referralCode: searchParams.get('ref') || undefined,
         }),
       });
 
@@ -136,6 +140,19 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="block text-slate-400 text-xs font-semibold">Target Band Score</label>
+            <select
+              value={targetBand}
+              onChange={(e) => setTargetBand(parseFloat(e.target.value))}
+              className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-4 py-3 text-white focus:outline-none transition-all duration-200 text-sm font-semibold cursor-pointer"
+            >
+              {[4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((b) => (
+                <option key={b} value={b}>Band {b}</option>
+              ))}
+            </select>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -153,5 +170,17 @@ export default function RegisterPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-navy flex items-center justify-center px-4 relative overflow-hidden">
+        <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+      </main>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

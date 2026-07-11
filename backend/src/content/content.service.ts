@@ -272,8 +272,22 @@ Provide a short, 3-paragraph explanation:
 
   // --- WRITING EVALUATION SYSTEM ---
   async submitWriting(userId: string, dto: CreateWritingSubmissionDto, mode?: string) {
-    const prompt = await this.prisma.writingPrompt.findUnique({ where: { id: dto.promptId } });
-    if (!prompt) throw new NotFoundException('Writing prompt not found');
+    let prompt: any;
+    if (dto.promptId === 'CUSTOM') {
+      prompt = await this.prisma.writingPrompt.create({
+        data: {
+          title: 'Custom Prompt (Student)',
+          promptText: dto.customQuestionText || 'Custom practice topic',
+          taskType: dto.customTaskType || 'TASK_2',
+          examType: (dto.customExamType as any) || 'ACADEMIC',
+          difficulty: 'INTERMEDIATE',
+        },
+      });
+      dto.promptId = prompt.id;
+    } else {
+      prompt = await this.prisma.writingPrompt.findUnique({ where: { id: dto.promptId } });
+      if (!prompt) throw new NotFoundException('Writing prompt not found');
+    }
 
     const wordCount = dto.userText.trim().split(/\s+/).length;
 
@@ -338,9 +352,32 @@ Provide a short, 3-paragraph explanation:
   }
 
   // --- SPEAKING EVALUATION SYSTEM ---
-  async submitSpeaking(userId: string, promptId: string, audioUrl: string, transcription?: string, mode?: string) {
-    const prompt = await this.prisma.speakingPrompt.findUnique({ where: { id: promptId } });
-    if (!prompt) throw new NotFoundException('Speaking prompt not found');
+  async submitSpeaking(
+    userId: string,
+    promptId: string,
+    audioUrl: string,
+    transcription?: string,
+    mode?: string,
+    customQuestionText?: string,
+  ) {
+    let prompt: any;
+    let actualPromptId = promptId;
+
+    if (promptId === 'CUSTOM') {
+      prompt = await this.prisma.speakingPrompt.create({
+        data: {
+          part: 2,
+          topic: 'Custom Topic (Student)',
+          cueCardText: customQuestionText || 'Custom practice topic description',
+          followUpQuestions: [],
+          difficulty: 'INTERMEDIATE',
+        },
+      });
+      actualPromptId = prompt.id;
+    } else {
+      prompt = await this.prisma.speakingPrompt.findUnique({ where: { id: promptId } });
+      if (!prompt) throw new NotFoundException('Speaking prompt not found');
+    }
 
     const finalTranscription = transcription || 'This is a sample student speaking practice response. I am describing a historic building in my hometown...';
 
@@ -351,8 +388,9 @@ Provide a short, 3-paragraph explanation:
     systemPrompt = systemPrompt
       .replace('{topic}', prompt.topic)
       .replace('{cueCardText}', prompt.cueCardText || '')
-      .replace('{transcription}', finalTranscription);
+      .replace('{userText}', finalTranscription);
 
+    // Force JSON output
     systemPrompt += `\n\nCRITICAL: Return ONLY a valid JSON object. Do not include markdown code block formatting. Format:
     {
       "estimatedBand": 7.0,
@@ -362,7 +400,7 @@ Provide a short, 3-paragraph explanation:
         "grammarAccuracy": 7.0,
         "pronunciation": 7.0
       },
-      "wellDone": "Your speaking pace was excellent.",
+      "wellDone": "Your fluency was good and structure was cohesive.",
       "mistakes": ["Pronunciation tip: 'historic' was pronounced incorrectly"],
       "improvedAnswer": "A building I would like to describe is...",
       "whyBetter": "Uses natural collocations and better flow.",
@@ -391,7 +429,7 @@ Provide a short, 3-paragraph explanation:
     return this.prisma.speakingSubmission.create({
       data: {
         userId,
-        promptId,
+        promptId: actualPromptId,
         audioUrl,
         transcription: finalTranscription,
         bandScoreEstimate: feedbackJson.estimatedBand,

@@ -13,6 +13,9 @@ class WritingPracticeScreen extends StatefulWidget {
 class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   final ApiService _apiService = ApiService();
   final TextEditingController _textController = TextEditingController();
+  final TextEditingController _customQuestionController = TextEditingController();
+  String _customTaskType = 'TASK_2';
+  String _customExamType = 'ACADEMIC';
 
   List<dynamic> _prompts = [];
   dynamic _selectedPrompt;
@@ -37,6 +40,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   void dispose() {
     _timer?.cancel();
     _textController.dispose();
+    _customQuestionController.dispose();
     super.dispose();
   }
 
@@ -47,8 +51,17 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         method: 'GET',
       );
       if (response.statusCode == 200) {
+        final List<dynamic> fetched = jsonDecode(response.body);
+        final customOption = {
+          'id': 'CUSTOM',
+          'title': '✍️ Write on my own Topic',
+          'promptText': 'Type your custom question topic in the input box below to start practicing.',
+          'taskType': 'TASK_2',
+          'difficulty': 'CUSTOM',
+          'examType': 'ACADEMIC'
+        };
         setState(() {
-          _prompts = jsonDecode(response.body);
+          _prompts = [...fetched, customOption];
           if (_prompts.isNotEmpty) {
             _selectedPrompt = _prompts[0];
           }
@@ -95,6 +108,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
           'promptId': _selectedPrompt['id'],
           'userText': _textController.text,
           'mode': _mode,
+          'customQuestionText': _selectedPrompt['id'] == 'CUSTOM' ? _customQuestionController.text.trim() : null,
+          'customTaskType': _selectedPrompt['id'] == 'CUSTOM' ? _customTaskType : null,
+          'customExamType': _selectedPrompt['id'] == 'CUSTOM' ? _customExamType : null,
         }),
       );
 
@@ -222,10 +238,87 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       ),
                       child: Text(
                         _selectedPrompt['promptText'],
-                        style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.5, fontStyle: FontStyle.italic),
+                        style: const TextStyle(color: const Color(0xFFCBD5E1), fontSize: 12, height: 1.5, fontStyle: FontStyle.italic),
                       ),
                     ),
                     const SizedBox(height: 20),
+
+                    if (_selectedPrompt['id'] == 'CUSTOM' && !_timerActive && _feedback == null && !_examSuccess) ...[
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0B1E36),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF1E3E6E)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Text(
+                              'Custom Essay Specifications',
+                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    dropdownColor: const Color(0xFF0B1E36),
+                                    value: _customTaskType,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Task Type',
+                                      labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                    ),
+                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                    items: const [
+                                      DropdownMenuItem(value: 'TASK_1', child: Text('Task 1 (Report/Letter)')),
+                                      DropdownMenuItem(value: 'TASK_2', child: Text('Task 2 (Essay)')),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setState(() => _customTaskType = val);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    dropdownColor: const Color(0xFF0B1E36),
+                                    value: _customExamType,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Exam Format',
+                                      labelStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                                    ),
+                                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                                    items: const [
+                                      DropdownMenuItem(value: 'ACADEMIC', child: Text('Academic')),
+                                      DropdownMenuItem(value: 'GENERAL', child: Text('General')),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) setState(() => _customExamType = val);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _customQuestionController,
+                              maxLines: 3,
+                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                              decoration: const InputDecoration(
+                                hintText: 'Enter your custom writing question topic here...',
+                                hintStyle: TextStyle(color: Color(0xFF475569)),
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (val) {
+                                setState(() {}); // Refresh start button disabled state
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                     // Timer Banner for Exam Mode
                     if (_timerActive && _mode == 'EXAM') ...[
@@ -271,13 +364,13 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                         if (!_timerActive && _mode == 'EXAM')
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37)),
-                            onPressed: _startTimer,
+                            onPressed: (_selectedPrompt['id'] == 'CUSTOM' && _customQuestionController.text.trim().isEmpty) ? null : _startTimer,
                             child: const Text('Start Exam Timer', style: TextStyle(color: Colors.black)),
                           )
                         else
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981)),
-                            onPressed: _submitting ? null : _submitEssay,
+                            onPressed: (_submitting || (_selectedPrompt['id'] == 'CUSTOM' && _customQuestionController.text.trim().isEmpty)) ? null : _submitEssay,
                             child: Text(_submitting ? 'Submitting...' : 'Submit Essay', style: const TextStyle(color: Colors.black)),
                           ),
                       ],

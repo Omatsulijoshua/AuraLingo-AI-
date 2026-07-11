@@ -8,4 +8,13 @@ export class CreateWritingSubmissionDto {
   @IsString()
   @IsNotEmpty()
   userText: string;
+
+  @IsString()
+  customQuestionText?: string;
+
+  @IsString()
+  customTaskType?: string;
+
+  @IsString()
+  customExamType?: string;
 }

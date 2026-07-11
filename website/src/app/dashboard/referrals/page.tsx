@@ -80,7 +80,7 @@ export default function ReferralDashboard() {
     );
   }
 
-  const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/auth/register?ref=${stats?.referralsList?.[0]?.id || 'your-id'}` : '';
+  const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/auth/register?ref=${stats?.userId || 'your-id'}` : '';
 
   return (
     <div className="min-h-screen bg-navy text-white flex flex-col">
@@ -151,6 +151,9 @@ export default function ReferralDashboard() {
             <h3 className="text-white font-bold text-base">Request Payout</h3>
             {stats?.isReferralVerified ? (
               <form onSubmit={handleWithdraw} className="space-y-4">
+                <div className="bg-blue-500/10 border border-blue-500/20 text-blue-400 p-3 rounded-lg text-[10px] leading-relaxed">
+                  ℹ️ <strong>Payout Schedule Notice:</strong> Payout requests are verified and paid on the <strong>21st of every month</strong>. You can only have one active request at a time.
+                </div>
                 <div>
                   <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Withdrawal Amount (₦)</label>
                   <input

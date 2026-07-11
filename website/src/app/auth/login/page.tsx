@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showRegisterSuccess = searchParams.get('registered') === 'true';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,12 @@ export default function LoginPage() {
           </Link>
           <p className="text-slate-400 mt-2 text-sm">Welcome back! Sign in to continue your preparation.</p>
         </div>
+
+        {showRegisterSuccess && (
+          <div className="mb-6 p-4 rounded-xl bg-emerald/10 border border-emerald/20 text-emerald text-xs text-center font-bold animate-pulse">
+            🎉 Account created successfully! Please sign in with your credentials to start your preparation.
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
@@ -114,5 +122,17 @@ export default function LoginPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-navy flex items-center justify-center px-4 relative overflow-hidden">
+        <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+      </main>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

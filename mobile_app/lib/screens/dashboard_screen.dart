@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import 'writing_practice_screen.dart';
 import 'referrals_screen.dart';
+import 'subscription_screen.dart';
 import 'history_screen.dart';
 import 'progress_report_screen.dart';
 
@@ -36,6 +38,74 @@ class DashboardScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Global Expiry/Upgrade Notification Bar
+            (() {
+              final subs = user?['subscriptions'] as List?;
+              final Map<String, dynamic>? sub = subs != null && subs.isNotEmpty ? Map<String, dynamic>.from(subs[0]) : null;
+              final planCode = sub != null ? (sub['plan']?['code'] ?? 'FREE') : 'FREE';
+              
+              if (planCode == 'FREE') {
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E1B10), // Amber tinted background
+                      border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(Icons.stars_rounded, color: Color(0xFFD4AF37), size: 20),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '✨ Upgrade to Premium for unlimited AI correction and mock tests! (Tap to Upgrade)',
+                            style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              } else if (sub != null && sub['endDate'] != null) {
+                try {
+                  final endDate = DateTime.parse(sub['endDate']);
+                  final daysLeft = endDate.difference(DateTime.now()).inDays;
+                  if (daysLeft >= 0 && daysLeft <= 3) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D1616), // Red tinted background
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '⚠️ Your subscription expires in $daysLeft ${daysLeft == 1 ? 'day' : 'days'}! Renew now.',
+                              style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                } catch (_) {}
+              }
+              return const SizedBox.shrink();
+            })(),
+
             // Welcome Card
             Container(
               padding: const EdgeInsets.all(20),
@@ -75,12 +145,112 @@ class DashboardScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: user?['id'] ?? ''));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Personal ID copied to clipboard!'),
+                          backgroundColor: Color(0xFF0B1E36),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'ID: ',
+                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                          ),
+                          Text(
+                            user?['id'] ?? '',
+                            style: const TextStyle(color: Colors.white70, fontSize: 10, fontFamily: 'monospace'),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(Icons.copy_rounded, color: Color(0xFFD4AF37), size: 10),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildStatItem('Target Band', '${user?['targetBand'] ?? 7.0}'),
-                      _buildStatItem('Current Band', '6.5 (Est.)'),
+                      _buildStatItem(
+                        'Target Band',
+                        '${user?['targetBand'] ?? 7.0}',
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: const Color(0xFF0B1E36),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                            ),
+                            builder: (context) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    const Text(
+                                      'Select Target Band Score',
+                                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    SizedBox(
+                                      height: 200,
+                                      child: ListView(
+                                        children: [4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((band) {
+                                          final isSelected = (user?['targetBand'] ?? 7.0).toString() == band.toString();
+                                          return ListTile(
+                                            title: Text(
+                                              'Band $band',
+                                              style: TextStyle(
+                                                color: isSelected ? const Color(0xFFD4AF37) : Colors.white,
+                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            onTap: () async {
+                                              Navigator.pop(context);
+                                              final success = await ref.read(authProvider.notifier).updateTargetBand(band);
+                                              if (success) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Target Band updated to $band!'),
+                                                    backgroundColor: const Color(0xFF0B1E36),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      (() {
+                        final progressStats = user?['progressStats'] as Map?;
+                        final currentEstimate = progressStats != null ? (progressStats['overallBandEstimate'] ?? 0.0) : 0.0;
+                        return _buildStatItem(
+                          'Current Band',
+                          currentEstimate > 0 ? '${currentEstimate.toStringAsFixed(1)} (Est.)' : '0.0',
+                        );
+                      })(),
                       _buildStatItem('Streak', '${user?['studyStreak'] ?? 0} Days 🔥'),
                     ],
                   ),
@@ -154,17 +324,29 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ],
+  Widget _buildStatItem(String label, String value, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              if (onTap != null) ...[
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFD4AF37), size: 18),
+              ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 

@@ -28,12 +28,15 @@ export default function PayoutManagement() {
   const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Tab state
+  const [payoutsTab, setPayoutsTab] = useState<'untreated' | 'treated'>('untreated');
 
   // Form states for resolving request
   const [selectedPayout, setSelectedPayout] = useState<PayoutRequest | null>(null);
   const [slipUrl, setSlipUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const fetchPayouts = async () => {
     setLoading(true);
@@ -50,6 +53,28 @@ export default function PayoutManagement() {
   useEffect(() => {
     fetchPayouts();
   }, []);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const data = await api.request<{ url: string }>('/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      setSlipUrl(data.url);
+      alert('Receipt slip uploaded successfully!');
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload file');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleResolvePayout = async (status: 'PROCESSED' | 'FAILED') => {
     if (!selectedPayout) return;
@@ -71,6 +96,10 @@ export default function PayoutManagement() {
       setSubmitting(false);
     }
   };
+
+  const untreatedPayouts = payouts.filter((p) => p.status === 'PROCESSING');
+  const treatedPayouts = payouts.filter((p) => p.status !== 'PROCESSING');
+  const activePayouts = payoutsTab === 'untreated' ? untreatedPayouts : treatedPayouts;
 
   return (
     <div className="space-y-6">
@@ -96,12 +125,37 @@ export default function PayoutManagement() {
 
       {/* Main List */}
       <div className="bg-primary/20 border border-primary-light/40 rounded-xl overflow-hidden shadow-xl backdrop-blur-sm">
+        
+        {/* Tab Headers */}
+        <div className="flex border-b border-primary-light/25 bg-navy/20 px-6 pt-4">
+          <button
+            onClick={() => setPayoutsTab('untreated')}
+            className={`px-4 py-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+              payoutsTab === 'untreated'
+                ? 'border-gold text-gold font-extrabold'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Untreated Payouts ({untreatedPayouts.length})
+          </button>
+          <button
+            onClick={() => setPayoutsTab('treated')}
+            className={`px-4 py-2 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+              payoutsTab === 'treated'
+                ? 'border-gold text-gold font-extrabold'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Treated Payouts ({treatedPayouts.length})
+          </button>
+        </div>
+
         {loading ? (
           <div className="py-24 w-full flex items-center justify-center">
             <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : payouts.length === 0 ? (
-          <p className="text-slate-500 text-xs text-center py-24">No withdrawal requests logged in the system.</p>
+        ) : activePayouts.length === 0 ? (
+          <p className="text-slate-500 text-xs text-center py-24">No withdrawal requests found in this section.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-300">
@@ -116,7 +170,7 @@ export default function PayoutManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-primary-light/20 text-xs">
-                {payouts.map((req) => {
+                {activePayouts.map((req) => {
                   const totalRefs = req.user?.referrals?.length || 0;
                   const paidRefs = req.user?.referrals?.filter((r) => r.payments?.length > 0).length || 0;
                   const trialRefs = totalRefs - paidRefs;
@@ -146,7 +200,7 @@ export default function PayoutManagement() {
                         <span className="text-gold font-extrabold text-sm">₦{req.amount.toLocaleString()}</span>
                       </td>
 
-                      {/* Telemetry (Anti-Fraud) */}
+                      {/* Telemetry */}
                       <td className="px-6 py-4">
                         <div className="space-y-1">
                           <p className="text-slate-300 font-semibold">{totalRefs} Total Invites</p>
@@ -221,14 +275,32 @@ export default function PayoutManagement() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-slate-400 text-xs font-semibold mb-1.5">Transaction Receipt Slip URL (Optional)</label>
-                <input
-                  type="text"
-                  placeholder="https://imgur.com/your-slip.png"
-                  value={slipUrl}
-                  onChange={(e) => setSlipUrl(e.target.value)}
-                  className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white text-xs placeholder-slate-600 focus:outline-none"
-                />
+                <label className="block text-slate-400 text-xs font-semibold mb-1.5">Transaction Receipt Slip</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="https://imgur.com/your-slip.png"
+                    value={slipUrl}
+                    onChange={(e) => setSlipUrl(e.target.value)}
+                    className="flex-1 bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-3 py-2 text-white text-xs placeholder-slate-600 focus:outline-none"
+                  />
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleFileUpload}
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      disabled={uploading}
+                    />
+                    <button
+                      type="button"
+                      className="bg-primary-light/35 border border-primary-light text-slate-200 hover:text-white px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap cursor-pointer"
+                      disabled={uploading}
+                    >
+                      {uploading ? 'Uploading...' : '📁 Upload File'}
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/10 space-y-2">
@@ -241,27 +313,30 @@ export default function PayoutManagement() {
               </div>
             </div>
 
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-2 justify-end pt-4 border-t border-primary-light/20">
               <button
+                onClick={() => {
+                  setSelectedPayout(null);
+                  setSlipUrl('');
+                }}
+                className="bg-primary-light/35 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs hover:text-white cursor-pointer"
                 disabled={submitting}
-                onClick={() => setSelectedPayout(null)}
-                className="bg-primary-light/50 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs cursor-pointer hover:bg-primary-light"
               >
-                Cancel
+                Close
               </button>
               <button
-                disabled={submitting}
                 onClick={() => handleResolvePayout('FAILED')}
                 className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-lg text-xs cursor-pointer"
+                disabled={submitting || uploading}
               >
-                Reject & Refund
+                Reject Payout
               </button>
               <button
-                disabled={submitting}
                 onClick={() => handleResolvePayout('PROCESSED')}
-                className="bg-emerald hover:bg-emerald-dark text-primary font-bold px-4 py-2 rounded-lg text-xs cursor-pointer"
+                className="bg-emerald hover:opacity-90 text-primary font-bold px-4 py-2 rounded-lg text-xs cursor-pointer"
+                disabled={submitting || uploading}
               >
-                {submitting ? 'Processing...' : 'Approve & Mark Processed'}
+                {submitting ? 'Processing...' : 'Approve & Mark Paid'}
               </button>
             </div>
           </div>

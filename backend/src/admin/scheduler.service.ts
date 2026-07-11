@@ -1,6 +1,7 @@
 import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AiService } from './ai.service';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class QuestionSchedulerService implements OnApplicationBootstrap {
@@ -21,7 +22,7 @@ export class QuestionSchedulerService implements OnApplicationBootstrap {
   }
 
   async checkAndGenerateDailyQuestions() {
-    this.logger.log('Checking database question count for auto-generation...');
+    this.logger.log('Checking database question counts for auto-generation...');
     
     // 1. Check if AI features are enabled
     const aiEnabledSetting = await this.prisma.appSettings.findUnique({
@@ -32,11 +33,14 @@ export class QuestionSchedulerService implements OnApplicationBootstrap {
       return;
     }
 
-    // 2. Check total question count limit
-    const totalQuestions = await this.prisma.practiceQuestion.count();
-    this.logger.log(`Current total practice questions: ${totalQuestions}/1000`);
+    // 2. Check total question count across all modules
+    const pqCount = await this.prisma.practiceQuestion.count();
+    const wpCount = await this.prisma.writingPrompt.count();
+    const spCount = await this.prisma.speakingPrompt.count();
+    const totalCount = pqCount + wpCount + spCount;
+    this.logger.log(`Current total practice resources: ${totalCount}/1000 (Questions: ${pqCount}, Writing: ${wpCount}, Speaking: ${spCount})`);
     
-    if (totalQuestions >= 1000) {
+    if (totalCount >= 1000) {
       this.logger.log('Database already has 1000+ practice questions. Auto-generation skipped.');
       return;
     }
@@ -63,13 +67,6 @@ export class QuestionSchedulerService implements OnApplicationBootstrap {
     }
 
     this.logger.log(`Starting auto-generation of 20 practice questions for ${todayStr}...`);
-    
-    // 4. Fetch modules
-    const modules = await this.prisma.module.findMany();
-    if (modules.length === 0) {
-      this.logger.error('No modules found in database to associate questions with.');
-      return;
-    }
 
     // Common IELTS themes
     const themes = [
@@ -85,24 +82,24 @@ export class QuestionSchedulerService implements OnApplicationBootstrap {
       'Urbanization and Modern Cities',
     ];
 
+    const theme = themes[Math.floor(Math.random() * themes.length)];
     let successfullyGeneratedCount = 0;
 
-    // We distribute 20 questions across the modules (5 questions per module)
-    for (const mod of modules) {
-      const theme = themes[Math.floor(Math.random() * themes.length)];
-      const countPerModule = 5;
-      
-      this.logger.log(`Generating ${countPerModule} questions for module: ${mod.name} with theme: "${theme}"`);
+    // 1. Fetch Listening & Reading modules
+    const listeningMod = await this.prisma.module.findFirst({ where: { name: 'LISTENING' } });
+    const readingMod = await this.prisma.module.findFirst({ where: { name: 'READING' } });
 
-      const prompt = `You are an expert IELTS Question Generator. Generate exactly ${countPerModule} IELTS practice questions for the module "${mod.name}" on the theme "${theme}".
-The questions must be of difficulty level "INTERMEDIATE".
-Output a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
-Each object in the array must match this schema:
+    // --- GENERATE LISTENING QUESTIONS (3) ---
+    if (listeningMod) {
+      try {
+        const prompt = `You are an expert IELTS Question Generator. Generate exactly 3 IELTS practice questions for the module "Listening" on the theme "${theme}".
+Difficulty: INTERMEDIATE. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+Each object must match this schema:
 {
   "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
   "instruction": "string describing the test instruction",
   "questionText": "the actual question text with blanks if applicable",
-  "explanation": "detailed grammatical/lexical explanation of the correct answer",
+  "explanation": "detailed explanation of the correct answer",
   "options": [
     { "optionText": "option label", "optionLetter": "A", "isCorrect": true },
     { "optionText": "option label", "optionLetter": "B", "isCorrect": false }
@@ -111,22 +108,14 @@ Each object in the array must match this schema:
     { "correctText": "the exact string matches" }
   ]
 }`;
-
-      try {
-        const aiResponse = await this.aiService.generateChatCompletion([
-          { role: 'user', content: prompt }
-        ]);
-
-        const responseText = aiResponse.text.trim();
-        const jsonText = responseText.replace(/^```json/, '').replace(/```$/, '').trim();
+        const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
         const questions = JSON.parse(jsonText);
-
         for (const q of questions) {
           await this.prisma.practiceQuestion.create({
             data: {
-              moduleId: mod.id,
+              moduleId: listeningMod.id,
               questionType: q.questionType,
-              difficulty: 'INTERMEDIATE',
               instruction: q.instruction,
               questionText: q.questionText,
               explanation: q.explanation,
@@ -152,11 +141,180 @@ Each object in the array must match this schema:
           successfullyGeneratedCount++;
         }
       } catch (err: any) {
-        this.logger.error(`Failed to generate questions for module ${mod.name}: ${err.message}`);
+        this.logger.error(`Failed to generate daily Listening questions: ${err.message}`);
       }
     }
 
-    this.logger.log(`Completed daily questions auto-generation. Successfully created ${successfullyGeneratedCount} questions.`);
+    // --- GENERATE READING QUESTIONS (3) ---
+    if (readingMod) {
+      try {
+        const prompt = `You are an expert IELTS Question Generator. Generate exactly 3 IELTS practice questions for the module "Reading" on the theme "${theme}".
+Difficulty: INTERMEDIATE. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+Each object must match this schema:
+{
+  "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
+  "instruction": "string describing the test instruction",
+  "questionText": "the actual question text with blanks if applicable",
+  "explanation": "detailed explanation of the correct answer",
+  "options": [
+    { "optionText": "option label", "optionLetter": "A", "isCorrect": true },
+    { "optionText": "option label", "optionLetter": "B", "isCorrect": false }
+  ],
+  "answers": [
+    { "correctText": "the exact string matches" }
+  ]
+}`;
+        const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+        const questions = JSON.parse(jsonText);
+        for (const q of questions) {
+          await this.prisma.practiceQuestion.create({
+            data: {
+              moduleId: readingMod.id,
+              questionType: q.questionType,
+              instruction: q.instruction,
+              questionText: q.questionText,
+              explanation: q.explanation,
+              options: q.options ? {
+                createMany: {
+                  data: q.options.map((opt: any) => ({
+                    optionText: opt.optionText,
+                    optionLetter: opt.optionLetter || '',
+                    isCorrect: !!opt.isCorrect,
+                  })),
+                }
+              } : undefined,
+              answers: q.answers ? {
+                createMany: {
+                  data: q.answers.map((ans: any) => ({
+                    correctText: ans.correctText,
+                    acceptableTexts: ans.acceptableTexts || [],
+                  })),
+                }
+              } : undefined,
+            },
+          });
+          successfullyGeneratedCount++;
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed to generate daily Reading questions: ${err.message}`);
+      }
+    }
+
+    // --- GENERATE WRITING REPORTS (3) ---
+    try {
+      const prompt = `You are an expert IELTS Writing Generator. Generate exactly 3 IELTS Writing Task 1 Academic (Report description of chart/graph/map/diagram) prompts on the theme "${theme}".
+Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+Each object must match this schema:
+{
+  "title": "Short descriptive title of chart",
+  "promptText": "Detailed instructions asking the student to summarize the key features of the visual chart"
+}`;
+      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const prompts = JSON.parse(jsonText);
+      for (const p of prompts) {
+        await this.prisma.writingPrompt.create({
+          data: {
+            title: p.title,
+            promptText: p.promptText,
+            examType: 'ACADEMIC',
+            taskType: 'TASK_1',
+            difficulty: 'INTERMEDIATE',
+          },
+        });
+        successfullyGeneratedCount++;
+      }
+    } catch (err: any) {
+      this.logger.error(`Failed to generate daily Writing Reports: ${err.message}`);
+    }
+
+    // --- GENERATE WRITING LETTERS (3) ---
+    try {
+      const prompt = `You are an expert IELTS Writing Generator. Generate exactly 3 IELTS Writing Task 1 General (Letter description requesting details, complaining or thanking) prompts on the theme "${theme}".
+Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+Each object must match this schema:
+{
+  "title": "Short descriptive title of letter request",
+  "promptText": "Detailed instructions outlining bullet points the student must include in their formal/informal letter response"
+}`;
+      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const prompts = JSON.parse(jsonText);
+      for (const p of prompts) {
+        await this.prisma.writingPrompt.create({
+          data: {
+            title: p.title,
+            promptText: p.promptText,
+            examType: 'GENERAL',
+            taskType: 'TASK_1',
+            difficulty: 'INTERMEDIATE',
+          },
+        });
+        successfullyGeneratedCount++;
+      }
+    } catch (err: any) {
+      this.logger.error(`Failed to generate daily Writing Letters: ${err.message}`);
+    }
+
+    // --- GENERATE WRITING ESSAYS (4) ---
+    try {
+      const prompt = `You are an expert IELTS Writing Generator. Generate exactly 4 IELTS Writing Task 2 Essay prompts (agree/disagree, discuss both views, advantage/disadvantage) on the theme "${theme}".
+Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+Each object must match this schema:
+{
+  "title": "Short descriptive title of essay theme",
+  "promptText": "Detailed essay topic text presenting a social opinion and asking for student arguments"
+}`;
+      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const prompts = JSON.parse(jsonText);
+      for (const p of prompts) {
+        await this.prisma.writingPrompt.create({
+          data: {
+            title: p.title,
+            promptText: p.promptText,
+            examType: 'ACADEMIC',
+            taskType: 'TASK_2',
+            difficulty: 'INTERMEDIATE',
+          },
+        });
+        successfullyGeneratedCount++;
+      }
+    } catch (err: any) {
+      this.logger.error(`Failed to generate daily Writing Essays: ${err.message}`);
+    }
+
+    // --- GENERATE SPEAKING CUE CARDS (4) ---
+    try {
+      const prompt = `You are an expert IELTS Speaking Generator. Generate exactly 4 IELTS Speaking Part 2 Cue Cards prompts on the theme "${theme}".
+Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
+Each object must match this schema:
+{
+  "topic": "Descriptive short title of cue card",
+  "cueCardText": "Describe a place, object or person context outline",
+  "followUpQuestions": ["List of 3 follow up questions for Part 3 based on this cue card"]
+}`;
+      const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const prompts = JSON.parse(jsonText);
+      for (const p of prompts) {
+        await this.prisma.speakingPrompt.create({
+          data: {
+            part: 2,
+            topic: p.topic,
+            cueCardText: p.cueCardText,
+            followUpQuestions: p.followUpQuestions || [],
+            difficulty: 'INTERMEDIATE',
+          },
+        });
+        successfullyGeneratedCount++;
+      }
+    } catch (err: any) {
+      this.logger.error(`Failed to generate daily Speaking prompts: ${err.message}`);
+    }
+
+    this.logger.log(`Completed daily questions auto-generation. Successfully created ${successfullyGeneratedCount} items.`);
     
     // Update the last generation date
     await this.prisma.appSettings.update({

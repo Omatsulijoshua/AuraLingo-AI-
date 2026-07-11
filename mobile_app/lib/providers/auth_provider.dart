@@ -98,6 +98,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String password,
     required String targetExam,
+    double targetBand = 7.0,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -109,6 +110,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'email': email,
           'password': password,
           'targetExam': targetExam,
+          'targetBand': targetBand,
         }),
       );
 
@@ -130,6 +132,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  Future<bool> updateTargetBand(double targetBand) async {
+    try {
+      final response = await _apiService.request(
+        path: '/auth/update-target-band',
+        method: 'PUT',
+        body: jsonEncode({'targetBand': targetBand}),
+      );
+
+      if (response.statusCode == 200) {
+        if (state.user != null) {
+          final updatedUser = Map<String, dynamic>.from(state.user!);
+          updatedUser['targetBand'] = targetBand;
+          
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user', jsonEncode(updatedUser));
+          
+          state = state.copyWith(user: updatedUser);
+        }
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   Future<void> logout() async {
