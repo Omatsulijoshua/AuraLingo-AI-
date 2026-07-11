@@ -22,6 +22,28 @@ export class AdminController {
     private readonly autoSpinService: AutoSpinService,
   ) {}
 
+  private extractJson(text: string): string {
+    const startArr = text.indexOf('[');
+    const startObj = text.indexOf('{');
+    
+    let start = -1;
+    let end = -1;
+    
+    if (startArr !== -1 && (startObj === -1 || startArr < startObj)) {
+      start = startArr;
+      end = text.lastIndexOf(']');
+    } else if (startObj !== -1) {
+      start = startObj;
+      end = text.lastIndexOf('}');
+    }
+    
+    if (start === -1 || end === -1 || end < start) {
+      return text.replace(/^```json/, '').replace(/```$/, '').trim();
+    }
+    
+    return text.substring(start, end + 1).trim();
+  }
+
   @Get('stats')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   async getStats(@Query('month') month?: string) {
@@ -348,8 +370,10 @@ Each object in the array must match this schema:
     try {
       if (type === 'listening' || type === 'reading') {
         const moduleName = type === 'listening' ? 'LISTENING' : 'READING';
-        const mod = await this.prisma.module.findFirst({ where: { name: moduleName as any } });
-        if (!mod) throw new NotFoundException(`${moduleName} module not found`);
+        let mod = await this.prisma.module.findFirst({ where: { name: moduleName as any } });
+        if (!mod) {
+          mod = await this.prisma.module.create({ data: { name: moduleName as any } });
+        }
 
         const prompt = `You are an expert IELTS Question Generator. Generate exactly 1 IELTS practice question for the module "${moduleName}" on the theme "${theme}".
 Difficulty: INTERMEDIATE. Return a valid JSON object matching this schema. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
@@ -367,7 +391,7 @@ Difficulty: INTERMEDIATE. Return a valid JSON object matching this schema. Do no
   ]
 }`;
         const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+        const jsonText = this.extractJson(aiResponse.text);
         const q = JSON.parse(jsonText);
         return this.prisma.practiceQuestion.create({
           data: {
@@ -408,7 +432,7 @@ Return a valid JSON object matching this schema. Do not include markdown code bl
   "promptText": "Detailed instructions for the student response"
 }`;
         const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+        const jsonText = this.extractJson(aiResponse.text);
         const p = JSON.parse(jsonText);
         return this.prisma.writingPrompt.create({
           data: {
@@ -428,7 +452,7 @@ Return a valid JSON object matching this schema. Do not include markdown code bl
   "followUpQuestions": ["List of 3 follow up questions for Part 3 based on this cue card"]
 }`;
         const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+        const jsonText = this.extractJson(aiResponse.text);
         const p = JSON.parse(jsonText);
         return this.prisma.speakingPrompt.create({
           data: {

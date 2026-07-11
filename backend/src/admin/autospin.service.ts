@@ -31,6 +31,28 @@ export class AutoSpinService {
     };
   }
 
+  private extractJson(text: string): string {
+    const startArr = text.indexOf('[');
+    const startObj = text.indexOf('{');
+    
+    let start = -1;
+    let end = -1;
+    
+    if (startArr !== -1 && (startObj === -1 || startArr < startObj)) {
+      start = startArr;
+      end = text.lastIndexOf(']');
+    } else if (startObj !== -1) {
+      start = startObj;
+      end = text.lastIndexOf('}');
+    }
+    
+    if (start === -1 || end === -1 || end < start) {
+      return text.replace(/^```json/, '').replace(/```$/, '').trim();
+    }
+    
+    return text.substring(start, end + 1).trim();
+  }
+
   async runSpin(config: {
     difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
     listeningCount?: number;
@@ -77,9 +99,15 @@ export class AutoSpinService {
     ];
     const theme = themes[Math.floor(Math.random() * themes.length)];
 
-    // Fetch Listening & Reading modules
-    const listeningMod = await this.prisma.module.findFirst({ where: { name: 'LISTENING' } });
-    const readingMod = await this.prisma.module.findFirst({ where: { name: 'READING' } });
+    // Fetch or create modules defensively
+    let listeningMod = await this.prisma.module.findFirst({ where: { name: 'LISTENING' } });
+    if (!listeningMod) {
+      listeningMod = await this.prisma.module.create({ data: { name: 'LISTENING' } });
+    }
+    let readingMod = await this.prisma.module.findFirst({ where: { name: 'READING' } });
+    if (!readingMod) {
+      readingMod = await this.prisma.module.create({ data: { name: 'READING' } });
+    }
 
     // 1. Listening Questions Step
     if (listeningCount > 0 && listeningMod) {
@@ -103,7 +131,7 @@ Each object must match this schema:
   ]
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const jsonText = this.extractJson(aiResponse.text);
           const questions = JSON.parse(jsonText);
           for (const q of questions) {
             await this.prisma.practiceQuestion.create({
@@ -160,7 +188,7 @@ Each object must match this schema:
   ]
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const jsonText = this.extractJson(aiResponse.text);
           const questions = JSON.parse(jsonText);
           for (const q of questions) {
             await this.prisma.practiceQuestion.create({
@@ -208,7 +236,7 @@ Each object must match this schema:
   "promptText": "Detailed instructions stating the essay question prompt"
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const jsonText = this.extractJson(aiResponse.text);
           const prompts = JSON.parse(jsonText);
           for (const p of prompts) {
             await this.prisma.writingPrompt.create({
@@ -238,7 +266,7 @@ Each object must match this schema:
   "promptText": "Detailed instructions asking the student to summarize the key features of the visual chart"
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const jsonText = this.extractJson(aiResponse.text);
           const prompts = JSON.parse(jsonText);
           for (const p of prompts) {
             await this.prisma.writingPrompt.create({
@@ -268,7 +296,7 @@ Each object must match this schema:
   "promptText": "Detailed instructions outlining bullet points the student must include in their formal/informal letter response"
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const jsonText = this.extractJson(aiResponse.text);
           const prompts = JSON.parse(jsonText);
           for (const p of prompts) {
             await this.prisma.writingPrompt.create({
@@ -299,7 +327,7 @@ Each object must match this schema:
   "followUpQuestions": ["List of 3 follow up questions for Part 3 based on this cue card"]
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-          const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+          const jsonText = this.extractJson(aiResponse.text);
           const prompts = JSON.parse(jsonText);
           for (const p of prompts) {
             await this.prisma.speakingPrompt.create({

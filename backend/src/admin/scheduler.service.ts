@@ -1,7 +1,6 @@
-import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AiService } from './ai.service';
-import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class QuestionSchedulerService implements OnApplicationBootstrap {
@@ -13,46 +12,63 @@ export class QuestionSchedulerService implements OnApplicationBootstrap {
   ) {}
 
   onApplicationBootstrap() {
-    // Run the check asynchronously so it doesn't block server startup
+    // Run the check on application startup
     setTimeout(() => {
       this.checkAndGenerateDailyQuestions().catch((err) => {
         this.logger.error('Error in daily questions auto-generation:', err);
       });
-    }, 5000);
+    }, 5000); // Wait 5 seconds after boot to let initialization finish
+  }
+
+  private extractJson(text: string): string {
+    const startArr = text.indexOf('[');
+    const startObj = text.indexOf('{');
+    
+    let start = -1;
+    let end = -1;
+    
+    if (startArr !== -1 && (startObj === -1 || startArr < startObj)) {
+      start = startArr;
+      end = text.lastIndexOf(']');
+    } else if (startObj !== -1) {
+      start = startObj;
+      end = text.lastIndexOf('}');
+    }
+    
+    if (start === -1 || end === -1 || end < start) {
+      return text.replace(/^```json/, '').replace(/```$/, '').trim();
+    }
+    
+    return text.substring(start, end + 1).trim();
   }
 
   async checkAndGenerateDailyQuestions() {
-    this.logger.log('Checking database question counts for auto-generation...');
-    
     // 1. Check if AI features are enabled
-    const aiEnabledSetting = await this.prisma.appSettings.findUnique({
-      where: { key: 'ai_enabled' },
-    });
-    if (!aiEnabledSetting || aiEnabledSetting.value !== 'true') {
+    const aiEnabled = await this.prisma.appSettings.findUnique({ where: { key: 'ai_enabled' } });
+    if (!aiEnabled || aiEnabled.value !== 'true') {
       this.logger.warn('AI is globally disabled. Skipping daily questions auto-generation.');
       return;
     }
 
-    // 2. Check total question count across all modules
-    const pqCount = await this.prisma.practiceQuestion.count();
-    const wpCount = await this.prisma.writingPrompt.count();
-    const spCount = await this.prisma.speakingPrompt.count();
+    // 2. Check current total resources to respect the 1000 limit safety cap
+    const [pqCount, wpCount, spCount] = await Promise.all([
+      this.prisma.practiceQuestion.count(),
+      this.prisma.writingPrompt.count(),
+      this.prisma.speakingPrompt.count(),
+    ]);
     const totalCount = pqCount + wpCount + spCount;
     this.logger.log(`Current total practice resources: ${totalCount}/1000 (Questions: ${pqCount}, Writing: ${wpCount}, Speaking: ${spCount})`);
-    
+
     if (totalCount >= 1000) {
       this.logger.log('Database already has 1000+ practice questions. Auto-generation skipped.');
       return;
     }
 
-    // 3. Check if we already ran auto-generation today
+    // 3. Check if we already generated questions today
     const todayStr = new Date().toISOString().split('T')[0];
-    let lastGenSetting = await this.prisma.appSettings.findUnique({
-      where: { key: 'last_auto_generation_date' },
-    });
-
-    if (!lastGenSetting) {
-      lastGenSetting = await this.prisma.appSettings.create({
+    let lastGenDateSetting = await this.prisma.appSettings.findUnique({ where: { key: 'last_auto_generation_date' } });
+    if (!lastGenDateSetting) {
+      lastGenDateSetting = await this.prisma.appSettings.create({
         data: {
           key: 'last_auto_generation_date',
           value: '',
@@ -61,33 +77,38 @@ export class QuestionSchedulerService implements OnApplicationBootstrap {
       });
     }
 
-    if (lastGenSetting.value === todayStr) {
+    if (lastGenDateSetting.value === todayStr) {
       this.logger.log(`Daily questions for ${todayStr} have already been generated today.`);
       return;
     }
 
     this.logger.log(`Starting auto-generation of 20 practice questions for ${todayStr}...`);
 
-    // Common IELTS themes
     const themes = [
-      'Education and Learning',
-      'Technology and Digitalization',
-      'Environmental Conservation and Climate Change',
-      'Travel and Tourism',
-      'Health, Fitness and Medicine',
-      'Work, Employment and Business',
-      'Family relationships and Social Structures',
-      'Arts, Culture and Literature',
-      'Science, Innovation and Discovery',
-      'Urbanization and Modern Cities',
+      'Climate Change and Eco-friendly Living',
+      'Artificial Intelligence and Future Jobs',
+      'The Impact of Fast Fashion on the Environment',
+      'Healthy Diets and Government Regulations',
+      'Public Transport vs Private Cars in Megacities',
+      'Cultural Preservation in a Globalized World',
+      'Remote Work and Family-Life Balance',
+      'Space Exploration and Funding Priorities',
+      'Higher Education Tuition and Social Inequality',
+      'The Role of Traditional Media in the Digital Age',
     ];
-
     const theme = themes[Math.floor(Math.random() * themes.length)];
+
     let successfullyGeneratedCount = 0;
 
-    // 1. Fetch Listening & Reading modules
-    const listeningMod = await this.prisma.module.findFirst({ where: { name: 'LISTENING' } });
-    const readingMod = await this.prisma.module.findFirst({ where: { name: 'READING' } });
+    // Fetch or create modules defensively
+    let listeningMod = await this.prisma.module.findFirst({ where: { name: 'LISTENING' } });
+    if (!listeningMod) {
+      listeningMod = await this.prisma.module.create({ data: { name: 'LISTENING' } });
+    }
+    let readingMod = await this.prisma.module.findFirst({ where: { name: 'READING' } });
+    if (!readingMod) {
+      readingMod = await this.prisma.module.create({ data: { name: 'READING' } });
+    }
 
     // --- GENERATE LISTENING QUESTIONS (3) ---
     if (listeningMod) {
@@ -109,7 +130,7 @@ Each object must match this schema:
   ]
 }`;
         const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+        const jsonText = this.extractJson(aiResponse.text);
         const questions = JSON.parse(jsonText);
         for (const q of questions) {
           await this.prisma.practiceQuestion.create({
@@ -165,7 +186,7 @@ Each object must match this schema:
   ]
 }`;
         const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-        const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+        const jsonText = this.extractJson(aiResponse.text);
         const questions = JSON.parse(jsonText);
         for (const q of questions) {
           await this.prisma.practiceQuestion.create({
@@ -211,7 +232,7 @@ Each object must match this schema:
   "promptText": "Detailed instructions asking the student to summarize the key features of the visual chart"
 }`;
       const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const jsonText = this.extractJson(aiResponse.text);
       const prompts = JSON.parse(jsonText);
       for (const p of prompts) {
         await this.prisma.writingPrompt.create({
@@ -239,7 +260,7 @@ Each object must match this schema:
   "promptText": "Detailed instructions outlining bullet points the student must include in their formal/informal letter response"
 }`;
       const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const jsonText = this.extractJson(aiResponse.text);
       const prompts = JSON.parse(jsonText);
       for (const p of prompts) {
         await this.prisma.writingPrompt.create({
@@ -267,7 +288,7 @@ Each object must match this schema:
   "promptText": "Detailed essay topic text presenting a social opinion and asking for student arguments"
 }`;
       const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const jsonText = this.extractJson(aiResponse.text);
       const prompts = JSON.parse(jsonText);
       for (const p of prompts) {
         await this.prisma.writingPrompt.create({
@@ -296,7 +317,7 @@ Each object must match this schema:
   "followUpQuestions": ["List of 3 follow up questions for Part 3 based on this cue card"]
 }`;
       const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
-      const jsonText = aiResponse.text.replace(/^```json/, '').replace(/```$/, '').trim();
+      const jsonText = this.extractJson(aiResponse.text);
       const prompts = JSON.parse(jsonText);
       for (const p of prompts) {
         await this.prisma.speakingPrompt.create({
