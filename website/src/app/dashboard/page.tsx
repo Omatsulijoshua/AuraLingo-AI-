@@ -306,18 +306,20 @@ export default function StudentDashboard() {
                       day: 'numeric',
                     });
                     return (
-                      <div className="mt-1 space-y-0.5">
-                        <p className="text-[10px] text-slate-300 font-bold">
-                          {diffDays > 0 ? `${diffDays} day${diffDays > 1 ? 's' : ''} left` : 'Expires today'}
-                        </p>
-                        <p className="text-[9px] text-slate-400 font-medium">
-                          ({expiryDate})
-                        </p>
+                      <div className="mt-2 space-y-1 bg-navy/60 border border-primary-light/20 rounded-lg p-2.5">
+                        <div className="flex justify-between items-center gap-3">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Days Left</span>
+                          <span className="text-[11px] text-gold font-extrabold">{diffDays > 0 ? `${diffDays} Days` : '0 Days'}</span>
+                        </div>
+                        <div className="flex justify-between items-center gap-3 border-t border-primary-light/10 pt-1">
+                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Expires</span>
+                          <span className="text-[10px] text-slate-200 font-bold">{expiryDate}</span>
+                        </div>
                       </div>
                     );
                   })()
                 ) : (
-                  <p className="text-[10px] text-slate-500 mt-1 font-semibold">
+                  <p className="text-[10px] text-slate-500 mt-2 font-semibold">
                     No active paid plan
                   </p>
                 )}
