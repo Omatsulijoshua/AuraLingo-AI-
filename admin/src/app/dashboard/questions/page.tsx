@@ -24,6 +24,14 @@ export default function QuestionsBuilder() {
   // Active Tab
   const [activeTab, setActiveTab] = useState<'listening' | 'reading' | 'essays' | 'reports' | 'letters' | 'speaking'>('listening');
 
+  // Selected item IDs for batch delete
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Clear selections when tab changes
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeTab]);
+
   // AutoSpin state and hook
   const [spinProgress, setSpinProgress] = useState<any>(null);
   const [showProSpinModal, setShowProSpinModal] = useState(false);
@@ -181,9 +189,42 @@ export default function QuestionsBuilder() {
       
       await api.request(endpoint, { method: 'DELETE' });
       alert('Deleted successfully!');
+      setSelectedIds(prev => prev.filter(x => x !== id));
       await loadQuestionsData();
     } catch (err: any) {
       alert(err.message || 'Failed to delete item');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete the ${selectedIds.length} selected items?`)) return;
+    setLoading(true);
+    try {
+      const type = activeTab === 'listening' || activeTab === 'reading'
+        ? 'question'
+        : activeTab === 'speaking'
+          ? 'speaking'
+          : 'writing';
+
+      await Promise.all(
+        selectedIds.map(id => {
+          const endpoint = type === 'question'
+            ? `/admin/questions/${id}`
+            : type === 'writing'
+              ? `/admin/writing-prompts/${id}`
+              : `/admin/speaking-prompts/${id}`;
+          return api.request(endpoint, { method: 'DELETE' });
+        })
+      );
+
+      alert('Selected items deleted successfully!');
+      setSelectedIds([]);
+      await loadQuestionsData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete some of the selected items');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -192,7 +233,6 @@ export default function QuestionsBuilder() {
     setSaving(true);
     try {
       if (activeTab === 'listening' || activeTab === 'reading') {
-        const selectedModule = modules.find(m => m.id === manualModuleId);
         await api.request('/admin/questions/manual', {
           method: 'POST',
           body: JSON.stringify({
@@ -287,6 +327,37 @@ export default function QuestionsBuilder() {
   const lettersList = writing.filter(w => w.taskType === 'TASK_1' && w.examType === 'GENERAL');
   const speakingList = speaking;
 
+  // Active list based on activeTab
+  const getActiveList = () => {
+    switch (activeTab) {
+      case 'listening': return listeningList;
+      case 'reading': return readingList;
+      case 'essays': return essaysList;
+      case 'reports': return reportsList;
+      case 'letters': return lettersList;
+      case 'speaking': return speakingList;
+    }
+  };
+
+  const currentList = getActiveList();
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(x => x !== id));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    const listIds = currentList.map(item => item.id);
+    if (checked) {
+      setSelectedIds(prev => Array.from(new Set([...prev, ...listIds])));
+    } else {
+      setSelectedIds(prev => prev.filter(id => !listIds.includes(id)));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Title Header */}
@@ -296,6 +367,14 @@ export default function QuestionsBuilder() {
           <p className="text-slate-400 text-xs mt-1">Manage database questions manually or generate new practice questions using AI.</p>
         </div>
         <div className="flex gap-2">
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-black transition-all cursor-pointer shadow-lg shadow-red-500/10"
+            >
+              🗑️ Delete Selected ({selectedIds.length})
+            </button>
+          )}
           <button
             onClick={() => {
               // Set correct default parameters based on tab
@@ -400,17 +479,27 @@ export default function QuestionsBuilder() {
 
       {/* Tabs Navigation */}
       <div className="flex border-b border-primary-light/25 overflow-x-auto gap-2">
-        {(['listening', 'reading', 'essays', 'reports', 'letters', 'speaking'] as const).map((tab) => (
+        {([
+          { key: 'listening', label: 'Listening Module', count: listeningList.length },
+          { key: 'reading', label: 'Reading Module', count: readingList.length },
+          { key: 'essays', label: 'Writing Essays', count: essaysList.length },
+          { key: 'reports', label: 'Writing Reports', count: reportsList.length },
+          { key: 'letters', label: 'Writing Letters', count: lettersList.length },
+          { key: 'speaking', label: 'Speaking Module', count: speakingList.length }
+        ] as const).map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer capitalize whitespace-nowrap ${
-              activeTab === tab
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer capitalize whitespace-nowrap flex items-center gap-1.5 ${
+              activeTab === tab.key
                 ? 'border-gold text-gold font-extrabold'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            {tab === 'essays' ? 'Writing Essays' : tab === 'reports' ? 'Writing Reports' : tab === 'letters' ? 'Writing Letters' : `${tab} Module`}
+            {tab.label}
+            <span className="px-2 py-0.5 text-[10px] rounded-full bg-navy/80 text-slate-300 font-bold border border-primary-light/10">
+              {tab.count}
+            </span>
           </button>
         ))}
       </div>
@@ -420,32 +509,72 @@ export default function QuestionsBuilder() {
         
         {/* LISTENING TAB */}
         {activeTab === 'listening' && (
-          <QuestionTable list={listeningList} onDelete={(id) => handleDelete('question', id)} />
+          <QuestionTable 
+            list={listeningList} 
+            selectedIds={selectedIds}
+            onSelect={handleSelectOne}
+            onSelectAll={handleSelectAll}
+            onDelete={(id) => handleDelete('question', id)} 
+          />
         )}
 
         {/* READING TAB */}
         {activeTab === 'reading' && (
-          <QuestionTable list={readingList} onDelete={(id) => handleDelete('question', id)} />
+          <QuestionTable 
+            list={readingList} 
+            selectedIds={selectedIds}
+            onSelect={handleSelectOne}
+            onSelectAll={handleSelectAll}
+            onDelete={(id) => handleDelete('question', id)} 
+          />
         )}
 
         {/* ESSAYS TAB */}
         {activeTab === 'essays' && (
-          <SubjectiveTable list={essaysList} onDelete={(id) => handleDelete('writing', id)} isWriting={true} />
+          <SubjectiveTable 
+            list={essaysList} 
+            selectedIds={selectedIds}
+            onSelect={handleSelectOne}
+            onSelectAll={handleSelectAll}
+            onDelete={(id) => handleDelete('writing', id)} 
+            isWriting={true} 
+          />
         )}
 
         {/* REPORTS TAB */}
         {activeTab === 'reports' && (
-          <SubjectiveTable list={reportsList} onDelete={(id) => handleDelete('writing', id)} isWriting={true} />
+          <SubjectiveTable 
+            list={reportsList} 
+            selectedIds={selectedIds}
+            onSelect={handleSelectOne}
+            onSelectAll={handleSelectAll}
+            onDelete={(id) => handleDelete('writing', id)} 
+            isWriting={true} 
+          />
         )}
 
         {/* LETTERS TAB */}
         {activeTab === 'letters' && (
-          <SubjectiveTable list={lettersList} onDelete={(id) => handleDelete('writing', id)} isWriting={true} />
+          <SubjectiveTable 
+            list={lettersList} 
+            selectedIds={selectedIds}
+            onSelect={handleSelectOne}
+            onSelectAll={handleSelectAll}
+            onDelete={(id) => handleDelete('writing', id)} 
+            isWriting={true} 
+          />
         )}
 
         {/* SPEAKING TAB */}
         {activeTab === 'speaking' && (
-          <SubjectiveTable list={speakingList} onDelete={(id) => handleDelete('speaking', id)} isWriting={false} />
+          <SubjectiveTable 
+            list={speakingList} 
+            selectedIds={selectedIds}
+            onSelect={handleSelectOne}
+            onSelectAll={handleSelectAll}
+            onDelete={(id) => handleDelete('speaking', id)} 
+            isWriting={false} 
+          />
         )}
 
       </div>
@@ -728,7 +857,6 @@ export default function QuestionsBuilder() {
                             type="checkbox"
                             checked={opt.isCorrect}
                             onChange={(e) => {
-                              // Reset others, make only one correct if wanted, or support multiple
                               handleOptionChange(i, 'isCorrect', e.target.checked);
                             }}
                             className="w-4 h-4 accent-gold"
@@ -915,16 +1043,34 @@ export default function QuestionsBuilder() {
 }
 
 // Subcomponent: Objective Table
-function QuestionTable({ list, onDelete }: { list: any[]; onDelete: (id: string) => void }) {
+interface QuestionTableProps {
+  list: any[];
+  selectedIds: string[];
+  onSelect: (id: string, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
+  onDelete: (id: string) => void;
+}
+
+function QuestionTable({ list, selectedIds, onSelect, onSelectAll, onDelete }: QuestionTableProps) {
   if (list.length === 0) {
     return <p className="text-slate-500 text-xs text-center py-24">No questions found in this module tab.</p>;
   }
+
+  const isAllSelected = list.every(item => selectedIds.includes(item.id));
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm text-slate-300">
         <thead className="text-xs uppercase text-slate-400 bg-primary/40 border-b border-primary-light/40 font-bold">
           <tr>
+            <th className="px-6 py-4 w-12">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={(e) => onSelectAll(e.target.checked)}
+                className="w-4 h-4 accent-gold rounded border-primary-light cursor-pointer"
+              />
+            </th>
             <th className="px-6 py-4">Instruction</th>
             <th className="px-6 py-4">Question Text</th>
             <th className="px-6 py-4">Type</th>
@@ -934,7 +1080,15 @@ function QuestionTable({ list, onDelete }: { list: any[]; onDelete: (id: string)
         </thead>
         <tbody className="divide-y divide-primary-light/20 text-xs">
           {list.map((q) => (
-            <tr key={q.id} className="hover:bg-primary-light/10 transition-colors duration-200">
+            <tr key={q.id} className={`hover:bg-primary-light/10 transition-colors duration-200 ${selectedIds.includes(q.id) ? 'bg-primary-light/10' : ''}`}>
+              <td className="px-6 py-4 w-12">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(q.id)}
+                  onChange={(e) => onSelect(q.id, e.target.checked)}
+                  className="w-4 h-4 accent-gold rounded border-primary-light cursor-pointer"
+                />
+              </td>
               <td className="px-6 py-4 font-semibold text-white max-w-xs truncate">{q.instruction}</td>
               <td className="px-6 py-4 max-w-sm truncate">{q.questionText}</td>
               <td className="px-6 py-4 font-mono text-[10px] text-gold uppercase">{q.questionType}</td>
@@ -960,16 +1114,35 @@ function QuestionTable({ list, onDelete }: { list: any[]; onDelete: (id: string)
 }
 
 // Subcomponent: Subjective Table
-function SubjectiveTable({ list, onDelete, isWriting }: { list: any[]; onDelete: (id: string) => void; isWriting: boolean }) {
+interface SubjectiveTableProps {
+  list: any[];
+  selectedIds: string[];
+  onSelect: (id: string, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
+  onDelete: (id: string) => void;
+  isWriting: boolean;
+}
+
+function SubjectiveTable({ list, selectedIds, onSelect, onSelectAll, onDelete, isWriting }: SubjectiveTableProps) {
   if (list.length === 0) {
     return <p className="text-slate-500 text-xs text-center py-24">No prompts found in this tab.</p>;
   }
+
+  const isAllSelected = list.every(item => selectedIds.includes(item.id));
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm text-slate-300">
         <thead className="text-xs uppercase text-slate-400 bg-primary/40 border-b border-primary-light/40 font-bold">
           <tr>
+            <th className="px-6 py-4 w-12">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={(e) => onSelectAll(e.target.checked)}
+                className="w-4 h-4 accent-gold rounded border-primary-light cursor-pointer"
+              />
+            </th>
             <th className="px-6 py-4">{isWriting ? 'Title' : 'Speaking Topic'}</th>
             <th className="px-6 py-4">{isWriting ? 'Prompt Text' : 'Cue Card Text'}</th>
             {isWriting && <th className="px-6 py-4">Exam Type</th>}
@@ -980,7 +1153,15 @@ function SubjectiveTable({ list, onDelete, isWriting }: { list: any[]; onDelete:
         </thead>
         <tbody className="divide-y divide-primary-light/20 text-xs">
           {list.map((q) => (
-            <tr key={q.id} className="hover:bg-primary-light/10 transition-colors duration-200">
+            <tr key={q.id} className={`hover:bg-primary-light/10 transition-colors duration-200 ${selectedIds.includes(q.id) ? 'bg-primary-light/10' : ''}`}>
+              <td className="px-6 py-4 w-12">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(q.id)}
+                  onChange={(e) => onSelect(q.id, e.target.checked)}
+                  className="w-4 h-4 accent-gold rounded border-primary-light cursor-pointer"
+                />
+              </td>
               <td className="px-6 py-4 font-semibold text-white max-w-xs truncate">{isWriting ? q.title : q.topic}</td>
               <td className="px-6 py-4 max-w-sm truncate">{isWriting ? q.promptText : q.cueCardText}</td>
               {isWriting && (
