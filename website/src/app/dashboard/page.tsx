@@ -164,6 +164,9 @@ export default function StudentDashboard() {
              <Link href="/dashboard/support" className="hover:text-gold transition-colors">
               💬 Help & Support
              </Link>
+             <Link href="/dashboard/billing" className="hover:text-gold transition-colors">
+              💳 Billing History
+             </Link>
              <button
                onClick={() => {
                  loadPaymentDetails();

@@ -529,4 +529,51 @@ export class SubscriptionService implements OnModuleInit {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async getStudentSubscriptionHistory(userId: string, startDate?: string, endDate?: string) {
+    const where: any = { userId };
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
+    return this.prisma.subscription.findMany({
+      where,
+      include: {
+        plan: true,
+        payments: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getAdminSubscriptionHistory(searchTerm?: string, startDate?: string, endDate?: string) {
+    const where: any = {};
+    if (searchTerm) {
+      where.user = {
+        OR: [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } },
+        ],
+      };
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
+    return this.prisma.subscription.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        plan: true,
+        payments: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

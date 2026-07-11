@@ -92,4 +92,34 @@ export class SubscriptionController {
   async getPaymentInfo() {
     return this.subscriptionService.getPaymentInfo();
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT)
+  @Get('history')
+  async getHistory(
+    @Req() req: any,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.subscriptionService.getStudentSubscriptionHistory(
+      req.user.sub,
+      startDate,
+      endDate,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.TUTOR)
+  @Get('admin/history')
+  async getAdminHistory(
+    @Query('searchTerm') searchTerm?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.subscriptionService.getAdminSubscriptionHistory(
+      searchTerm,
+      startDate,
+      endDate,
+    );
+  }
 }
