@@ -367,11 +367,20 @@ Each object must match this schema:
       }
     }
 
-    this.progress = {
-      status: 'COMPLETED',
-      percent: 100,
-      currentStep: `Successfully generated and inserted questions across ${completedSteps}/${activeSteps.length} sections!`,
-      error: null,
-    };
+    if (completedSteps === 0) {
+      this.progress = {
+        status: 'FAILED',
+        percent: 0,
+        currentStep: 'Failed to generate any questions. Check active AI key configurations.',
+        error: 'All generation steps failed. Please verify that your active provider key is valid in settings.',
+      };
+    } else {
+      this.progress = {
+        status: 'COMPLETED',
+        percent: 100,
+        currentStep: `Successfully generated and inserted questions across ${completedSteps}/${activeSteps.length} sections!`,
+        error: null,
+      };
+    }
   }
 }

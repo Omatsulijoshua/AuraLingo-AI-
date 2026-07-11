@@ -34,7 +34,11 @@ export class AppController {
           speakingPrompts: spCount,
         },
         modules,
-        activeSettings: settings.filter(s => s.key === 'ai_enabled' || s.key === 'active_ai_provider'),
+        activeSettings: settings.map(s => ({
+          key: s.key,
+          hasValue: !!s.value && s.value.trim() !== '',
+          valueLength: s.value ? s.value.length : 0,
+        })).filter(s => s.key.startsWith('ai_') || s.key === 'active_ai_provider'),
       };
     } catch (err: any) {
       return {
