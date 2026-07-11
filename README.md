@@ -95,6 +95,27 @@ flutter run
 
 ---
 
+## 🧠 Smart AI Routing, Fallbacks & Multi-Key Support
+
+To keep the platform's running costs at **₦0** while maintaining 100% online availability, the backend is equipped with a custom **LLM Fallback Router** and **Multi-Key Support**:
+
+*   **Fallback Routing Chain**: The backend can cascade between Google Gemini, Groq Cloud, OpenRouter, and OpenAI. If the active provider fails (e.g., due to free-tier rate limits or key depletion), it automatically retries with the next configured provider.
+*   **Multi-Key Loop (Same Provider)**: You can combine multiple API keys from the same provider (created across different Google/Groq accounts) by separating them with commas (e.g., `key_1, key_2, key_3`). The router will loop through each key individually before escalating to the next provider.
+
+```mermaid
+graph TD
+    A[AI Request: Grade/Spin Questions] --> B[Retrieve Encrypted Keys from Settings]
+    B --> C[Order Candidates: Active Provider First]
+    C --> D{Loop Candidate Key List}
+    D -->|Get Next Key| E{Send HTTP Request}
+    E -- Success --> F[Return AI Response]
+    E -- Rate Limit / Error --> G[Log Warning & Try Fallback]
+    G --> D
+    D -- All Keys Exhausted --> H[Return Error to Admin/User]
+```
+
+---
+
 ## 🔍 Validation Commands
 
 To verify that all components are syntax-error free and build correctly:
