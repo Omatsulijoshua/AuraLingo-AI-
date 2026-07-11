@@ -296,16 +296,30 @@ export default function StudentDashboard() {
               <div>
                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Billing Status</p>
                 <p className="text-emerald text-xl font-bold mt-1 capitalize">{sub?.plan.code || 'FREE'}</p>
-                {sub && sub.status === 'ACTIVE' && sub.endDate && (
+                {sub && sub.status === 'ACTIVE' && sub.endDate ? (
                   (() => {
                     const diffTime = new Date(sub.endDate).getTime() - new Date().getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    const expiryDate = new Date(sub.endDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    });
                     return (
-                      <p className="text-[10px] text-slate-400 mt-1 font-semibold">
-                        {diffDays > 0 ? `Ends in ${diffDays} day${diffDays > 1 ? 's' : ''}` : 'Expires today'}
-                      </p>
+                      <div className="mt-1 space-y-0.5">
+                        <p className="text-[10px] text-slate-300 font-bold">
+                          {diffDays > 0 ? `${diffDays} day${diffDays > 1 ? 's' : ''} left` : 'Expires today'}
+                        </p>
+                        <p className="text-[9px] text-slate-400 font-medium">
+                          ({expiryDate})
+                        </p>
+                      </div>
                     );
                   })()
+                ) : (
+                  <p className="text-[10px] text-slate-500 mt-1 font-semibold">
+                    No active paid plan
+                  </p>
                 )}
               </div>
             </div>
