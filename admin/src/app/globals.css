@@ -36,12 +36,14 @@ body {
 }
 
 /* Style Webkit Date/Month Picker Calendar Indicator Icon */
-input[type="month"]::-webkit-calendar-picker-indicator {
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1) brightness(1.2);
   cursor: pointer;
   opacity: 0.85;
   transition: opacity 0.15s ease;
 }
-input[type="month"]::-webkit-calendar-picker-indicator:hover {
+input[type="month"]::-webkit-calendar-picker-indicator:hover,
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }

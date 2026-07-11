@@ -169,8 +169,12 @@ Each object in the array must match this schema:
 
   @Get('payouts')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  async getPayouts() {
-    return this.adminService.getPayouts();
+  async getPayouts(
+    @Query('searchTerm') searchTerm?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.adminService.getPayouts(searchTerm, startDate, endDate);
   }
 
   @Put('payouts/:id')

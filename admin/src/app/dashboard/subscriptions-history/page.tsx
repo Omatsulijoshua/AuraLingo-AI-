@@ -103,7 +103,7 @@ export default function AdminSubscriptionsHistoryPage() {
               placeholder="Search by student name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
+              className="w-full bg-primary-light/45 border border-primary-light/80 hover:border-gold/60 focus:border-gold rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none transition-all placeholder-slate-500"
             />
           </div>
           <div>
@@ -112,7 +112,7 @@ export default function AdminSubscriptionsHistoryPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-primary-light/45 border border-primary-light/80 hover:border-gold/60 focus:border-gold rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none transition-all"
             />
           </div>
           <div>
@@ -121,7 +121,7 @@ export default function AdminSubscriptionsHistoryPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-primary-light/45 border border-primary-light/80 hover:border-gold/60 focus:border-gold rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none transition-all"
             />
           </div>
         </div>

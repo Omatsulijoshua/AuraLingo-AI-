@@ -32,6 +32,11 @@ export default function PayoutManagement() {
   // Tab state
   const [payoutsTab, setPayoutsTab] = useState<'untreated' | 'treated'>('untreated');
 
+  // Search and Date range states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   // Form states for resolving request
   const [selectedPayout, setSelectedPayout] = useState<PayoutRequest | null>(null);
   const [slipUrl, setSlipUrl] = useState('');
@@ -41,13 +46,40 @@ export default function PayoutManagement() {
   const fetchPayouts = async () => {
     setLoading(true);
     try {
-      const data = await api.request<PayoutRequest[]>('/admin/payouts');
+      let url = '/admin/payouts';
+      const params = new URLSearchParams();
+      if (searchTerm.trim()) params.append('searchTerm', searchTerm.trim());
+      if (startDate) params.append('startDate', new Date(startDate).toISOString());
+      if (endDate) params.append('endDate', new Date(endDate).toISOString());
+      
+      const queryStr = params.toString();
+      if (queryStr) url += `?${queryStr}`;
+
+      const data = await api.request<PayoutRequest[]>(url);
       setPayouts(data);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch payouts list');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFilterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchPayouts();
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStartDate('');
+    setEndDate('');
+    setTimeout(() => {
+      setLoading(true);
+      api.request<PayoutRequest[]>('/admin/payouts')
+        .then(setPayouts)
+        .catch((err) => setError(err.message))
+        .finally(() => setLoading(false));
+    }, 50);
   };
 
   useEffect(() => {
@@ -122,6 +154,56 @@ export default function PayoutManagement() {
           {error}
         </div>
       )}
+
+      {/* Filters Toolbar */}
+      <form onSubmit={handleFilterSubmit} className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1.5">Search Student</label>
+            <input
+              type="text"
+              placeholder="Search by student name or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-primary-light/45 border border-primary-light/80 hover:border-gold/60 focus:border-gold rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none transition-all placeholder-slate-500"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1.5">Start Date</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full bg-primary-light/45 border border-primary-light/80 hover:border-gold/60 focus:border-gold rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none transition-all"
+            />
+          </div>
+          <div>
+            <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1.5">End Date</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full bg-primary-light/45 border border-primary-light/80 hover:border-gold/60 focus:border-gold rounded-lg px-3 py-2 text-sm font-bold text-white focus:outline-none transition-all"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2 border-t border-primary-light/10">
+          <button
+            type="button"
+            onClick={handleClearFilters}
+            className="bg-primary/20 hover:bg-primary/30 text-slate-300 font-bold px-4 py-2 rounded-lg text-xs transition-colors cursor-pointer border border-primary-light/10"
+          >
+            Clear Filters
+          </button>
+          <button
+            type="submit"
+            className="bg-gold hover:bg-gold-dark text-primary font-bold px-6 py-2 rounded-lg text-xs transition-colors cursor-pointer"
+          >
+            🔍 Search & Filter
+          </button>
+        </div>
+      </form>
 
       {/* Main List */}
       <div className="bg-primary/20 border border-primary-light/40 rounded-xl overflow-hidden shadow-xl backdrop-blur-sm">

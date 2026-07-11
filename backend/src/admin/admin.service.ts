@@ -231,8 +231,24 @@ export class AdminService {
   }
 
   // --- PAYOUTS (WITHDRAWALS) MANAGEMENT ---
-  async getPayouts() {
+  async getPayouts(searchTerm?: string, startDate?: string, endDate?: string) {
+    const where: any = {};
+    if (searchTerm) {
+      where.user = {
+        OR: [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { email: { contains: searchTerm, mode: 'insensitive' } },
+        ],
+      };
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+
     return this.prisma.referralWithdrawal.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
