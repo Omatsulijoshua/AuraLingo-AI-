@@ -52,6 +52,31 @@ export class AppController {
     }
   }
 
+  @Get('diagnose-db')
+  async diagnoseDb() {
+    try {
+      const [plans, subscriptions, users] = await Promise.all([
+        this.prisma.subscriptionPlan.findMany(),
+        this.prisma.subscription.findMany({ include: { plan: true } }),
+        this.prisma.user.findMany({ select: { id: true, email: true, role: true } }),
+      ]);
+      return {
+        status: 'OK',
+        plans,
+        subscriptions: subscriptions.map(s => ({
+          id: s.id,
+          userId: s.userId,
+          planCode: s.plan.code,
+          status: s.status,
+          endDate: s.endDate,
+        })),
+        users,
+      };
+    } catch (err: any) {
+      return { status: 'ERROR', message: err.message || err };
+    }
+  }
+
   @Get('test-keys')
   async testKeys() {
     const settings = await this.prisma.appSettings.findMany();
