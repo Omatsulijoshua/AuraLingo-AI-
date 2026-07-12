@@ -618,5 +618,180 @@ Provide a short, 3-paragraph explanation:
       },
     });
   }
+
+  async submitWritingExaminer(
+    userId: string,
+    dto: {
+      promptId: string;
+      userText: string;
+      customQuestionText?: string;
+      customTaskType?: string;
+      customExamType?: string;
+    },
+  ) {
+    let prompt: any;
+    if (dto.promptId === 'CUSTOM') {
+      prompt = await this.prisma.writingPrompt.create({
+        data: {
+          title: 'Custom Prompt (Student)',
+          promptText: dto.customQuestionText || 'Custom practice topic',
+          taskType: dto.customTaskType || 'TASK_2',
+          examType: (dto.customExamType as any) || 'ACADEMIC',
+          difficulty: 'INTERMEDIATE',
+        },
+      });
+      dto.promptId = prompt.id;
+    } else {
+      prompt = await this.prisma.writingPrompt.findUnique({ where: { id: dto.promptId } });
+      if (!prompt) throw new NotFoundException('Writing prompt not found');
+    }
+
+    const wordCount = dto.userText.trim().split(/\s+/).length;
+
+    const systemPrompt = `
+You are an expert IELTS Writing Examiner. Analyze the following student essay written for the prompt below in "AI Examiner Mode".
+Task Type: ${prompt.taskType}
+Prompt: ${prompt.promptText}
+Essay: ${dto.userText}
+
+Analyze the essay sentence by sentence. For each sentence, determine:
+1. "text": The exact text of the original sentence.
+2. "strength": "STRONG" (excellent sentence), "OKAY" (grammatically correct but basic/could be more cohesive or varied), or "WEAK" (contains grammatical errors, spelling errors, or poor vocabulary).
+3. "critique": A brief, constructive critique explaining why it is marked as such.
+4. "rewrite": An improved version of that sentence utilizing advanced vocabulary, correct grammar, and cohesive devices.
+
+Also provide:
+1. "estimatedBand": An overall estimated band score.
+2. "breakdown": Estimated band score for each of the 4 IELTS criteria: Task Achievement/Response, Coherence and Cohesion, Lexical Resource, and Grammatical Range and Accuracy.
+3. "coachingTip": A high-impact tip for the student's next revision draft.
+
+CRITICAL: Return ONLY a valid JSON object matching the format below. Do not include markdown code block formatting.
+{
+  "estimatedBand": 6.5,
+  "breakdown": {
+    "taskAchievement": 6.5,
+    "coherenceCohesion": 6.5,
+    "lexicalResource": 6.0,
+    "grammarAccuracy": 6.5
+  },
+  "coachingTip": "Try using more formal transition words like 'Furthermore' instead of 'Also'.",
+  "sentences": [
+    {
+      "text": "First sentence...",
+      "strength": "STRONG",
+      "critique": "Great introduction showing clear stance.",
+      "rewrite": "First sentence..."
+    }
+  ]
+}
+`;
+
+    let feedbackJson: any = {
+      estimatedBand: 6.0,
+      breakdown: { taskAchievement: 6.0, coherenceCohesion: 6.0, lexicalResource: 6.0, grammarAccuracy: 6.0 },
+      coachingTip: 'Review paragraph structures.',
+      sentences: [
+        {
+          text: dto.userText,
+          strength: 'OKAY',
+          critique: 'Analyze sentence-by-sentence to see feedback.',
+          rewrite: dto.userText,
+        },
+      ],
+    };
+
+    try {
+      const aiResponse = await this.aiService.generateChatCompletion([
+        { role: 'user', content: systemPrompt },
+      ]);
+      feedbackJson = JSON.parse(aiResponse.text.trim());
+    } catch (err) {
+      console.warn('[AI_WRITING_EXAMINER_ERROR] Falling back:', err);
+    }
+
+    return this.prisma.writingSubmission.create({
+      data: {
+        userId,
+        promptId: dto.promptId,
+        userText: dto.userText,
+        wordCount,
+        bandScoreEstimate: feedbackJson.estimatedBand,
+        feedbackJson,
+        mode: 'EXAMINER_DRAFT1',
+      },
+    });
+  }
+
+  async compareDrafts(
+    userId: string,
+    dto: {
+      promptId: string;
+      draft1Text: string;
+      draft2Text: string;
+    },
+  ) {
+    const prompt = await this.prisma.writingPrompt.findUnique({ where: { id: dto.promptId } });
+    if (!prompt) throw new NotFoundException('Writing prompt not found');
+
+    const wordCount = dto.draft2Text.trim().split(/\s+/).length;
+
+    const systemPrompt = `
+You are an expert IELTS Writing Examiner. Compare the original draft (Draft 1) and the revised draft (Draft 2) of a student's essay.
+Prompt: ${prompt.promptText}
+Draft 1: ${dto.draft1Text}
+Draft 2: ${dto.draft2Text}
+
+Provide a comparative analysis:
+1. "draft1Band": Estimated band score of Draft 1.
+2. "draft2Band": Estimated band score of Draft 2.
+3. "improvement": The change in band score (e.g. 0.5, 1.0, or 0.0).
+4. "lexicalImprovements": Explain how the lexical resource (vocabulary) improved in Draft 2.
+5. "grammarImprovements": Explain how the grammatical range and accuracy improved in Draft 2.
+6. "coherenceImprovements": Explain how coherence and cohesion improved in Draft 2.
+7. "summary": A motivational summary of the overall improvement and next steps.
+
+CRITICAL: Return ONLY a valid JSON object matching the format below. Do not include markdown code block formatting.
+{
+  "draft1Band": 6.0,
+  "draft2Band": 7.0,
+  "improvement": 1.0,
+  "lexicalImprovements": "Vocabulary improved...",
+  "grammarImprovements": "Grammar improved...",
+  "coherenceImprovements": "Coherence improved...",
+  "summary": "Excellent revision."
+}
+`;
+
+    let feedbackJson: any = {
+      draft1Band: 6.0,
+      draft2Band: 6.5,
+      improvement: 0.5,
+      lexicalImprovements: 'Better vocabulary diversity.',
+      grammarImprovements: 'Reduced minor grammatical errors.',
+      coherenceImprovements: 'Stronger transition phrases used.',
+      summary: 'Good effort revising Draft 1.',
+    };
+
+    try {
+      const aiResponse = await this.aiService.generateChatCompletion([
+        { role: 'user', content: systemPrompt },
+      ]);
+      feedbackJson = JSON.parse(aiResponse.text.trim());
+    } catch (err) {
+      console.warn('[AI_COMPARE_DRAFTS_ERROR] Falling back:', err);
+    }
+
+    return this.prisma.writingSubmission.create({
+      data: {
+        userId,
+        promptId: dto.promptId,
+        userText: dto.draft2Text,
+        wordCount,
+        bandScoreEstimate: feedbackJson.draft2Band,
+        feedbackJson,
+        mode: 'EXAMINER_DRAFT2',
+      },
+    });
+  }
 }
 

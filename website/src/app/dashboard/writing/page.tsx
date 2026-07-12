@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function WritingPractice() {
   const [prompts, setPrompts] = useState<any[]>([]);
   const [selectedPrompt, setSelectedPrompt] = useState<any>(null);
-  const [mode, setMode] = useState<'PRACTICE' | 'EXAM'>('PRACTICE');
+  const [mode, setMode] = useState<'PRACTICE' | 'EXAM' | 'EXAMINER'>('PRACTICE');
   const [userText, setUserText] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -16,6 +16,13 @@ export default function WritingPractice() {
   const [customQuestionText, setCustomQuestionText] = useState('');
   const [customTaskType, setCustomTaskType] = useState('TASK_2');
   const [customExamType, setCustomExamType] = useState('ACADEMIC');
+
+  // AI Examiner Mode states
+  const [examinerFeedback, setExaminerFeedback] = useState<any>(null);
+  const [selectedSentence, setSelectedSentence] = useState<any>(null);
+  const [draft2Text, setDraft2Text] = useState('');
+  const [comparisonResult, setComparisonResult] = useState<any>(null);
+  const [comparing, setComparing] = useState(false);
 
   // Timer for Exam Mode (40 minutes = 2400 seconds)
   const [timeLeft, setTimeLeft] = useState(2400);
@@ -63,12 +70,79 @@ export default function WritingPractice() {
     setUserText('');
     setFeedback(null);
     setExamSuccess(false);
+    setExaminerFeedback(null);
+    setSelectedSentence(null);
+    setDraft2Text('');
+    setComparisonResult(null);
     if (mode === 'EXAM') {
       setTimeLeft(2400); // 40 mins
       setTimerActive(true);
     } else {
       setTimerActive(false);
     }
+  };
+
+  const handleSubmitDraft1 = async () => {
+    if (!userText.trim()) return;
+    setSubmitting(true);
+
+    try {
+      const result = await api.request<any>('/content/writing/submit-examiner', {
+        method: 'POST',
+        body: JSON.stringify({
+          promptId: selectedPrompt.id,
+          userText,
+          customQuestionText: selectedPrompt.id === 'CUSTOM' ? customQuestionText : undefined,
+          customTaskType: selectedPrompt.id === 'CUSTOM' ? customTaskType : undefined,
+          customExamType: selectedPrompt.id === 'CUSTOM' ? customExamType : undefined,
+        }),
+      });
+
+      setExaminerFeedback(result.feedbackJson);
+      setDraft2Text(userText);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit Draft 1 for examiner analysis.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmitDraft2 = async () => {
+    if (!draft2Text.trim()) return;
+    setComparing(true);
+
+    try {
+      const result = await api.request<any>('/content/writing/compare-drafts', {
+        method: 'POST',
+        body: JSON.stringify({
+          promptId: selectedPrompt.id,
+          draft1Text: userText,
+          draft2Text,
+        }),
+      });
+
+      setComparisonResult(result.feedbackJson);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit Draft 2 for comparison.');
+    } finally {
+      setComparing(false);
+    }
+  };
+
+  const handleApplySuggestion = (sentence: any) => {
+    if (!sentence || !sentence.rewrite) return;
+    const original = sentence.text;
+    const rewrite = sentence.rewrite;
+    
+    setDraft2Text((prev) => {
+      if (prev.includes(original)) {
+        return prev.replace(original, rewrite);
+      }
+      return prev;
+    });
+    alert('Applied rewrite suggestion to Draft 2!');
   };
 
   const handleSubmit = async () => {
@@ -135,11 +209,14 @@ export default function WritingPractice() {
         <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-6 self-start">
           <div>
             <h3 className="text-white font-bold text-sm mb-3">1. Select Mode</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2.5">
               <button
-                onClick={() => setMode('PRACTICE')}
+                onClick={() => {
+                  setMode('PRACTICE');
+                  handleStartPractice();
+                }}
                 disabled={timerActive}
-                className={`py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                   mode === 'PRACTICE'
                     ? 'bg-gold border-gold text-primary shadow-lg shadow-gold/25'
                     : 'bg-navy/40 border-primary-light text-slate-400 hover:text-white'
@@ -148,9 +225,26 @@ export default function WritingPractice() {
                 Practice Mode
               </button>
               <button
-                onClick={() => setMode('EXAM')}
+                onClick={() => {
+                  setMode('EXAMINER');
+                  handleStartPractice();
+                }}
                 disabled={timerActive}
-                className={`py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                  mode === 'EXAMINER'
+                    ? 'bg-gradient-to-r from-amber-500 to-gold border-gold text-primary shadow-lg shadow-gold/25'
+                    : 'bg-navy/40 border-primary-light text-slate-400 hover:text-white'
+                }`}
+              >
+                🤖 AI Examiner Mode
+              </button>
+              <button
+                onClick={() => {
+                  setMode('EXAM');
+                  handleStartPractice();
+                }}
+                disabled={timerActive}
+                className={`w-full py-2 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
                   mode === 'EXAM'
                     ? 'bg-gold border-gold text-primary shadow-lg shadow-gold/25'
                     : 'bg-navy/40 border-primary-light text-slate-400 hover:text-white'
@@ -160,9 +254,9 @@ export default function WritingPractice() {
               </button>
             </div>
             <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-              {mode === 'PRACTICE'
-                ? '⭐ Practice untimed with real-time AI scoring, step-by-step model rewrites, and strategic time-management tips!'
-                : '⏱️ Strict 40-minute timer. Submissions will be logged quietly for official tutor grading evaluation.'}
+              {mode === 'PRACTICE' && '⭐ Practice untimed with real-time AI scoring, step-by-step model rewrites, and strategic time-management tips!'}
+              {mode === 'EXAMINER' && '🤖 Sentence-by-sentence highlighting, interactive rewriting critiques, and a comparison engine for Draft 2!'}
+              {mode === 'EXAM' && '⏱️ Strict 40-minute timer. Submissions will be logged quietly for official tutor grading evaluation.'}
             </p>
           </div>
 
@@ -252,7 +346,7 @@ export default function WritingPractice() {
                 </div>
               )}
 
-              {!timerActive && !feedback && !examSuccess ? (
+              {!timerActive && !feedback && !examSuccess && mode !== 'EXAMINER' ? (
                 <button
                   onClick={handleStartPractice}
                   disabled={selectedPrompt.id === 'CUSTOM' && !customQuestionText.trim()}
@@ -262,7 +356,29 @@ export default function WritingPractice() {
                 </button>
               ) : null}
 
-              {(timerActive || feedback || examSuccess) && (
+              {mode === 'EXAMINER' && !examinerFeedback && (
+                <div className="space-y-4">
+                  <textarea
+                    rows={12}
+                    value={userText}
+                    onChange={(e) => setUserText(e.target.value)}
+                    placeholder="Write your Draft 1 response here under examiner conditions..."
+                    className="w-full bg-navy/55 border border-primary-light/60 focus:border-gold rounded-xl p-4 text-white text-xs leading-relaxed focus:outline-none"
+                  />
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Word Count: <span className="text-white font-bold">{wordCount}</span></span>
+                    <button
+                      onClick={handleSubmitDraft1}
+                      disabled={submitting || !userText.trim()}
+                      className="bg-gold hover:bg-gold-dark text-primary font-extrabold px-6 py-2 rounded-lg text-xs cursor-pointer transition-colors disabled:opacity-40"
+                    >
+                      {submitting ? 'Analyzing Draft 1...' : '🤖 Analyze Draft 1'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(timerActive || feedback || examSuccess) && mode !== 'EXAMINER' && (
                 <div className="space-y-4">
                   <textarea
                     rows={12}
@@ -341,6 +457,183 @@ export default function WritingPractice() {
                     {feedback.improvedAnswer}
                   </pre>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* AI Examiner Mode - Draft 1 Highlights & Draft 2 Workspace */}
+          {mode === 'EXAMINER' && examinerFeedback && !comparisonResult && (
+            <div className="space-y-6">
+              {/* Overall Estimated Band */}
+              <div className="bg-primary/25 border border-primary-light/40 rounded-2xl p-6 shadow-2xl space-y-6">
+                <div className="flex justify-between items-center border-b border-primary-light/20 pb-3">
+                  <h3 className="text-gold font-bold text-base">🤖 AI Examiner Mode - Draft 1 Evaluation</h3>
+                  <div className="bg-amber-500/10 border border-amber-500/20 text-gold px-3 py-1.5 rounded-lg text-xs font-bold font-mono">
+                    Estimated Band: {examinerFeedback.estimatedBand}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-navy/40 p-3 rounded-lg border border-primary-light/15 text-center">
+                    <p className="text-slate-500 text-[9px] uppercase font-bold">Task Achievement</p>
+                    <p className="text-slate-300 text-sm font-bold mt-0.5">{examinerFeedback.breakdown?.taskAchievement || 6.0}</p>
+                  </div>
+                  <div className="bg-navy/40 p-3 rounded-lg border border-primary-light/15 text-center">
+                    <p className="text-slate-500 text-[9px] uppercase font-bold">Coherence & Cohesion</p>
+                    <p className="text-slate-300 text-sm font-bold mt-0.5">{examinerFeedback.breakdown?.coherenceCohesion || 6.0}</p>
+                  </div>
+                  <div className="bg-navy/40 p-3 rounded-lg border border-primary-light/15 text-center">
+                    <p className="text-slate-500 text-[9px] uppercase font-bold">Lexical Resource</p>
+                    <p className="text-slate-300 text-sm font-bold mt-0.5">{examinerFeedback.breakdown?.lexicalResource || 6.0}</p>
+                  </div>
+                  <div className="bg-navy/40 p-3 rounded-lg border border-primary-light/15 text-center">
+                    <p className="text-slate-500 text-[9px] uppercase font-bold">Grammar Accuracy</p>
+                    <p className="text-slate-300 text-sm font-bold mt-0.5">{examinerFeedback.breakdown?.grammarAccuracy || 6.0}</p>
+                  </div>
+                </div>
+
+                <div className="bg-gold/5 border border-gold/20 p-4 rounded-xl text-xs text-slate-300 leading-relaxed">
+                  <strong className="text-gold font-bold block mb-1">💡 Coaching Tip for Draft 2:</strong>
+                  {examinerFeedback.coachingTip}
+                </div>
+              </div>
+
+              {/* Interactive Sentence Highlighter & Draft 2 Split Screen */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Panel: Highlighted Sentences */}
+                <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4">
+                  <h4 className="text-white font-bold text-sm">Sentence-by-Sentence Analysis</h4>
+                  <p className="text-[10px] text-slate-500 leading-relaxed">
+                    Click on any sentence highlighted in <span className="text-red-400 font-bold">red</span> (Weak) or <span className="text-amber-400 font-bold">yellow</span> (Okay) to view the examiner critique and suggested rewrite.
+                  </p>
+                  <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/10 text-xs leading-relaxed space-y-2">
+                    {examinerFeedback.sentences?.map((s: any, idx: number) => {
+                      let hlClass = '';
+                      if (s.strength === 'STRONG') hlClass = 'bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-200/90 hover:bg-emerald-500/20';
+                      else if (s.strength === 'OKAY') hlClass = 'bg-amber-500/10 border-b border-amber-500/20 text-amber-200 hover:bg-amber-500/20';
+                      else hlClass = 'bg-red-500/10 border-b border-red-500/20 text-red-300 font-bold hover:bg-red-500/20';
+
+                      return (
+                        <span
+                          key={idx}
+                          onClick={() => setSelectedSentence(s)}
+                          className={`${hlClass} transition-colors px-0.5 cursor-pointer inline-block mr-1 rounded`}
+                        >
+                          {s.text}{' '}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  {/* Critique Details Card */}
+                  {selectedSentence && (
+                    <div className="bg-navy/60 border border-primary-light/20 p-4 rounded-xl space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded ${
+                          selectedSentence.strength === 'STRONG' ? 'bg-emerald-500/20 text-emerald-400' :
+                          selectedSentence.strength === 'OKAY' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'
+                        }`}>
+                          {selectedSentence.strength} Sentence
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold">Critique</p>
+                        <p className="text-slate-300 text-xs leading-relaxed mt-0.5">{selectedSentence.critique}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold">Suggested Rewrite</p>
+                        <p className="text-gold text-xs leading-relaxed mt-0.5 italic">{selectedSentence.rewrite}</p>
+                      </div>
+                      <button
+                        onClick={() => handleApplySuggestion(selectedSentence)}
+                        className="bg-gold hover:bg-gold-dark text-primary font-black px-4 py-1.5 rounded text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        ✍️ Apply Rewrite to Draft 2
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Panel: Draft 2 Workspace */}
+                <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-white font-bold text-sm">Draft 2 Refinement Workspace</h4>
+                    <span className="text-[10px] text-slate-500">
+                      Word Count: {draft2Text.trim() === '' ? 0 : draft2Text.trim().split(/\s+/).length}
+                    </span>
+                  </div>
+                  <textarea
+                    rows={12}
+                    value={draft2Text}
+                    onChange={(e) => setDraft2Text(e.target.value)}
+                    placeholder="Refine your essay here... Apply rewrites to replace weak sentences."
+                    className="w-full bg-navy/55 border border-primary-light/60 focus:border-gold rounded-xl p-4 text-white text-xs leading-relaxed focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSubmitDraft2}
+                    disabled={comparing || !draft2Text.trim()}
+                    className="w-full bg-emerald hover:bg-emerald-dark text-primary font-black py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-40"
+                  >
+                    {comparing ? 'Comparing Drafts...' : '🤖 Submit Revised Draft (Draft 2)'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* AI Examiner Mode - Draft 1 vs Draft 2 Comparison Results */}
+          {mode === 'EXAMINER' && comparisonResult && (
+            <div className="bg-primary/25 border border-primary-light/40 rounded-2xl p-6 shadow-2xl space-y-6">
+              <div className="text-center space-y-2 border-b border-primary-light/20 pb-4">
+                <h3 className="text-gold font-black text-lg">📈 AI Examiner Mode - Comparison Analysis</h3>
+                <p className="text-slate-300 text-xs">Fantastic job refining your essay! Here is how your revision compared to Draft 1.</p>
+              </div>
+
+              {/* Band Score Progress Comparison */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 text-center space-y-1">
+                  <p className="text-slate-500 text-[10px] uppercase font-bold">Draft 1 Band</p>
+                  <p className="text-slate-400 text-lg font-bold">Band {comparisonResult.draft1Band}</p>
+                </div>
+                <div className="bg-gold/10 p-4 rounded-xl border border-gold/30 text-center space-y-1">
+                  <p className="text-gold text-[10px] uppercase font-black">Draft 2 Band</p>
+                  <p className="text-white text-2xl font-black">Band {comparisonResult.draft2Band}</p>
+                </div>
+                <div className="bg-emerald/10 p-4 rounded-xl border border-emerald-500/35 text-center flex flex-col justify-center items-center">
+                  <p className="text-emerald-400 text-[10px] uppercase font-black">Score Progress</p>
+                  <p className="text-emerald-400 text-xl font-black mt-1">
+                    +{comparisonResult.improvement} Band Score! 🎉
+                  </p>
+                </div>
+              </div>
+
+              {/* Specific Improvement Areas */}
+              <div className="space-y-4 pt-2">
+                <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/10">
+                  <h4 className="text-gold font-bold text-xs mb-1">✍️ Lexical Improvements</h4>
+                  <p className="text-slate-300 text-xs leading-relaxed">{comparisonResult.lexicalImprovements}</p>
+                </div>
+                <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/10">
+                  <h4 className="text-gold font-bold text-xs mb-1">📐 Grammatical Improvements</h4>
+                  <p className="text-slate-300 text-xs leading-relaxed">{comparisonResult.grammarImprovements}</p>
+                </div>
+                <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/10">
+                  <h4 className="text-gold font-bold text-xs mb-1">🔗 Coherence & Cohesion Improvements</h4>
+                  <p className="text-slate-300 text-xs leading-relaxed">{comparisonResult.coherenceImprovements}</p>
+                </div>
+                <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/10">
+                  <h4 className="text-white font-bold text-xs mb-1">💡 Examiner Summary</h4>
+                  <p className="text-slate-300 text-xs leading-relaxed">{comparisonResult.summary}</p>
+                </div>
+              </div>
+
+              <div className="text-center pt-2">
+                <button
+                  onClick={handleStartPractice}
+                  className="bg-gold hover:bg-gold-dark text-primary font-black px-6 py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Start New examiner practice
+                </button>
               </div>
             </div>
           )}

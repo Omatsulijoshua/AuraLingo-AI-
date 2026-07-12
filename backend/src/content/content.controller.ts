@@ -114,6 +114,36 @@ export class ContentController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.STUDENT)
+  @Post('writing/submit-examiner')
+  async submitWritingExaminer(
+    @Req() req: any,
+    @Body() dto: {
+      promptId: string;
+      userText: string;
+      customQuestionText?: string;
+      customTaskType?: string;
+      customExamType?: string;
+    },
+  ) {
+    return this.contentService.submitWritingExaminer(req.user.sub, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT)
+  @Post('writing/compare-drafts')
+  async compareDrafts(
+    @Req() req: any,
+    @Body() dto: {
+      promptId: string;
+      draft1Text: string;
+      draft2Text: string;
+    },
+  ) {
+    return this.contentService.compareDrafts(req.user.sub, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.STUDENT)
   @Post('speaking/submit')
   async submitSpeaking(
     @Req() req: any,
