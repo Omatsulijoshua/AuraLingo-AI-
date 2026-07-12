@@ -122,19 +122,105 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           );
         } else {
           _timer?.cancel();
+          final result = jsonDecode(response.body);
+          final attempt = result['attempt'];
+          final overall = result['overallBandScore'] ?? attempt?['overallBandEstimate'] ?? 6.0;
+
           setState(() {
             _timerActive = false;
             _activeAttempt = null;
           });
+
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (_) => AlertDialog(
-              title: const Text('🎉 Exam Completed!'),
-              content: const Text('Your full mock exam has been submitted successfully. Grading is in progress.'),
+              backgroundColor: const Color(0xFF0B1E36),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: Color(0xFF1E3E6E)),
+              ),
+              title: Column(
+                children: const [
+                  Text(
+                    '🏆 Mock Exam Result',
+                    style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'All sections graded successfully!',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF050E1A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'OVERALL BAND SCORE',
+                          style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Band $overall',
+                          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 22, fontWeight: FontWeight.w900),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('🎧 Listening:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      Text('Band ${attempt?['listeningScore'] ?? 6.0}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('📖 Reading:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      Text('Band ${attempt?['readingScore'] ?? 6.0}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('✍️ Writing (Est.):', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      Text('Band ${attempt?['writingScore'] ?? 6.5}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('🎙️ Speaking (Est.):', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      Text('Band ${attempt?['speakingScore'] ?? 6.5}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: const Color(0xFF050E1A),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Return to List', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
             ),

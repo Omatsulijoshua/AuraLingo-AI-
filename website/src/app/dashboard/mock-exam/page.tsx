@@ -12,6 +12,7 @@ export default function MockExamsPage() {
   const [timerActive, setTimerActive] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [finalResult, setFinalResult] = useState<any>(null);
 
   // Form answers state for current section
   const [answersInput, setAnswersInput] = useState<Record<string, string>>({});
@@ -80,7 +81,7 @@ export default function MockExamsPage() {
         answerText: text,
       }));
 
-      await api.request(`/mock-tests/attempts/${activeAttempt.id}/submit-section`, {
+      const res = await api.request<any>(`/mock-tests/attempts/${activeAttempt.id}/submit-section`, {
         method: 'POST',
         body: JSON.stringify({
           sectionId: section.id,
@@ -96,7 +97,7 @@ export default function MockExamsPage() {
       } else {
         setTimerActive(false);
         setActiveAttempt(null);
-        alert('Mock test completed successfully! Evaluators will grade your writing and speaking submissions shortly.');
+        setFinalResult(res);
         fetchMockTests();
       }
     } catch (err: any) {
@@ -117,6 +118,58 @@ export default function MockExamsPage() {
     return (
       <div className="min-h-screen bg-navy flex items-center justify-center text-white">
         <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (finalResult) {
+    const attempt = finalResult.attempt;
+    return (
+      <div className="min-h-screen bg-navy text-white flex flex-col items-center justify-center p-8">
+        <div className="max-w-md w-full bg-primary/25 border border-primary-light/30 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+          <div className="w-16 h-16 bg-gold/10 border border-gold/20 rounded-full flex items-center justify-center mx-auto">
+            <span className="text-gold text-2xl font-bold">🏆</span>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-white font-extrabold text-2xl">Mock Test Completed!</h2>
+            <p className="text-slate-400 text-xs">Your responses have been fully graded by the IELTS evaluation service.</p>
+          </div>
+          
+          <div className="p-6 bg-navy/40 border border-primary-light/15 rounded-2xl space-y-4">
+            <div>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Estimated Band Score</p>
+              <p className="text-gold text-4xl font-black mt-1">Band {finalResult.overallBandScore || attempt?.overallBandEstimate}</p>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 text-left border-t border-primary-light/10 pt-4 text-xs">
+              <div>
+                <span className="text-slate-400">🎧 Listening:</span>
+                <span className="text-white font-bold ml-1.5">{attempt?.listeningScore}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">📖 Reading:</span>
+                <span className="text-white font-bold ml-1.5">{attempt?.readingScore}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">✍️ Writing:</span>
+                <span className="text-white font-bold ml-1.5">{attempt?.writingScore} (Est.)</span>
+              </div>
+              <div>
+                <span className="text-slate-400">🎙️ Speaking:</span>
+                <span className="text-white font-bold ml-1.5">{attempt?.speakingScore} (Est.)</span>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-slate-500 italic">This AI marking is for practice only and does not represent an official IELTS score.</p>
+
+          <button
+            onClick={() => setFinalResult(null)}
+            className="w-full bg-gold hover:bg-gold-dark text-primary font-black py-3 rounded-xl text-xs transition-colors cursor-pointer"
+          >
+            Return to Mock List
+          </button>
+        </div>
       </div>
     );
   }
