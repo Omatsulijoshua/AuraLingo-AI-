@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import 'writing_practice_screen.dart';
+import 'listening_practice_screen.dart';
+import 'reading_practice_screen.dart';
+import 'speaking_practice_screen.dart';
+import 'mock_exams_screen.dart';
 import 'referrals_screen.dart';
 import 'subscription_screen.dart';
 import 'support_screen.dart';
@@ -43,7 +47,7 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,17 +334,61 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
             
-            // Grid of Modules
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.35,
+              children: [
+                _buildModuleCard(context, 'Listening', Icons.headphones_rounded, const Color(0xFF3B82F6)),
+                _buildModuleCard(context, 'Reading', Icons.menu_book_rounded, const Color(0xFF10B981)),
+                _buildModuleCard(context, 'Writing', Icons.edit_note_rounded, const Color(0xFFF59E0B)),
+                _buildModuleCard(context, 'Speaking', Icons.mic_external_on_rounded, Colors.purple),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Mock Exam Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1E36),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+              ),
+              child: Row(
                 children: [
-                  _buildModuleCard(context, 'Listening', Icons.headphones_rounded, const Color(0xFF3B82F6)),
-                  _buildModuleCard(context, 'Reading', Icons.menu_book_rounded, const Color(0xFF10B981)),
-                  _buildModuleCard(context, 'Writing', Icons.edit_note_rounded, const Color(0xFFF59E0B)),
-                  _buildModuleCard(context, 'Speaking', Icons.mic_external_on_rounded, Colors.purple),
+                  const Icon(Icons.stars_rounded, color: Color(0xFFD4AF37), size: 36),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Full Mock Exam',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Simulate a timed 2.5-hour complete IELTS exam.',
+                          style: TextStyle(color: Colors.white60, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const MockExamsScreen()));
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: const Color(0xFF050E1A),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Start', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
             ),
@@ -414,6 +462,12 @@ class DashboardScreen extends ConsumerWidget {
           onTap: () {
             if (title == 'Writing') {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+            } else if (title == 'Listening') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
+            } else if (title == 'Reading') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
+            } else if (title == 'Speaking') {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
             }
           },
           child: Padding(
