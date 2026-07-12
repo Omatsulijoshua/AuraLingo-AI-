@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { MockTestService } from './mocktest.service';
 import { SubmitSectionDto } from './dto/submit-section.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -15,6 +15,18 @@ export class MockTestController {
   @Get()
   async getMockTests() {
     return this.mockTestService.getMockTests();
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Post()
+  async createMockTest(@Body() body: any) {
+    return this.mockTestService.createMockTest(body);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Delete(':id')
+  async deleteMockTest(@Param('id') id: string) {
+    return this.mockTestService.deleteMockTest(id);
   }
 
   @Roles(UserRole.STUDENT)

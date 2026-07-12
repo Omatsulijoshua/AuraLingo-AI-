@@ -1,10 +1,60 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { SubmitSectionDto } from './dto/submit-section.dto';
+import { ExamType } from '@prisma/client';
 
 @Injectable()
 export class MockTestService {
   constructor(private prisma: PrismaService) {}
+
+  // --- CREATE TEST ---
+  async createMockTest(data: {
+    title: string;
+    examType: ExamType;
+    duration: number;
+    sections: {
+      moduleId: string;
+      title: string;
+      order: number;
+      readingPassageId?: string;
+      listeningAudioId?: string;
+      instructions: string;
+    }[];
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const mockTest = await tx.mockTest.create({
+        data: {
+          title: data.title,
+          examType: data.examType,
+          duration: data.duration,
+          active: true,
+        },
+      });
+
+      for (const sec of data.sections) {
+        await tx.mockTestSection.create({
+          data: {
+            mockTestId: mockTest.id,
+            moduleId: sec.moduleId,
+            title: sec.title,
+            order: sec.order,
+            readingPassageId: sec.readingPassageId || null,
+            listeningAudioId: sec.listeningAudioId || null,
+            instructions: sec.instructions,
+          },
+        });
+      }
+
+      return mockTest;
+    });
+  }
+
+  // --- DELETE TEST ---
+  async deleteMockTest(id: string) {
+    return this.prisma.mockTest.delete({
+      where: { id },
+    });
+  }
 
   // --- LIST TESTS ---
   async getMockTests() {

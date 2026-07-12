@@ -37,7 +37,7 @@ export default function MockExamsPage() {
   const fetchMockTests = async () => {
     try {
       const data = await api.request<any[]>('/mock-tests');
-      setMockTests(data || []);
+      setMockTests(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch mock tests', err);
     } finally {
