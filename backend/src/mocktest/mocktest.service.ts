@@ -93,22 +93,22 @@ export class MockTestService {
       },
     });
 
-    // Get the first section questions
-    const firstSection = mockTest.sections[0];
-    const questions = await this.getSectionQuestions(firstSection);
-
-    return {
-      attemptId: attempt.id,
-      mockTestTitle: mockTest.title,
-      totalDurationMinutes: customDuration || mockTest.duration,
-      firstSection: {
-        id: firstSection.id,
-        title: firstSection.title,
-        order: firstSection.order,
-        instructions: firstSection.instructions,
-        questions,
+    return this.prisma.userMockAttempt.findUnique({
+      where: { id: attempt.id },
+      include: {
+        mockTest: {
+          include: {
+            sections: {
+              include: {
+                readingPassage: true,
+                listeningAudio: true,
+              },
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
       },
-    };
+    });
   }
 
   // --- SUBMIT SECTION ---
