@@ -77,6 +77,50 @@ export class AppController {
     }
   }
 
+  @Get('make-premium')
+  async makePremium() {
+    try {
+      const student = await this.prisma.user.findFirst({
+        where: { email: 'joshuaomatsuli02@gmail.com' }
+      });
+      if (!student) return { status: 'ERROR', message: 'Student user not found' };
+
+      const premiumPlan = await this.prisma.subscriptionPlan.findFirst({
+        where: { code: 'PREMIUM' }
+      });
+      if (!premiumPlan) return { status: 'ERROR', message: 'PREMIUM plan not found' };
+
+      // Update or create subscription
+      const sub = await this.prisma.subscription.findFirst({
+        where: { userId: student.id }
+      });
+
+      if (sub) {
+        await this.prisma.subscription.update({
+          where: { id: sub.id },
+          data: {
+            planId: premiumPlan.id,
+            status: 'ACTIVE',
+            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
+          }
+        });
+      } else {
+        await this.prisma.subscription.create({
+          data: {
+            userId: student.id,
+            planId: premiumPlan.id,
+            status: 'ACTIVE',
+            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+          }
+        });
+      }
+
+      return { status: 'OK', message: 'Student upgraded to PREMIUM successfully!' };
+    } catch (err: any) {
+      return { status: 'ERROR', message: err.message || err };
+    }
+  }
+
   @Get('test-keys')
   async testKeys() {
     const settings = await this.prisma.appSettings.findMany();
