@@ -77,6 +77,77 @@ export class AppController {
     }
   }
 
+  @Get('seed-mock-exam')
+  async seedMockExam() {
+    try {
+      const listeningMod = await this.prisma.module.findFirst({ where: { name: 'LISTENING' } });
+      const readingMod = await this.prisma.module.findFirst({ where: { name: 'READING' } });
+
+      if (!listeningMod || !readingMod) {
+        return { status: 'ERROR', message: 'Listening or Reading module not found. Run auto-spin first.' };
+      }
+
+      const existing = await this.prisma.mockTest.findFirst({
+        where: { title: 'IELTS Complete Mock Test #1' }
+      });
+      if (existing) {
+        return { status: 'OK', message: 'Mock test already exists!', mockTestId: existing.id };
+      }
+
+      const passage = await this.prisma.readingPassage.create({
+        data: {
+          title: 'The Evolution of Architecture',
+          text: 'Architecture has evolved significantly over the past millennium. From Roman arches to modern glass skyscrapers, materials and structural techniques have driven style changes. Today, sustainable architectural designs prioritize ecological harmony alongside structural safety.',
+          difficulty: 'INTERMEDIATE',
+        }
+      });
+
+      const audio = await this.prisma.listeningAudio.create({
+        data: {
+          title: 'Section 1: Town Library Membership Conversation',
+          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          transcript: 'This is the transcript of the Town Library membership application process.',
+          duration: 300,
+          difficulty: 'BEGINNER',
+        }
+      });
+
+      const mockTest = await this.prisma.mockTest.create({
+        data: {
+          title: 'IELTS Complete Mock Test #1',
+          examType: 'ACADEMIC',
+          duration: 160,
+          active: true,
+        }
+      });
+
+      await this.prisma.mockTestSection.createMany({
+        data: [
+          {
+            mockTestId: mockTest.id,
+            moduleId: listeningMod.id,
+            title: 'Listening Section 1',
+            order: 1,
+            listeningAudioId: audio.id,
+            instructions: 'Listen to the conversation about the town library membership and answer questions 1-10.',
+          },
+          {
+            mockTestId: mockTest.id,
+            moduleId: readingMod.id,
+            title: 'Reading Section 1',
+            order: 2,
+            readingPassageId: passage.id,
+            instructions: 'Read the passage about the Evolution of Architecture and answer questions 11-20.',
+          }
+        ]
+      });
+
+      return { status: 'OK', message: 'Mock test seeded successfully!', mockTestId: mockTest.id };
+    } catch (err: any) {
+      return { status: 'ERROR', message: err.message || err };
+    }
+  }
+
   @Get('make-premium')
   async makePremium() {
     try {
