@@ -50,6 +50,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isAuthenticated: true,
         user: jsonDecode(userStr),
       );
+      fetchProfile();
     } else {
       state = AuthState(isAuthenticated: false);
     }
@@ -75,6 +76,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isAuthenticated: true,
           user: data['user'],
         );
+        await fetchProfile();
         return true;
       } else {
         final data = jsonDecode(response.body);
@@ -163,6 +165,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user');
     state = AuthState(isAuthenticated: false);
+  }
+
+  Future<void> fetchProfile() async {
+    try {
+      final response = await _apiService.request(
+        path: '/auth/profile',
+        method: 'GET',
+      );
+      if (response.statusCode == 200) {
+        final profile = jsonDecode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user', jsonEncode(profile));
+        state = state.copyWith(user: profile);
+      }
+    } catch (_) {}
   }
 }
 

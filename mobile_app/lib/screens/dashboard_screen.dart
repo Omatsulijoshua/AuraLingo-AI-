@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import 'writing_practice_screen.dart';
 import 'listening_practice_screen.dart';
 import 'reading_practice_screen.dart';
@@ -9,17 +11,167 @@ import 'speaking_practice_screen.dart';
 import 'mock_exams_screen.dart';
 import 'referrals_screen.dart';
 import 'subscription_screen.dart';
+import 'subscription_history_screen.dart';
 import 'support_screen.dart';
 import 'history_screen.dart';
 import 'progress_report_screen.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  final ApiService _apiService = ApiService();
+  List<dynamic> _notifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).fetchProfile();
+      _fetchNotifications();
+    });
+  }
+
+  Future<void> _fetchNotifications() async {
+    try {
+      final response = await _apiService.request(
+        path: '/notifications',
+        method: 'GET',
+      );
+      if (response.statusCode == 200 && mounted) {
+        setState(() {
+          _notifications = jsonDecode(response.body);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markNotificationRead(String id) async {
+    try {
+      final response = await _apiService.request(
+        path: '/notifications/$id/read',
+        method: 'PUT',
+      );
+      if (response.statusCode == 200) {
+        _fetchNotifications();
+      }
+    } catch (_) {}
+  }
+
+  void _showNotificationsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0B1E36),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final unread = _notifications.where((n) => !(n['read'] ?? false)).toList();
+            return Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Notifications',
+                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      if (unread.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${unread.length} new',
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _notifications.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No notifications yet.',
+                              style: TextStyle(color: Colors.white30, fontSize: 12),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _notifications.length,
+                            itemBuilder: (context, idx) {
+                              final item = _notifications[idx];
+                              final isRead = item['read'] ?? false;
+                              return InkWell(
+                                onTap: () async {
+                                  if (!isRead) {
+                                    await _markNotificationRead(item['id']);
+                                    setModalState(() {
+                                      item['read'] = true;
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: isRead ? Colors.transparent : const Color(0xFF1E3E6E).withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isRead ? const Color(0xFF1E3E6E).withValues(alpha: 0.5) : const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['title'] ?? 'Notification',
+                                        style: TextStyle(
+                                          color: isRead ? Colors.white70 : Colors.white,
+                                          fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        item['message'] ?? '',
+                                        style: TextStyle(
+                                          color: isRead ? Colors.white30 : Colors.white70,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final unreadCount = _notifications.where((n) => !(n['read'] ?? false)).length;
 
     return Scaffold(
       backgroundColor: const Color(0xFF050E1A), // Deep Navy
@@ -38,6 +190,31 @@ class DashboardScreen extends ConsumerWidget {
                 MaterialPageRoute(builder: (_) => const SupportScreen()),
               );
             },
+          ),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white70),
+                onPressed: () => _showNotificationsBottomSheet(context),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 8,
+                      minHeight: 8,
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: Colors.white70),
@@ -381,6 +558,7 @@ class DashboardScreen extends ConsumerWidget {
               children: [
                 _buildQuickAction(context, 'Progress', Icons.insights_rounded, const ProgressReportScreen()),
                 _buildQuickAction(context, 'History', Icons.history_rounded, const HistoryScreen()),
+                _buildQuickAction(context, 'Billing', Icons.receipt_long_rounded, const SubscriptionHistoryScreen()),
                 _buildQuickAction(context, 'Referrals', Icons.card_giftcard_rounded, const ReferralsScreen()),
               ],
             ),

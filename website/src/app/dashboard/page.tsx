@@ -27,6 +27,27 @@ export default function StudentDashboard() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await api.request<any[]>('/notifications');
+      setNotifications(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const markNotificationRead = async (id: string) => {
+    try {
+      await api.request(`/notifications/${id}/read`, { method: 'PUT' });
+      setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const loadProfile = async () => {
     try {
       const data = await api.request('/auth/profile');
@@ -40,6 +61,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     loadProfile();
+    fetchNotifications();
   }, []);
 
   const loadPaymentDetails = async () => {
@@ -183,6 +205,46 @@ export default function StudentDashboard() {
             <span className="text-xs text-slate-400">Streak:</span>
             <span className="text-gold font-extrabold text-sm">{profile.studyStreak} Days 🔥</span>
           </div>
+
+          {/* Notification Bell */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-1.5 rounded-lg hover:bg-primary-light/25 text-slate-300 hover:text-white transition-all cursor-pointer text-xs"
+            >
+              <span>🔔</span>
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border border-navy" />
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2.5 w-80 bg-primary border border-primary-light/45 rounded-xl shadow-2xl p-4 z-50 space-y-3 max-h-96 overflow-y-auto">
+                <h4 className="text-white font-bold text-xs border-b border-primary-light/10 pb-2">Notifications</h4>
+                {notifications.length === 0 ? (
+                  <p className="text-slate-500 text-[11px] italic py-2">No notifications yet.</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        onClick={() => !n.read && markNotificationRead(n.id)}
+                        className={`p-2.5 rounded-lg text-left text-xs transition-colors cursor-pointer border ${
+                          n.read
+                            ? 'bg-navy/40 text-slate-400 border-primary-light/10'
+                            : 'bg-primary-light/25 text-white font-semibold border-primary-light/35'
+                        }`}
+                      >
+                        <p className="font-bold text-slate-200">{n.title}</p>
+                        <p className="text-[10px] mt-0.5 leading-relaxed text-slate-300">{n.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => {
               api.clearTokens();
