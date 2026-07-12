@@ -200,112 +200,174 @@ class DashboardScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  (() {
-                    final subs = user?['subscriptions'] as List?;
-                    final Map<String, dynamic>? sub = (() {
-                      if (subs == null || subs.isEmpty) return null;
-                      final activeSub = subs.firstWhere(
-                        (s) => s['status'] == 'ACTIVE',
-                        orElse: () => subs[0],
-                      );
-                      return Map<String, dynamic>.from(activeSub);
-                    })();
-                    final planName = sub != null ? (sub['plan']?['name'] ?? 'Free Starter') : 'Free Starter';
-                    
-                    String subCountdown = '';
-                    if (sub != null && sub['status'] == 'ACTIVE' && sub['endDate'] != null) {
-                      final end = DateTime.tryParse(sub['endDate']);
-                      if (end != null) {
-                        final diff = end.difference(DateTime.now()).inDays + 1;
-                        subCountdown = diff > 0 ? ' (Ends in $diff days)' : ' (Expires today)';
-                      }
-                    }
-
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Plan: $planName$subCountdown',
-                        style: const TextStyle(
-                          color: Color(0xFF10B981),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    );
-                  })(),
                   const SizedBox(height: 16),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildStatItem(
-                        'Target Band',
-                        '${user?['targetBand'] ?? 7.0}',
-                        onTap: () {
-                          showModalBottomSheet(
-                            context: context,
-                            backgroundColor: const Color(0xFF0B1E36),
-                            shape: const RoundedRectangleBorder(
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                            ),
-                            builder: (context) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    const Text(
-                                      'Select Target Band Score',
-                                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    SizedBox(
-                                      height: 200,
-                                      child: ListView(
-                                        children: [4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((band) {
-                                          final isSelected = (user?['targetBand'] ?? 7.0).toString() == band.toString();
-                                          return ListTile(
-                                            title: Text(
-                                              'Band $band',
-                                              style: TextStyle(
-                                                color: isSelected ? const Color(0xFFD4AF37) : Colors.white,
-                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            onTap: () async {
-                                              Navigator.pop(context);
-                                              final success = await ref.read(authProvider.notifier).updateTargetBand(band);
-                                              if (success) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('Target Band updated to $band!'),
-                                                    backgroundColor: const Color(0xFF0B1E36),
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                          );
-                                        }).toList(),
+                      Expanded(
+                        child: _buildStatItem(
+                          'Target Band',
+                          'Band ${(user?['targetBand'] ?? 7.0).toStringAsFixed(1)}',
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              backgroundColor: const Color(0xFF0B1E36),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                              ),
+                              builder: (context) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      const Text(
+                                        'Select Target Band Score',
+                                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                        textAlign: TextAlign.center,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        },
+                                      const SizedBox(height: 16),
+                                      SizedBox(
+                                        height: 200,
+                                        child: ListView(
+                                          children: [4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((band) {
+                                            final isSelected = (user?['targetBand'] ?? 7.0).toString() == band.toString();
+                                            return ListTile(
+                                              title: Text(
+                                                'Band $band',
+                                                style: TextStyle(
+                                                  color: isSelected ? const Color(0xFFD4AF37) : Colors.white,
+                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                              onTap: () async {
+                                                Navigator.pop(context);
+                                                final success = await ref.read(authProvider.notifier).updateTargetBand(band);
+                                                if (success) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('Target Band updated to $band!'),
+                                                      backgroundColor: const Color(0xFF0B1E36),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
-                      (() {
-                        final progressStats = user?['progressStats'] as Map?;
-                        final currentEstimate = progressStats != null ? (progressStats['overallBandEstimate'] ?? 0.0) : 0.0;
-                        return _buildStatItem(
-                          'Current Band',
-                          currentEstimate > 0 ? '${currentEstimate.toStringAsFixed(1)} (Est.)' : '0.0',
-                        );
-                      })(),
-                      _buildStatItem('Streak', '${user?['studyStreak'] ?? 0} Days 🔥'),
+                      Expanded(
+                        child: (() {
+                          final progressStats = user?['progressStats'] as Map?;
+                          final currentEstimate = progressStats != null ? (progressStats['overallBandEstimate'] ?? 0.0) : 0.0;
+                          return _buildStatItem(
+                            'Current Estimate',
+                            currentEstimate > 0 ? 'Band ${currentEstimate.toStringAsFixed(1)}' : 'Band 0.0',
+                          );
+                        })(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: (() {
+                          final progressStats = user?['progressStats'] as Map?;
+                          final completedLessons = progressStats != null ? (progressStats['lessonsCompletedCount'] ?? 0) : 0;
+                          return _buildStatItem(
+                            'Completed Lessons',
+                            '$completedLessons Lessons',
+                          );
+                        })(),
+                      ),
+                      Expanded(
+                        child: (() {
+                          final subs = user?['subscriptions'] as List?;
+                          final Map<String, dynamic>? sub = (() {
+                            if (subs == null || subs.isEmpty) return null;
+                            final activeSub = subs.firstWhere(
+                              (s) => s['status'] == 'ACTIVE',
+                              orElse: () => subs[0],
+                            );
+                            return Map<String, dynamic>.from(activeSub);
+                          })();
+                          final planCode = sub != null ? (sub['plan']?['code'] ?? 'FREE') : 'FREE';
+
+                          int diffDays = 0;
+                          String expiryDate = '';
+                          if (sub != null && sub['status'] == 'ACTIVE' && sub['endDate'] != null) {
+                            final end = DateTime.tryParse(sub['endDate']);
+                            if (end != null) {
+                              diffDays = end.difference(DateTime.now()).inDays + 1;
+                              expiryDate = _formatDate(end);
+                            }
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Billing Status', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
+                              const SizedBox(height: 4),
+                              Text(
+                                planCode,
+                                style: TextStyle(
+                                  color: planCode == 'PREMIUM' ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (planCode == 'PREMIUM' && expiryDate.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFF1E3E6E)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text('DAYS LEFT: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 8, fontWeight: FontWeight.bold)),
+                                          Text(
+                                            '$diffDays Days',
+                                            style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w900),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text('EXPIRES: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 8, fontWeight: FontWeight.bold)),
+                                          Text(
+                                            expiryDate,
+                                            style: const TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        })(),
+                      ),
                     ],
                   ),
                 ],
@@ -498,5 +560,10 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 }
