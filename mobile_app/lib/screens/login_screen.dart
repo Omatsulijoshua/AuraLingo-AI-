@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import 'register_screen.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -37,7 +38,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           backgroundColor: Colors.green,
         ),
       );
-      // Navigation to home dashboard goes here
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
     }
   }
 
