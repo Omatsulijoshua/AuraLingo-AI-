@@ -142,6 +142,11 @@ export class AppController {
         ]
       });
 
+      // Clean old mock questions to prevent unique constraints
+      await this.prisma.practiceQuestion.deleteMany({
+        where: { id: { in: ['mock-q1', 'mock-q2', 'mock-q3', 'mock-q4'] } }
+      }).catch(() => {});
+
       // Create questions for Listening Section
       await this.prisma.practiceQuestion.createMany({
         data: [
