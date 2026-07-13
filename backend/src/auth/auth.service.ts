@@ -182,11 +182,62 @@ export class AuthService {
       where: { userId },
     });
 
+    const writingCount = await this.prisma.writingSubmission.count({ where: { userId } });
+    const speakingCount = await this.prisma.speakingSubmission.count({ where: { userId } });
+    const completedLessonsCount = totalMockTestsCount + writingCount + speakingCount;
+
+    const activeSub = user.subscriptions.find(s => s.status === 'ACTIVE');
+    let subscriptionDaysLeft = 0;
+    let subscriptionExpiresAt: string | null = null;
+    if (activeSub) {
+      const expiry = new Date(activeSub.endDate);
+      const diffTime = expiry.getTime() - Date.now();
+      subscriptionDaysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      subscriptionExpiresAt = expiry.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+
+    const mockEstimates = await this.prisma.userMockAttempt.findMany({
+      where: { userId, overallBandEstimate: { not: null } },
+      select: { overallBandEstimate: true },
+    });
+    const writingEstimates = await this.prisma.writingSubmission.findMany({
+      where: { userId, bandScoreEstimate: { not: null } },
+      select: { bandScoreEstimate: true },
+    });
+    const speakingEstimates = await this.prisma.speakingSubmission.findMany({
+      where: { userId, bandScoreEstimate: { not: null } },
+      select: { bandScoreEstimate: true },
+    });
+
+    const scores = [
+      ...mockEstimates.map(m => m.overallBandEstimate),
+      ...writingEstimates.map(w => w.bandScoreEstimate),
+      ...speakingEstimates.map(s => s.bandScoreEstimate),
+    ].filter((s): s is number => s !== null);
+
+    let currentEstimateBand = 6.0;
+    if (scores.length > 0) {
+      const sum = scores.reduce((a, b) => a + b, 0);
+      currentEstimateBand = parseFloat((sum / scores.length).toFixed(1));
+    } else {
+      if (user.currentLevel === 'BEGINNER') currentEstimateBand = 4.5;
+      else if (user.currentLevel === 'ADVANCED') currentEstimateBand = 7.5;
+      else currentEstimateBand = 6.3; // Default intermediate matching screenshot
+    }
+
     const { passwordHash: _, ...result } = user;
     return {
       ...result,
       todayAnswersCount,
       totalMockTestsCount,
+      completedLessonsCount,
+      subscriptionDaysLeft,
+      subscriptionExpiresAt,
+      currentEstimateBand,
     };
   }
 

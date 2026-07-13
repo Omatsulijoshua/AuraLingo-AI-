@@ -657,6 +657,49 @@ export default function StudentDashboard() {
               </div>
             </div>
 
+            {/* Metrics Dashboard Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl">
+              {/* Card 1: Completed Lessons */}
+              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+                <div className="text-2xl">📚</div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Completed Lessons</p>
+                  <p className="text-base font-black text-white mt-1">
+                    {profile.completedLessonsCount ?? 0} Lessons
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 2: Current Estimate */}
+              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+                <div className="text-2xl text-gold">📈</div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Current Estimate</p>
+                  <p className="text-base font-black text-gold mt-1">
+                    Band {profile.currentEstimateBand ?? 6.3}
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 3: Days Left / Expiry */}
+              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+                <div className="text-2xl">💳</div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                    {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? 'Days Left' : 'Subscription'}
+                  </p>
+                  {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? (
+                    <div className="mt-1">
+                      <p className="text-sm font-black text-white">{profile.subscriptionDaysLeft} Days</p>
+                      <p className="text-[9px] text-slate-500">Expires {profile.subscriptionExpiresAt}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-black text-slate-400 mt-1">Free Plan</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Practice Grid */}
             <div className="space-y-4">
               <h3 className="text-white font-bold text-sm tracking-wide uppercase text-gold">{_t('practice_area')}</h3>
@@ -842,6 +885,83 @@ export default function StudentDashboard() {
           <div className="space-y-8 max-w-2xl">
             <h2 className="text-xl font-bold text-slate-200">{_t('menu_settings')}</h2>
             
+            {/* User ID Badge Card */}
+            <div className="bg-primary/25 border border-primary-light/30 rounded-xl p-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
+              <div>
+                <h3 className="text-base font-bold text-white">{profile.name}</h3>
+                <p className="text-xs text-slate-400 mt-1">{profile.email}</p>
+              </div>
+              <div className="flex items-center gap-2 bg-navy/60 px-4 py-2 border border-primary-light/30 rounded-xl text-xs">
+                <span className="text-slate-400 font-medium">ID:</span>
+                <span className="font-mono text-white select-all">{profile.id}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(profile.id);
+                    alert('User ID copied to clipboard!');
+                  }}
+                  className="text-gold hover:text-gold-dark font-bold ml-2 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  📋 Copy
+                </button>
+              </div>
+            </div>
+
+            {/* My Account Quick Links Card */}
+            <div className="bg-primary/25 border border-primary-light/30 rounded-xl p-6 space-y-4">
+              <h3 className="text-xs font-bold text-gold uppercase tracking-wide">My Account</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                  onClick={() => alert('AI Progress Report is active and analyzing your profile!')}
+                  className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer"
+                >
+                  <span className="text-lg">📈</span>
+                  <div>
+                    <p className="text-white font-bold">AI Progress Report</p>
+                    <p className="text-slate-500 text-[10px] mt-0.5">Real-time profile performance</p>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('history')}
+                  className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer"
+                >
+                  <span className="text-lg">📜</span>
+                  <div>
+                    <p className="text-white font-bold">Attempt History</p>
+                    <p className="text-slate-500 text-[10px] mt-0.5">Mock tests and practice runs</p>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    alert('Referral Program balance: $' + (profile.referralBalance ?? '0.00'));
+                  }}
+                  className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer"
+                >
+                  <span className="text-lg">💸</span>
+                  <div>
+                    <p className="text-white font-bold">Referral Program</p>
+                    <p className="text-slate-500 text-[10px] mt-0.5">Invite friends and earn rewards</p>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    loadPaymentDetails();
+                    setShowPaymentModal(true);
+                  }}
+                  className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer"
+                >
+                  <span className="text-lg">💳</span>
+                  <div>
+                    <p className="text-white font-bold">Billing History</p>
+                    <p className="text-slate-500 text-[10px] mt-0.5">Subscriptions and invoices</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Preferred Language Settings Card */}
             <div className="bg-primary/25 border border-primary-light/30 rounded-xl p-6 space-y-4">
               <h3 className="text-xs font-bold text-gold uppercase tracking-wide">Language Settings</h3>

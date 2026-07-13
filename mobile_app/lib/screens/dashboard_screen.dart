@@ -214,6 +214,8 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
               ),
             ),
 
+            _buildMetricCards(user),
+
             const SizedBox(height: 24),
 
             // Practice Area Title
@@ -235,37 +237,45 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                 _buildPracticeGridItem('Writing', Icons.edit, Colors.amberAccent, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
                 }),
-                _buildPracticeGridItem('Reading', Icons.menu_book, Colors.blueAccent, () {
+                _buildPracticeGridItem('Reading', Icons.book, Colors.blueAccent, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
                 }),
-                _buildPracticeGridItem('Listening', Icons.headphones, Colors.greenAccent, () {
+                _buildPracticeGridItem('Listening', Icons.headset, Colors.greenAccent, () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
                 }),
               ],
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-            // Continue Learning Title
-            Text(_t('continue_learning'), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
+            // Daily practice task title widget
+            Text(_t('daily_practice'), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
 
-            // Today's dynamic planner task entries
-            _isLoadingTasks
+            // Daily task content
+            user == null
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
-                : _todayTasks.isEmpty
-                    ? const Center(child: Text('No daily tasks found.', style: TextStyle(color: Colors.white30, fontSize: 11)))
+                : user['dailyTasks'] == null || (user['dailyTasks'] as List).isEmpty
+                    ? Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0B1E36),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF1E3E6E)),
+                        ),
+                        width: double.infinity,
+                        child: const Text(
+                          'No daily tasks available. Recalculate your study plan in settings!',
+                          style: TextStyle(color: Colors.white54, fontSize: 12),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
                     : Column(
-                        children: _todayTasks.map<Widget>((t) {
-                          final task = Map<String, dynamic>.from(t);
-                          final module = task['module'] ?? '';
-
+                        children: (user['dailyTasks'] as List).map<Widget>((task) {
                           IconData icon;
                           Color iconColor;
-                          if (module == 'LISTENING') {
-                            icon = Icons.headphones;
-                            iconColor = Colors.greenAccent;
-                          } else if (module == 'READING') {
+                          final String module = task['module'] ?? 'READING';
+                          if (module == 'READING') {
                             icon = Icons.book;
                             iconColor = Colors.blueAccent;
                           } else if (module == 'WRITING') {
@@ -338,6 +348,80 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
             const Text('Start Practice', style: TextStyle(color: Colors.white30, fontSize: 9)),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMetricCards(Map<String, dynamic>? user) {
+    final completedCount = user?['completedLessonsCount'] ?? 0;
+    final currentEstimate = user?['currentEstimateBand'] ?? 6.3;
+    final daysLeft = user?['subscriptionDaysLeft'] ?? 0;
+    final expiresAt = user?['subscriptionExpiresAt'];
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      height: 72,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          // Completed Lessons Card
+          _buildSingleMetricCard(
+            'Completed Lessons',
+            '$completedCount Lessons',
+            Icons.menu_book,
+            const Color(0xFFD4AF37),
+          ),
+          const SizedBox(width: 12),
+          // Current Estimate Card
+          _buildSingleMetricCard(
+            'Current Estimate',
+            'Band $currentEstimate',
+            Icons.trending_up,
+            const Color(0xFFD4AF37),
+          ),
+          const SizedBox(width: 12),
+          // Expiration Card
+          _buildSingleMetricCard(
+            daysLeft > 0 ? 'Days Left' : 'Subscription',
+            daysLeft > 0 ? '$daysLeft Days' : 'Free Plan',
+            Icons.workspace_premium,
+            const Color(0xFFD4AF37),
+            subLabel: daysLeft > 0 ? 'Expires $expiresAt' : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleMetricCard(String title, String val, IconData icon, Color color, {String? subLabel}) {
+    return Container(
+      width: 170,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1E36),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E3E6E)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.white54, fontSize: 9), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Text(val, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                if (subLabel != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subLabel, style: const TextStyle(color: Colors.white30, fontSize: 7), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

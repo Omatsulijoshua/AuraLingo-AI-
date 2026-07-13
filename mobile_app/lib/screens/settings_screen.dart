@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
@@ -74,6 +75,67 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Profile Card with Name, Email & Account ID Badge
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1E36),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E3E6E)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user?['name'] ?? 'Student Name',
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user?['email'] ?? 'student@example.com',
+                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF050E1A),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF152A4A)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'ID: ${user?['id'] ?? ''}',
+                            style: const TextStyle(color: Colors.white70, fontSize: 9, fontFamily: 'monospace'),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            if (user?['id'] != null) {
+                              Clipboard.setData(ClipboardData(text: user?['id'] ?? ''));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('ID copied to clipboard!')),
+                              );
+                            }
+                          },
+                          child: const Text(
+                            'Copy',
+                            style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Plan Widget Banner
             Container(
               padding: const EdgeInsets.all(20),
@@ -161,6 +223,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         }
                       },
                     ),
+                  ),
+                ],
+              ),
+            ),
+
+            // My Account Section
+            const Text('MY ACCOUNT', style: TextStyle(color: Colors.white30, fontSize: 10, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1E36),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E3E6E)),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.analytics, color: Color(0xFFD4AF37), size: 20),
+                    title: const Text('AI Progress Report', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('AI Progress Report is active and analyzing your profile!')),
+                      );
+                    },
+                  ),
+                  const Divider(color: Color(0xFF1E3E6E), height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.history, color: Color(0xFFD4AF37), size: 20),
+                    title: const Text('Attempt History', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Navigate to the History tab below to see your attempt history!')),
+                      );
+                    },
+                  ),
+                  const Divider(color: Color(0xFF1E3E6E), height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.share, color: Color(0xFFD4AF37), size: 20),
+                    title: const Text('Referral Program', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Referral Program details and links are available on your account!')),
+                      );
+                    },
+                  ),
+                  const Divider(color: Color(0xFF1E3E6E), height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.credit_card, color: Color(0xFFD4AF37), size: 20),
+                    title: const Text('Billing History', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+                    },
                   ),
                 ],
               ),
