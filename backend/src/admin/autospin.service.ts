@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AiService } from './ai.service';
+import { join } from 'path';
+import * as fs from 'fs';
+import axios from 'axios';
 
 @Injectable()
 export class AutoSpinService {
@@ -112,114 +115,189 @@ export class AutoSpinService {
     // 1. Listening Questions Step
     if (listeningCount > 0 && listeningMod) {
       activeSteps.push({
-        name: `Generating ${listeningCount} Listening Practice Questions (${difficulty}) on theme: ${theme}`,
+        name: `Generating Listening Practice Track and ${listeningCount} Questions (${difficulty}) on theme: ${theme}`,
         action: async () => {
-          const prompt = `You are an expert IELTS Question Generator. Generate exactly ${listeningCount} IELTS practice questions for the module "Listening" on the theme "${theme}".
-Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
-Each object must match this schema:
+          const prompt = `You are an expert IELTS Listening Generator. Generate an IELTS Listening practice track dialogue/lecture transcript and a set of ${listeningCount} questions based on the theme "${theme}".
+Difficulty: ${difficulty}.
+Return a valid JSON object matching this schema. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 {
-  "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
-  "instruction": "string describing the test instruction",
-  "questionText": "the actual question text with blanks if applicable",
-  "explanation": "detailed explanation of the correct answer",
-  "options": [
-    { "optionText": "option label", "optionLetter": "A", "isCorrect": true },
-    { "optionText": "option label", "optionLetter": "B", "isCorrect": false }
-  ],
-  "answers": [
-    { "correctText": "the exact string matches" }
+  "title": "IELTS Listening Part 1: Conversation about...",
+  "transcript": "Full dialogue or monologue script. Use clear turn-taking markers like Speaker A: and Speaker B:.",
+  "duration": 300,
+  "questions": [
+    {
+      "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
+      "instruction": "Answer the question based on the listening track.",
+      "questionText": "What is...",
+      "explanation": "Detailed explanation of the correct answer.",
+      "options": [
+        { "optionText": "option label", "optionLetter": "A", "isCorrect": true },
+        { "optionText": "option label", "optionLetter": "B", "isCorrect": false }
+      ],
+      "answers": [
+        { "correctText": "the exact text answer" }
+      ]
+    }
   ]
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
           const jsonText = this.extractJson(aiResponse.text);
-          const questions = JSON.parse(jsonText);
-          for (const q of questions) {
+          const data = JSON.parse(jsonText);
+
+          // Try to generate TTS audio using OpenAI if configured
+          let audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Fallback
+          
+          const openAiKeySetting = await this.prisma.appSettings.findFirst({
+            where: { key: 'ai_openai_key' }
+          });
+          const openAiKey = openAiKeySetting ? this.aiService.decryptKey(openAiKeySetting.value) : '';
+
+          if (openAiKey) {
+            try {
+              const ttsResponse = await axios.post(
+                'https://api.openai.com/v1/audio/speech',
+                {
+                  model: 'tts-1',
+                  input: data.transcript,
+                  voice: 'alloy',
+                  response_format: 'mp3',
+                },
+                {
+                  headers: {
+                    Authorization: `Bearer ${openAiKey}`,
+                    'Content-Type': 'application/json',
+                  },
+                  responseType: 'arraybuffer',
+                }
+              );
+              
+              const uploadsDir = join(__dirname, '..', '..', 'uploads', 'listening');
+              if (!fs.existsSync(uploadsDir)) {
+                fs.mkdirSync(uploadsDir, { recursive: true });
+              }
+              const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`;
+              const filepath = join(uploadsDir, filename);
+              fs.writeFileSync(filepath, Buffer.from(ttsResponse.data));
+              audioUrl = `/uploads/listening/${filename}`;
+            } catch (ttsErr: any) {
+              this.logger.warn(`[AI_TTS_GENERATION_FAILED] Falling back: ${ttsErr.message}`);
+            }
+          }
+
+          const audio = await this.prisma.listeningAudio.create({
+            data: {
+              title: data.title,
+              audioUrl: audioUrl,
+              transcript: data.transcript,
+              duration: data.duration || 300,
+              difficulty: difficulty as any,
+            }
+          });
+
+          // Create the questions
+          for (const q of data.questions) {
             await this.prisma.practiceQuestion.create({
               data: {
                 moduleId: listeningMod.id,
+                listeningAudioId: audio.id,
                 questionType: q.questionType || 'MULTIPLE_CHOICE',
-                instruction: q.instruction || q.instructions || q.info || '',
-                questionText: q.questionText || q.text || q.question || '',
-                explanation: q.explanation || q.reason || q.explanationText || '',
-                difficulty: difficulty,
+                instruction: q.instruction || 'Answer the question based on the listening track.',
+                questionText: q.questionText || '',
+                explanation: q.explanation || '',
+                difficulty: difficulty as any,
                 options: q.options ? {
                   createMany: {
                     data: q.options.map((opt: any) => ({
-                      optionText: opt.optionText || opt.text || '',
+                      optionText: opt.optionText || '',
                       optionLetter: opt.optionLetter || '',
-                      isCorrect: opt.isCorrect !== undefined ? !!opt.isCorrect : false,
+                      isCorrect: !!opt.isCorrect,
                     })),
                   }
                 } : undefined,
                 answers: q.answers ? {
                   createMany: {
                     data: q.answers.map((ans: any) => ({
-                      correctText: ans.correctText || ans.text || '',
-                      acceptableTexts: ans.acceptableTexts || [],
+                      correctText: ans.correctText || '',
                     })),
                   }
                 } : undefined,
-              },
+              }
             });
           }
-        }
+        },
       });
     }
 
     // 2. Reading Questions Step
     if (readingCount > 0 && readingMod) {
       activeSteps.push({
-        name: `Generating ${readingCount} Reading Practice Questions (${difficulty}) on theme: ${theme}`,
+        name: `Generating Reading Passage and ${readingCount} Questions (${difficulty}) on theme: ${theme}`,
         action: async () => {
-          const prompt = `You are an expert IELTS Question Generator. Generate exactly ${readingCount} IELTS practice questions for the module "Reading" on the theme "${theme}".
-Difficulty: ${difficulty}. Return a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
-Each object must match this schema:
+          const prompt = `You are an expert IELTS Reading Generator. Generate an IELTS Reading passage (long text/article) and a set of ${readingCount} questions based on the theme "${theme}".
+Difficulty: ${difficulty}.
+Return a valid JSON object matching this schema. Do not include markdown code block syntax (like \`\`\`json). Output raw JSON.
 {
-  "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
-  "instruction": "string describing the test instruction",
-  "questionText": "the actual question text with blanks if applicable",
-  "explanation": "detailed explanation of the correct answer",
-  "options": [
-    { "optionText": "option label", "optionLetter": "A", "isCorrect": true },
-    { "optionText": "option label", "optionLetter": "B", "isCorrect": false }
-  ],
-  "answers": [
-    { "correctText": "the exact string matches" }
+  "title": "The History/Science of...",
+  "text": "The full passage text (several paragraphs long) discussing the subject.",
+  "questions": [
+    {
+      "questionType": "MULTIPLE_CHOICE", // or "FILL_IN_THE_BLANK"
+      "instruction": "Answer the question based on the reading passage.",
+      "questionText": "What does...",
+      "explanation": "Detailed explanation of the correct answer.",
+      "options": [
+        { "optionText": "option label", "optionLetter": "A", "isCorrect": true },
+        { "optionText": "option label", "optionLetter": "B", "isCorrect": false }
+      ],
+      "answers": [
+        { "correctText": "the exact text answer" }
+      ]
+    }
   ]
 }`;
           const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
           const jsonText = this.extractJson(aiResponse.text);
-          const questions = JSON.parse(jsonText);
-          for (const q of questions) {
+          const data = JSON.parse(jsonText);
+
+          const passage = await this.prisma.readingPassage.create({
+            data: {
+              title: data.title,
+              text: data.text,
+              difficulty: difficulty as any,
+            }
+          });
+
+          // Create the questions
+          for (const q of data.questions) {
             await this.prisma.practiceQuestion.create({
               data: {
                 moduleId: readingMod.id,
+                readingPassageId: passage.id,
                 questionType: q.questionType || 'MULTIPLE_CHOICE',
-                instruction: q.instruction || q.instructions || q.info || '',
-                questionText: q.questionText || q.text || q.question || '',
-                explanation: q.explanation || q.reason || q.explanationText || '',
-                difficulty: difficulty,
+                instruction: q.instruction || 'Answer the question based on the reading passage.',
+                questionText: q.questionText || '',
+                explanation: q.explanation || '',
+                difficulty: difficulty as any,
                 options: q.options ? {
                   createMany: {
                     data: q.options.map((opt: any) => ({
-                      optionText: opt.optionText || opt.text || '',
+                      optionText: opt.optionText || '',
                       optionLetter: opt.optionLetter || '',
-                      isCorrect: opt.isCorrect !== undefined ? !!opt.isCorrect : false,
+                      isCorrect: !!opt.isCorrect,
                     })),
                   }
                 } : undefined,
                 answers: q.answers ? {
                   createMany: {
                     data: q.answers.map((ans: any) => ({
-                      correctText: ans.correctText || ans.text || '',
-                      acceptableTexts: ans.acceptableTexts || [],
+                      correctText: ans.correctText || '',
                     })),
                   }
                 } : undefined,
-              },
+              }
             });
           }
-        }
+        },
       });
     }
 

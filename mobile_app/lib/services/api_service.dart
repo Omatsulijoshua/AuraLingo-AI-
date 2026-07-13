@@ -7,6 +7,8 @@ class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS simulator/web
   static const String _baseUrl = 'https://bandup-ielts.onrender.com/api';
   
+  String get assetBaseUrl => _baseUrl.replaceAll('/api', '');
+  
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal();

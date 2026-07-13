@@ -282,6 +282,34 @@ export class AuthService {
       data: { targetBand },
     });
   }
+
+  async updateOnboarding(
+    userId: string,
+    dto: {
+      targetExam?: 'ACADEMIC' | 'GENERAL';
+      targetBand?: number;
+      currentLevel?: string;
+      weaknesses?: string[];
+      studyTimeCommitment?: string;
+      testDate?: string;
+      hasBookedTest?: boolean;
+      preferredLanguage?: string;
+    },
+  ) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        targetExam: dto.targetExam ? (dto.targetExam as any) : undefined,
+        targetBand: dto.targetBand !== undefined ? dto.targetBand : undefined,
+        currentLevel: dto.currentLevel || undefined,
+        weaknesses: dto.weaknesses || undefined,
+        studyTimeCommitment: dto.studyTimeCommitment || undefined,
+        testDate: dto.testDate ? new Date(dto.testDate) : undefined,
+        hasBookedTest: dto.hasBookedTest !== undefined ? dto.hasBookedTest : undefined,
+        preferredLanguage: dto.preferredLanguage || undefined,
+      },
+    });
+  }
 }
 
 // Exception shim helper

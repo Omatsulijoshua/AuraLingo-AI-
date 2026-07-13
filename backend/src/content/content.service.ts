@@ -36,7 +36,16 @@ export class ContentService {
   }
 
   async getReadingPassages() {
-    return this.prisma.readingPassage.findMany();
+    return this.prisma.readingPassage.findMany({
+      include: {
+        practiceQuestions: {
+          include: {
+            options: true,
+            answers: true,
+          },
+        },
+      },
+    });
   }
 
   // --- AUDIOS (LISTENING) ---
@@ -47,7 +56,16 @@ export class ContentService {
   }
 
   async getListeningAudios() {
-    return this.prisma.listeningAudio.findMany();
+    return this.prisma.listeningAudio.findMany({
+      include: {
+        practiceQuestions: {
+          include: {
+            options: true,
+            answers: true,
+          },
+        },
+      },
+    });
   }
 
   // --- LESSONS ---
@@ -792,6 +810,106 @@ CRITICAL: Return ONLY a valid JSON object matching the format below. Do not incl
         mode: 'EXAMINER_DRAFT2',
       },
     });
+  }
+
+  async getPersonalizedSchedule(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const audios = await this.prisma.listeningAudio.findMany({ select: { id: true, title: true } });
+    const passages = await this.prisma.readingPassage.findMany({ select: { id: true, title: true } });
+    const writingPrompts = await this.prisma.practiceQuestion.findMany({
+      where: { module: { name: 'WRITING' } },
+      select: { id: true, instruction: true }
+    });
+    const speakingPrompts = await this.prisma.speakingPrompt.findMany({ select: { id: true, topic: true } });
+
+    let dailyTasksCount = 2;
+    if (user.studyTimeCommitment === '15m') dailyTasksCount = 1;
+    else if (user.studyTimeCommitment === '30m') dailyTasksCount = 2;
+    else if (user.studyTimeCommitment === '1h') dailyTasksCount = 3;
+    else if (user.studyTimeCommitment === '2h+') dailyTasksCount = 4;
+
+    const schedule = [];
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const now = new Date();
+
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() + dayIndex);
+
+      const dayName = weekdays[targetDate.getDay()];
+      const dayTasks = [];
+
+      const prioritizedModules: string[] = [];
+      if (user.weaknesses && user.weaknesses.length > 0) {
+        if (user.weaknesses.includes('speaking_confidence')) prioritizedModules.push('SPEAKING');
+        if (user.weaknesses.includes('writing_structure')) prioritizedModules.push('WRITING');
+        if (user.weaknesses.includes('reading_speed')) prioritizedModules.push('READING');
+        if (user.weaknesses.includes('listening_comprehension')) prioritizedModules.push('LISTENING');
+      }
+
+      const defaultRotation = ['LISTENING', 'WRITING', 'READING', 'SPEAKING'];
+      const modulesToAssign = [...prioritizedModules];
+      while (modulesToAssign.length < dailyTasksCount) {
+        for (const m of defaultRotation) {
+          if (!modulesToAssign.includes(m) && modulesToAssign.length < dailyTasksCount) {
+            modulesToAssign.push(m);
+          }
+        }
+        if (modulesToAssign.length < dailyTasksCount) {
+          modulesToAssign.push(defaultRotation[modulesToAssign.length % defaultRotation.length]);
+        }
+      }
+
+      for (let i = 0; i < dailyTasksCount; i++) {
+        const moduleName = modulesToAssign[i];
+        let taskTitle = '';
+        let entityId = '';
+
+        if (moduleName === 'LISTENING' && audios.length > 0) {
+          const item = audios[(dayIndex + i) % audios.length];
+          taskTitle = `Listening: ${item.title}`;
+          entityId = item.id;
+        } else if (moduleName === 'READING' && passages.length > 0) {
+          const item = passages[(dayIndex + i) % passages.length];
+          taskTitle = `Reading: ${item.title}`;
+          entityId = item.id;
+        } else if (moduleName === 'WRITING' && writingPrompts.length > 0) {
+          const item = writingPrompts[(dayIndex + i) % writingPrompts.length];
+          taskTitle = `Writing: ${item.instruction.substring(0, 40)}...`;
+          entityId = item.id;
+        } else if (moduleName === 'SPEAKING' && speakingPrompts.length > 0) {
+          const item = speakingPrompts[(dayIndex + i) % speakingPrompts.length];
+          taskTitle = `Speaking: ${item.topic}`;
+          entityId = item.id;
+        } else {
+          taskTitle = `${moduleName} Practice Session`;
+          entityId = 'practice-session';
+        }
+
+        dayTasks.push({
+          id: `task-${dayIndex}-${i}-${entityId}`,
+          title: taskTitle,
+          module: moduleName,
+          type: dayIndex === 0 ? 'Today\'s Task' : 'Upcoming',
+          entityId: entityId,
+          completed: false,
+        });
+      }
+
+      schedule.push({
+        date: targetDate.toISOString().split('T')[0],
+        dayLabel: dayName,
+        tasks: dayTasks,
+      });
+    }
+
+    return schedule;
   }
 }
 

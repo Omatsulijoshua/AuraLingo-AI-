@@ -54,8 +54,20 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put('update-target-band')
-  async updateTargetBand(@Req() req: any, @Body('targetBand') targetBand: number) {
-    return this.authService.updateTargetBand(req.user.sub, targetBand);
+  @Put('onboarding')
+  async updateOnboarding(
+    @Req() req: any,
+    @Body() dto: {
+      targetExam?: 'ACADEMIC' | 'GENERAL';
+      targetBand?: number;
+      currentLevel?: string;
+      weaknesses?: string[];
+      studyTimeCommitment?: string;
+      testDate?: string;
+      hasBookedTest?: boolean;
+      preferredLanguage?: string;
+    },
+  ) {
+    return this.authService.updateOnboarding(req.user.sub, dto);
   }
 }

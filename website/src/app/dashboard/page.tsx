@@ -3,20 +3,37 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-
-interface Stats {
-  overallBandEstimate: number;
-  studyStreak: number;
-  timeSpentStudying: number;
-  lessonsCompletedCount: number;
-  mockTestsCompletedCount: number;
-  weakQuestionTypes: string[];
-}
+import { getTranslation, languagesList } from '@/lib/localization';
 
 export default function StudentDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Active Tab
+  const [activeTab, setActiveTab] = useState<'home' | 'plan' | 'tools' | 'history' | 'settings'>('home');
+  const [locale, setLocale] = useState('EN');
+
+  // Onboarding parameters
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [targetBand, setTargetBand] = useState(7.0);
+  const [testType, setTestType] = useState('ACADEMIC');
+  const [hasBookedTest, setHasBookedTest] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState('INTERMEDIATE');
+  const [selectedWeaknesses, setSelectedWeaknesses] = useState<string[]>([]);
+  const [studyTimeCommitment, setStudyTimeCommitment] = useState('1h');
+
+  // Schedule Plan State
+  const [schedule, setSchedule] = useState<any[]>([]);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [loadingSchedule, setLoadingSchedule] = useState(false);
+
+  // Band Calculator state
+  const [listeningScore, setListeningScore] = useState(6.0);
+  const [readingScore, setReadingScore] = useState(6.0);
+  const [writingScore, setWritingScore] = useState(6.0);
+  const [speakingScore, setSpeakingScore] = useState(6.0);
+  const [calculatedBand, setCalculatedBand] = useState(6.0);
 
   // Manual payment modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -29,6 +46,8 @@ export default function StudentDashboard() {
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const _t = (key: string) => getTranslation(key, locale);
 
   const fetchNotifications = async () => {
     try {
@@ -50,8 +69,23 @@ export default function StudentDashboard() {
 
   const loadProfile = async () => {
     try {
-      const data = await api.request('/auth/profile');
+      const data = await api.request<any>('/auth/profile');
       setProfile(data);
+      if (data) {
+        setLocale(data.preferredLanguage || 'EN');
+        setTargetBand(data.targetBand || 7.0);
+        setTestType(data.targetExam || 'ACADEMIC');
+        if (data.currentLevel) {
+          setCurrentLevel(data.currentLevel);
+        }
+        if (data.weaknesses) {
+          setSelectedWeaknesses(data.weaknesses);
+        }
+        if (data.studyTimeCommitment) {
+          setStudyTimeCommitment(data.studyTimeCommitment);
+        }
+        setHasBookedTest(data.hasBookedTest || false);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load user profile');
     } finally {
@@ -59,16 +93,48 @@ export default function StudentDashboard() {
     }
   };
 
+  const fetchSchedule = async () => {
+    setLoadingSchedule(true);
+    try {
+      const data = await api.request<any[]>('/content/schedule');
+      setSchedule(data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingSchedule(false);
+    }
+  };
+
   useEffect(() => {
     loadProfile();
     fetchNotifications();
+    const storedLocale = localStorage.getItem('preferredLanguage') || 'EN';
+    setLocale(storedLocale);
   }, []);
+
+  useEffect(() => {
+    if (profile && profile.currentLevel) {
+      fetchSchedule();
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    const avg = (listeningScore + readingScore + writingScore + speakingScore) / 4.0;
+    const fraction = avg - Math.floor(avg);
+    let rounded = Math.floor(avg);
+    if (fraction >= 0.75) {
+      rounded += 1.0;
+    } else if (fraction >= 0.25) {
+      rounded += 0.5;
+    }
+    setCalculatedBand(rounded);
+  }, [listeningScore, readingScore, writingScore, speakingScore]);
 
   const loadPaymentDetails = async () => {
     try {
       const [info, activePlans] = await Promise.all([
-        api.request('/subscriptions/payment-info'),
-        api.request('/subscriptions/plans'),
+        api.request<any>('/subscriptions/payment-info'),
+        api.request<any[]>('/subscriptions/plans'),
       ]);
       setPaymentInfo(info);
       const filtered = activePlans.filter((p: any) => p.code !== 'FREE');
@@ -127,6 +193,42 @@ export default function StudentDashboard() {
     }
   };
 
+  const saveOnboardingProfile = async (completed: boolean = true) => {
+    setLoading(true);
+    try {
+      await api.request('/auth/onboarding', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetExam: testType,
+          targetBand: targetBand,
+          currentLevel: completed ? currentLevel : 'INTERMEDIATE',
+          weaknesses: selectedWeaknesses,
+          studyTimeCommitment: studyTimeCommitment,
+          hasBookedTest: hasBookedTest,
+          preferredLanguage: locale,
+        }),
+      });
+      await loadProfile();
+    } catch (e: any) {
+      alert(e.message || 'Failed to submit preferences');
+      setLoading(false);
+    }
+  };
+
+  const handleLanguageChange = (code: string) => {
+    setLocale(code);
+    localStorage.setItem('preferredLanguage', code);
+    if (profile) {
+      api.request('/auth/onboarding', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferredLanguage: code }),
+      }).then(() => loadProfile());
+    }
+  };
+
+  // 1. Loading screen
   if (loading) {
     return (
       <div className="min-h-screen bg-navy flex items-center justify-center text-white">
@@ -135,407 +237,652 @@ export default function StudentDashboard() {
     );
   }
 
-  if (error || !profile) {
+  // 2. Onboarding wizard blocker
+  if (profile && !profile.currentLevel) {
     return (
-      <div className="min-h-screen bg-navy flex items-center justify-center p-6">
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-xl text-center max-w-md">
-          <p className="font-bold">Error loading dashboard</p>
-          <p className="text-xs mt-2">{error || 'Please sign in again.'}</p>
-          <Link href="/auth/login" className="mt-4 inline-block bg-gold text-primary font-bold px-4 py-2 rounded-lg text-xs hover:bg-gold-dark">
-            Go to Login
-          </Link>
+      <div className="min-h-screen bg-navy text-white flex flex-col items-center justify-center p-4">
+        <div className="bg-primary border border-primary-light rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative">
+          
+          {/* Header language switcher */}
+          <div className="absolute top-4 right-4">
+            <select
+              value={locale}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="bg-navy/80 border border-primary-light rounded-lg px-2 py-1 text-xs text-white"
+            >
+              {languagesList.map(l => (
+                <option key={l.code} value={l.code}>{l.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Steps */}
+          {onboardingStep === 0 && (
+            <div className="space-y-6 text-center">
+              <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center text-white text-3xl font-extrabold mx-auto shadow-lg shadow-red-600/30">
+                IELTS
+              </div>
+              <h2 className="text-2xl font-black text-white">{_t('welcome_title')}</h2>
+              <p className="text-slate-400 text-sm max-w-md mx-auto">{_t('welcome_desc')}</p>
+              
+              <div className="grid grid-cols-3 gap-4 py-4 bg-navy/40 rounded-xl border border-primary-light/10 max-w-md mx-auto">
+                <div>
+                  <p className="text-lg font-black text-white">4.8 ★</p>
+                  <p className="text-[10px] text-slate-500">Rating</p>
+                </div>
+                <div>
+                  <p className="text-lg font-black text-white">300+</p>
+                  <p className="text-[10px] text-slate-500">Mock Tests</p>
+                </div>
+                <div>
+                  <p className="text-lg font-black text-white">+1.5</p>
+                  <p className="text-[10px] text-slate-500">Avg Band ↑</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setOnboardingStep(1)}
+                className="w-full max-w-md mx-auto block bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer"
+              >
+                {_t('get_started')}
+              </button>
+            </div>
+          )}
+
+          {onboardingStep === 1 && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold">{_t('target_score_title')}</h3>
+              <p className="text-slate-400 text-xs">{_t('target_score_desc')}</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                {[5.5, 6.0, 6.5, 7.0, 7.5, 8.0].map((band) => (
+                  <button
+                    key={band}
+                    onClick={() => setTargetBand(band)}
+                    className={`p-4 rounded-xl border text-left flex justify-between items-center transition-all ${
+                      targetBand === band
+                        ? 'bg-red-600/25 border-gold text-white'
+                        : 'bg-navy/60 border-primary-light/50 text-slate-300'
+                    }`}
+                  >
+                    <span className="font-bold text-sm">Band {band}</span>
+                    <span className="text-[10px] opacity-60">
+                      {band >= 7.5 ? 'Expert' : (band >= 7.0 ? 'Very Good' : 'Competent')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setOnboardingStep(0)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
+                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 2 && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold">{_t('test_type_title')}</h3>
+              <p className="text-slate-400 text-xs">{_t('test_type_desc')}</p>
+
+              <div className="space-y-4">
+                <button
+                  onClick={() => setTestType('ACADEMIC')}
+                  className={`w-full p-5 rounded-xl border text-left flex items-center gap-4 transition-all ${
+                    testType === 'ACADEMIC' ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                  }`}
+                >
+                  <span className="text-2xl">🎓</span>
+                  <div>
+                    <h4 className="font-bold text-sm">{_t('academic')}</h4>
+                    <p className="text-slate-400 text-[10px] mt-1">{_t('academic_desc')}</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setTestType('GENERAL')}
+                  className={`w-full p-5 rounded-xl border text-left flex items-center gap-4 transition-all ${
+                    testType === 'GENERAL' ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                  }`}
+                >
+                  <span className="text-2xl">💼</span>
+                  <div>
+                    <h4 className="font-bold text-sm">{_t('general')}</h4>
+                    <p className="text-slate-400 text-[10px] mt-1">{_t('general_desc')}</p>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setOnboardingStep(1)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
+                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 3 && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold">{_t('test_date_title')}</h3>
+              <p className="text-slate-400 text-xs">{_t('test_date_desc')}</p>
+
+              <div className="bg-navy/60 border border-primary-light/50 p-4 rounded-xl flex justify-between items-center">
+                <span className="text-sm font-bold">{_t('booked_switch')}</span>
+                <input
+                  type="checkbox"
+                  checked={hasBookedTest}
+                  onChange={(e) => setHasBookedTest(e.target.checked)}
+                  className="w-5 h-5 rounded accent-gold"
+                />
+              </div>
+
+              <div className="bg-navy/40 border border-primary-light/20 p-6 rounded-xl text-center space-y-3">
+                <span className="text-3xl text-gold">📅</span>
+                <h4 className="font-bold text-sm">{_t('no_worries')}</h4>
+                <p className="text-slate-400 text-[10px] leading-relaxed max-w-sm mx-auto">{_t('flexible_plan')}</p>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
+                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 4 && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold">{_t('level_title')}</h3>
+              <p className="text-slate-400 text-xs">{_t('level_desc')}</p>
+
+              <div className="space-y-3">
+                {[
+                  { code: 'BEGINNER', label: _t('level_beg'), desc: _t('level_beg_desc'), icon: '🌱' },
+                  { code: 'INTERMEDIATE', label: _t('level_int'), desc: _t('level_int_desc'), icon: '📖' },
+                  { code: 'ADVANCED', label: _t('level_adv'), desc: _t('level_adv_desc'), icon: '🚀' },
+                ].map((lvl) => (
+                  <button
+                    key={lvl.code}
+                    onClick={() => setCurrentLevel(lvl.code)}
+                    className={`w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all ${
+                      currentLevel === lvl.code ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                    }`}
+                  >
+                    <span className="text-xl">{lvl.icon}</span>
+                    <div>
+                      <h4 className="font-bold text-sm">{lvl.label}</h4>
+                      <p className="text-slate-400 text-[10px] mt-0.5">{lvl.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
+                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 5 && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold">{_t('stoppers_title')}</h3>
+              <p className="text-slate-400 text-xs">{_t('stoppers_desc')}</p>
+
+              <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                {[
+                  { key: 'speaking_confidence', label: _t('stop_speaking') },
+                  { key: 'reading_speed', label: _t('stop_reading') },
+                  { key: 'writing_structure', label: _t('stop_writing') },
+                  { key: 'listening_comprehension', label: _t('stop_listening') },
+                  { key: 'time_management', label: _t('stop_time') },
+                  { key: 'vocabulary', label: _t('stop_vocab') },
+                ].map((item) => {
+                  const isSelected = selectedWeaknesses.includes(item.key);
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedWeaknesses(selectedWeaknesses.filter(k => k !== item.key));
+                        } else {
+                          setSelectedWeaknesses([...selectedWeaknesses, item.key]);
+                        }
+                      }}
+                      className={`p-3 rounded-xl border text-left text-xs font-bold transition-all ${
+                        isSelected ? 'bg-red-600/25 border-gold text-white' : 'bg-navy/60 border-primary-light/50 text-slate-300'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
+                <button onClick={() => setOnboardingStep(6)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 6 && (
+            <div className="space-y-6">
+              <h3 className="text-xl font-bold">{_t('study_time_title')}</h3>
+              <p className="text-slate-400 text-xs">{_t('study_time_desc')}</p>
+
+              <div className="space-y-3">
+                {[
+                  { code: '15m', label: _t('time_15'), desc: _t('time_15_desc'), icon: '⚡' },
+                  { code: '30m', label: _t('time_30'), desc: _t('time_30_desc'), icon: '☕' },
+                  { code: '1h', label: _t('time_1h'), desc: _t('time_1h_desc'), icon: '📚' },
+                  { code: '2h+', label: _t('time_2h'), desc: _t('time_2h_desc'), icon: '🚀' },
+                ].map((item) => (
+                  <button
+                    key={item.code}
+                    onClick={() => setStudyTimeCommitment(item.code)}
+                    className={`w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all ${
+                      studyTimeCommitment === item.code ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                    }`}
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    <div>
+                      <h4 className="font-bold text-sm">{item.label}</h4>
+                      <p className="text-slate-400 text-[10px] mt-0.5">{item.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
+                <button onClick={() => setOnboardingStep(7)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 7 && (
+            <div className="space-y-6 text-center">
+              <h3 className="text-xl font-bold">{_t('projected_title')}</h3>
+              <p className="text-slate-400 text-xs">{_t('projected_desc')}</p>
+
+              <div className="w-40 h-40 rounded-full border-8 border-red-600 flex flex-col justify-center items-center mx-auto bg-navy/40">
+                <span className="text-[10px] text-slate-500">Band</span>
+                <span className="text-3xl font-black text-white">{targetBand}</span>
+                <span className="text-[10px] text-green-400 font-bold mt-1">↗ +2.5</span>
+              </div>
+
+              <button
+                onClick={() => saveOnboardingProfile(true)}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer mt-4"
+              >
+                Finish & Open Dashboard
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
     );
   }
 
-  const sub = profile.subscriptions?.find((s: any) => s.status === 'ACTIVE') || profile.subscriptions?.[0];
-  const stats = profile.progressStats || {
-    overallBandEstimate: 0,
-    timeSpentStudying: 0,
-    lessonsCompletedCount: 0,
-    mockTestsCompletedCount: 0,
-    weakQuestionTypes: [],
-  };
-
-  const modules = [
-    { name: 'Listening Practice', path: '/dashboard/listening', icon: '🎧', color: 'border-l-blue-500', desc: 'Audio clips, form completion, and map labeling' },
-    { name: 'Reading Practice', path: '/dashboard/reading', icon: '📖', color: 'border-l-emerald', desc: 'Academic and general training long-passages' },
-    { name: 'Writing Correction', path: '/dashboard/writing', icon: '✍️', color: 'border-l-gold', desc: 'Instant AI grading for Task 1 and Task 2 essays' },
-    { name: 'Speaking Feedback', path: '/dashboard/speaking', icon: '🎙️', color: 'border-l-purple-500', desc: 'Speech-to-text pronunciation and vocabulary review' },
-  ];
-
+  // 3. Authenticated Dashboard with Tabs
   return (
     <div className="min-h-screen bg-navy text-white flex flex-col">
-      {/* Header */}
-      <header className="h-16 border-b border-primary-light/30 bg-primary/45 backdrop-blur-md flex items-center justify-between px-8 md:px-16">
+      
+      {/* Header Layout */}
+      <header className="h-16 border-b border-primary-light/30 bg-primary/45 backdrop-blur-md flex items-center justify-between px-8 md:px-16 z-30">
         <div className="flex items-center gap-8">
           <Link href="/" className="text-xl font-bold tracking-wider flex items-center gap-1.5">
             <span className="text-gold">BandUp</span> IELTS
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-xs font-bold text-slate-300">
-            <Link href="/dashboard/progress" className="hover:text-gold transition-colors">
-              📈 AI Progress Report
-            </Link>
-            <Link href="/dashboard/history" className="hover:text-gold transition-colors">
-              📜 Attempt History
-            </Link>
-             <Link href="/dashboard/referrals" className="hover:text-gold transition-colors">
-              💸 Referral Program
-             </Link>
-             <Link href="/dashboard/support" className="hover:text-gold transition-colors">
-              💬 Help & Support
-             </Link>
-             <Link href="/dashboard/billing" className="hover:text-gold transition-colors">
-              💳 Billing History
-             </Link>
-             <button
-               onClick={() => {
-                 loadPaymentDetails();
-                 setShowPaymentModal(true);
-               }}
-               className="bg-gold hover:bg-gold-dark text-primary font-black px-3.5 py-1.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
-             >
-               💳 Upgrade Premium
-             </button>
+          <nav className="hidden md:flex items-center gap-6 text-xs font-bold">
+            <button
+              onClick={() => setActiveTab('home')}
+              className={`transition-colors ${activeTab === 'home' ? 'text-gold' : 'text-slate-300 hover:text-white'}`}
+            >
+              {_t('menu_home')}
+            </button>
+            <button
+              onClick={() => setActiveTab('plan')}
+              className={`transition-colors ${activeTab === 'plan' ? 'text-gold' : 'text-slate-300 hover:text-white'}`}
+            >
+              {_t('menu_plan')}
+            </button>
+            <button
+              onClick={() => setActiveTab('tools')}
+              className={`transition-colors ${activeTab === 'tools' ? 'text-gold' : 'text-slate-300 hover:text-white'}`}
+            >
+              {_t('menu_tools')}
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`transition-colors ${activeTab === 'history' ? 'text-gold' : 'text-slate-300 hover:text-white'}`}
+            >
+              {_t('menu_history')}
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`transition-colors ${activeTab === 'settings' ? 'text-gold' : 'text-slate-300 hover:text-white'}`}
+            >
+              {_t('menu_settings')}
+            </button>
           </nav>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Streak:</span>
-            <span className="text-gold font-extrabold text-sm">{profile.studyStreak} Days 🔥</span>
-          </div>
 
-          {/* Notification Bell */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-1.5 rounded-lg hover:bg-primary-light/25 text-slate-300 hover:text-white transition-all cursor-pointer text-xs"
-            >
-              <span>🔔</span>
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border border-navy" />
-              )}
-            </button>
-
-            {showNotifications && (
-              <div className="absolute right-0 mt-2.5 w-80 bg-primary border border-primary-light/45 rounded-xl shadow-2xl p-4 z-50 space-y-3 max-h-96 overflow-y-auto">
-                <h4 className="text-white font-bold text-xs border-b border-primary-light/10 pb-2">Notifications</h4>
-                {notifications.length === 0 ? (
-                  <p className="text-slate-500 text-[11px] italic py-2">No notifications yet.</p>
-                ) : (
-                  <div className="space-y-2.5">
-                    {notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        onClick={() => !n.read && markNotificationRead(n.id)}
-                        className={`p-2.5 rounded-lg text-left text-xs transition-colors cursor-pointer border ${
-                          n.read
-                            ? 'bg-navy/40 text-slate-400 border-primary-light/10'
-                            : 'bg-primary-light/25 text-white font-semibold border-primary-light/35'
-                        }`}
-                      >
-                        <p className="font-bold text-slate-200">{n.title}</p>
-                        <p className="text-[10px] mt-0.5 leading-relaxed text-slate-300">{n.message}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="flex items-center gap-4">
+          {/* Header language switcher */}
+          <select
+            value={locale}
+            onChange={(e) => handleLanguageChange(e.target.value)}
+            className="bg-navy/80 border border-primary-light rounded-lg px-2 py-1 text-xs text-white"
+          >
+            {languagesList.map(l => (
+              <option key={l.code} value={l.code}>{l.name}</option>
+            ))}
+          </select>
 
           <button
             onClick={() => {
-              api.clearTokens();
-              window.location.href = '/auth/login';
+              loadPaymentDetails();
+              setShowPaymentModal(true);
             }}
-            className="text-xs font-bold text-red-400 border border-red-500/20 px-3 py-1.5 rounded-lg bg-red-500/5 hover:bg-red-500/10 transition-colors"
+            className="bg-gold hover:bg-gold-dark text-primary font-black px-3.5 py-1.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
           >
-            Logout
+            💳 {_t('upgrade')}
           </button>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-8 space-y-8">
-        {/* Global Expiry/Upgrade Notification Bar */}
-        {(!sub || sub.plan.code === 'FREE') ? (
-          <div className="bg-gradient-to-r from-amber-500/10 to-gold/15 border border-gold/30 rounded-xl p-4 flex items-center justify-between shadow-lg text-xs md:text-sm">
-            <div className="flex items-center gap-2 text-gold font-bold">
-              <span>✨</span>
-              <span>You are currently on the Free Starter plan. Upgrade to Premium for unlimited AI writing/speaking evaluations and full mock tests!</span>
-            </div>
-            <button
-              onClick={() => {
-                loadPaymentDetails();
-                setShowPaymentModal(true);
-              }}
-              className="bg-gold hover:bg-gold-dark text-primary font-black px-3.5 py-1.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
-            >
-              Upgrade Now
-            </button>
-          </div>
-        ) : (() => {
-          const daysLeft = Math.ceil((new Date(sub.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-          if (daysLeft <= 3) {
-            return (
-              <div className="bg-gradient-to-r from-red-500/10 to-rose-600/15 border border-red-500/35 rounded-xl p-4 flex items-center justify-between shadow-lg text-xs md:text-sm">
-                <div className="flex items-center gap-2 text-red-400 font-bold">
-                  <span>⚠️</span>
-                  <span>Your premium subscription is about to end in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}! Renew now to keep your study progress active.</span>
-                </div>
-                <button
-                  onClick={() => {
-                    loadPaymentDetails();
-                    setShowPaymentModal(true);
-                  }}
-                  className="bg-red-500 hover:bg-red-600 text-white font-black px-3.5 py-1.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
-                >
-                  Renew Subscription
-                </button>
+      {/* Main Tab Render Workspace */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 space-y-8">
+        
+        {activeTab === 'home' && (
+          <div className="space-y-8">
+            {/* Header Greeting Banner */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-slate-200">
+                  {DateTimeGreeting(locale)} {profile.name}!
+                </h2>
+                <p className="text-xs text-slate-500">Let's reach your goal today!</p>
               </div>
-            );
-          }
-          return null;
-        })()}
+            </div>
 
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-primary to-primary-light border border-primary-light/40 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-          <div className="relative z-10 space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-black">Welcome back, {profile.name}!</h2>
-                <p className="text-slate-300 text-sm mt-1">Your target exam is <span className="text-gold font-bold uppercase">{profile.targetExam}</span>. Let's practice to hit your goal!</p>
+            {/* Current Level Widget */}
+            <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl flex items-center gap-6 max-w-2xl">
+              <div className="w-20 h-20 rounded-full border-4 border-red-600 flex flex-col justify-center items-center bg-navy/40">
+                <span className="text-xs font-bold text-white">{targetBand}</span>
+                <span className="text-[8px] text-slate-400">Band</span>
               </div>
-              <div className="bg-navy/55 border border-primary-light/35 rounded-xl px-4 py-2 text-xs flex items-center gap-2 max-w-sm self-start md:self-auto">
-                <span className="text-slate-400">ID:</span>
-                <span className="font-mono text-white text-[10px] select-all">{profile.id}</span>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(profile.id);
-                    alert('Your Personal ID has been copied to your clipboard!');
-                  }}
-                  className="text-gold hover:text-white transition-colors font-bold px-1 ml-1"
-                >
-                  📋 Copy
-                </button>
+              <div>
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Current Level</span>
+                <h3 className="text-lg font-black text-white mt-1">
+                  {currentLevel === 'BEGINNER' ? _t('level_beg') : (currentLevel === 'ADVANCED' ? _t('level_adv') : 'Advance')}
+                </h3>
+                <p className="text-xs text-slate-400 mt-2">{_t('level_sub')}</p>
               </div>
             </div>
+
+            {/* Practice Grid */}
+            <div className="space-y-4">
+              <h3 className="text-white font-bold text-sm tracking-wide uppercase text-gold">{_t('practice_area')}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                  { name: 'Speaking', path: '/dashboard/speaking', icon: '🎙️', desc: 'Speech evaluation' },
+                  { name: 'Writing', path: '/dashboard/writing', icon: '✍️', desc: 'AI correction' },
+                  { name: 'Reading', path: '/dashboard/reading', icon: '📖', desc: 'Academic articles' },
+                  { name: 'Listening', path: '/dashboard/listening', icon: '🎧', desc: 'Audio clips' },
+                ].map((m) => (
+                  <Link
+                    key={m.name}
+                    href={m.path}
+                    className="bg-primary/30 border border-primary-light/45 rounded-xl p-5 hover:border-gold/30 transition-all text-center flex flex-col items-center justify-center space-y-2 cursor-pointer"
+                  >
+                    <span className="text-3xl">{m.icon}</span>
+                    <span className="text-sm font-bold text-slate-200">{m.name}</span>
+                    <span className="text-[10px] text-slate-500">{m.desc}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Continue Learning list */}
+            <div className="space-y-4">
+              <h3 className="text-white font-bold text-sm tracking-wide uppercase text-gold">{_t('continue_learning')}</h3>
+              {loadingSchedule ? (
+                <div className="text-xs text-slate-500">Loading daily planner...</div>
+              ) : schedule.length > 0 ? (
+                <div className="space-y-3 max-w-xl">
+                  {schedule[0].tasks.slice(0, 2).map((task: any) => (
+                    <div key={task.id} className="bg-primary/20 border border-primary-light/30 rounded-xl p-4 flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg">🎯</span>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-200">{task.title}</h4>
+                          <p className="text-[10px] text-slate-500 mt-1">Daily Planner Practice</p>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/dashboard/${task.module.toLowerCase()}`}
+                        className="bg-gold text-primary font-bold px-3 py-1.5 rounded-lg text-[10px] transition-colors"
+                      >
+                        Start
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">No tasks generated. Recalculate schedule in Settings.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'plan' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-200">{_t('schedule_title')}</h2>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-4 border-t border-primary-light/40">
-              <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Target Band</p>
+            {loadingSchedule ? (
+              <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+            ) : schedule.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                {/* Horizontal day buttons */}
+                <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
+                  {schedule.map((day, idx) => (
+                    <button
+                      key={day.date}
+                      onClick={() => setSelectedDayIndex(idx)}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        selectedDayIndex === idx ? 'bg-red-600/20 border-gold text-white' : 'bg-primary/20 border-primary-light/20 text-slate-400'
+                      }`}
+                    >
+                      <p className="text-[10px] uppercase font-bold">{day.dayLabel}</p>
+                      <p className="text-xs font-black mt-0.5">{day.date}</p>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Day Tasks List */}
+                <div className="md:col-span-3 space-y-4">
+                  <h3 className="text-sm font-bold text-slate-400">Tasks for {schedule[selectedDayIndex].dayLabel}</h3>
+                  <div className="space-y-3">
+                    {schedule[selectedDayIndex].tasks.map((task: any) => (
+                      <div key={task.id} className="bg-primary/20 border border-primary-light/30 rounded-xl p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                          <span className="text-lg">📚</span>
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-200">{task.title}</h4>
+                            <p className="text-[9px] text-slate-500 uppercase font-semibold mt-1">{task.module} PRACTICE</p>
+                          </div>
+                        </div>
+                        <Link
+                          href={`/dashboard/${task.module.toLowerCase()}`}
+                          className="bg-gold text-primary font-bold px-4 py-2 rounded-lg text-xs"
+                        >
+                          Start
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-slate-400 text-xs">No schedule generated yet. Please save your onboarding preferences in Settings.</p>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'tools' && (
+          <div className="space-y-8">
+            <h2 className="text-xl font-bold text-slate-200">{_t('ai_tools_title')}</h2>
+            
+            {/* AI Tools Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { name: _t('essay_checker'), desc: _t('essay_checker_desc'), path: '/dashboard/writing', icon: '📝' },
+                { name: _t('grammar_check'), desc: _t('grammar_check_desc'), path: '/dashboard/writing', icon: '🔍' },
+                { name: _t('paraphrase'), desc: _t('paraphrase_desc'), path: '/dashboard/writing', icon: '🔄' },
+                { name: _t('speaking_samples'), desc: _t('speaking_samples_desc'), path: '/dashboard/speaking', icon: '🎙️' },
+              ].map((tool) => (
+                <div key={tool.name} className="bg-primary/20 border border-primary-light/30 rounded-xl p-5 space-y-4">
+                  <span className="text-3xl">{tool.icon}</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200">{tool.name}</h4>
+                    <p className="text-xs text-slate-500 mt-1">{tool.desc}</p>
+                  </div>
+                  <Link href={tool.path} className="inline-block bg-primary-light hover:bg-gold hover:text-primary px-3 py-1.5 rounded-lg text-[10px] font-bold">
+                    Open Tool
+                  </Link>
+                </div>
+              ))}
+            </div>
+
+            {/* Dynamic Band Score Calculator Utility widget */}
+            <div className="bg-primary/20 border border-primary-light/30 rounded-2xl p-8 max-w-xl">
+              <h3 className="text-sm font-bold text-gold uppercase tracking-wide mb-6">{_t('band_calculator')}</h3>
+              
+              <div className="bg-navy/60 border border-red-500/30 p-6 rounded-xl text-center mb-6 space-y-1">
+                <p className="text-[10px] text-slate-500">Calculated Overall Band Score</p>
+                <p className="text-4xl font-black text-white">{calculatedBand}</p>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  { name: 'Listening', score: listeningScore, setScore: setListeningScore },
+                  { name: 'Reading', score: readingScore, setScore: setReadingScore },
+                  { name: 'Writing', score: writingScore, setScore: setWritingScore },
+                  { name: 'Speaking', score: speakingScore, setScore: setSpeakingScore },
+                ].map((s) => (
+                  <div key={s.name} className="flex justify-between items-center text-xs">
+                    <span className="w-24 text-slate-300 font-bold">{s.name}</span>
+                    <input
+                      type="range"
+                      min="4.0"
+                      max="9.0"
+                      step="0.5"
+                      value={s.score}
+                      onChange={(e) => s.setScore(parseFloat(e.target.value))}
+                      className="flex-1 mx-4 accent-gold"
+                    />
+                    <span className="w-8 font-mono font-bold text-gold">{s.score.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-200">Attempt History</h2>
+            <p className="text-xs text-slate-500">Review all your previous learning practice answers and band grades.</p>
+            <div className="pt-4">
+              <Link href="/dashboard/history" className="bg-gold text-primary font-bold px-4 py-2 rounded-lg text-xs">
+                View Full Attempt History Panel
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-8 max-w-2xl">
+            <h2 className="text-xl font-bold text-slate-200">{_t('menu_settings')}</h2>
+            
+            {/* Preferred Language Settings Card */}
+            <div className="bg-primary/25 border border-primary-light/30 rounded-xl p-6 space-y-4">
+              <h3 className="text-xs font-bold text-gold uppercase tracking-wide">Language Settings</h3>
+              <div className="flex justify-between items-center text-xs">
+                <span>Select App Language Switcher</span>
                 <select
-                  value={profile.targetBand}
-                  onChange={async (e) => {
-                    const newBand = parseFloat(e.target.value);
-                    setProfile({ ...profile, targetBand: newBand });
-                    try {
-                      await api.request('/auth/update-target-band', {
-                        method: 'PUT',
-                        body: JSON.stringify({ targetBand: newBand }),
-                      });
-                    } catch (err: any) {
-                      alert('Failed to update target band');
-                    }
-                  }}
-                  className="bg-navy/70 border border-primary-light/50 text-white rounded px-2 py-0.5 text-xs font-bold mt-1 focus:outline-none focus:border-gold transition-colors cursor-pointer"
+                  value={locale}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  className="bg-navy border border-primary-light rounded-lg px-3 py-1.5 text-white"
                 >
-                  {[4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((b) => (
+                  {languagesList.map(l => (
+                    <option key={l.code} value={l.code}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Profile configuration parameters */}
+            <div className="bg-primary/25 border border-primary-light/30 rounded-xl p-6 space-y-4">
+              <h3 className="text-xs font-bold text-gold uppercase tracking-wide">Study Settings</h3>
+              
+              <div className="flex justify-between items-center text-xs">
+                <span>{_t('exam_type')}</span>
+                <select
+                  value={testType}
+                  onChange={(e) => {
+                    setTestType(e.target.value);
+                    api.request('/auth/onboarding', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ targetExam: e.target.value }),
+                    }).then(() => loadProfile());
+                  }}
+                  className="bg-navy border border-primary-light rounded-lg px-3 py-1.5 text-white"
+                >
+                  <option value="ACADEMIC">Academic</option>
+                  <option value="GENERAL">General Training</option>
+                </select>
+              </div>
+
+              <div className="flex justify-between items-center text-xs">
+                <span>{_t('target_band')}</span>
+                <select
+                  value={targetBand}
+                  onChange={(e) => {
+                    const band = parseFloat(e.target.value);
+                    setTargetBand(band);
+                    api.request('/auth/onboarding', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ targetBand: band }),
+                    }).then(() => loadProfile());
+                  }}
+                  className="bg-navy border border-primary-light rounded-lg px-3 py-1.5 text-white"
+                >
+                  {[5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5].map(b => (
                     <option key={b} value={b}>Band {b}</option>
                   ))}
                 </select>
               </div>
-              <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Current Estimate</p>
-                <p className="text-gold text-xl font-bold mt-1">Band {stats.overallBandEstimate > 0 ? stats.overallBandEstimate.toFixed(1) : '0.0'}</p>
-              </div>
-              <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Completed Lessons</p>
-                <p className="text-white text-xl font-bold mt-1">{stats.lessonsCompletedCount} Lessons</p>
-              </div>
-              <div>
-                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Billing Status</p>
-                <p className="text-emerald text-xl font-bold mt-1 capitalize">{sub?.plan.code || 'FREE'}</p>
-                {sub && sub.status === 'ACTIVE' && sub.endDate ? (
-                  (() => {
-                    const diffTime = new Date(sub.endDate).getTime() - new Date().getTime();
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    const expiryDate = new Date(sub.endDate).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    });
-                    return (
-                      <div className="mt-2 space-y-1 bg-navy/60 border border-primary-light/20 rounded-lg p-2.5">
-                        <div className="flex justify-between items-center gap-3">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Days Left</span>
-                          <span className="text-[11px] text-gold font-extrabold">{diffDays > 0 ? `${diffDays} Days` : '0 Days'}</span>
-                        </div>
-                        <div className="flex justify-between items-center gap-3 border-t border-primary-light/10 pt-1">
-                          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Expires</span>
-                          <span className="text-[10px] text-slate-200 font-bold">{expiryDate}</span>
-                        </div>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <p className="text-[10px] text-slate-500 mt-2 font-semibold">
-                    No active paid plan
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Account Limits & Usage */}
-        <div className="bg-primary/25 border border-primary-light/45 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-4">
-          <h3 className="text-white font-bold text-sm">Account Limits & Usage</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Daily Practice */}
-            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-300 font-medium">Daily Practice Questions</span>
-                <span className="text-gold font-bold">
-                  {sub?.plan.limitDailyPractice === -1 
-                    ? 'Unlimited' 
-                    : `${profile.todayAnswersCount || 0} / ${sub?.plan.limitDailyPractice || 5} Used`}
-                </span>
-              </div>
-              <div className="w-full bg-primary/40 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-gold h-full rounded-full transition-all duration-500"
-                  style={{ 
-                    width: `${sub?.plan.limitDailyPractice === -1 
-                      ? 0 
-                      : Math.min(100, ((profile.todayAnswersCount || 0) / (sub?.plan.limitDailyPractice || 5)) * 100)}%` 
+              <div className="flex justify-between items-center text-xs pt-4 border-t border-primary-light/20">
+                <span className="text-orange-400 font-bold">{_t('reset_plan')}</span>
+                <button
+                  onClick={() => {
+                    saveOnboardingProfile(true);
+                    alert('Study plan schedule recalculated successfully!');
                   }}
-                />
+                  className="bg-primary-light hover:bg-gold hover:text-primary font-bold px-3 py-1.5 rounded-lg text-[10px] transition-colors"
+                >
+                  Reset & Recalculate
+                </button>
               </div>
-              <p className="text-[10px] text-slate-500">
-                {sub?.plan.limitDailyPractice === -1 
-                  ? 'Answer as many questions as you like.' 
-                  : `You have ${Math.max(0, (sub?.plan.limitDailyPractice || 5) - (profile.todayAnswersCount || 0))} questions remaining for today.`}
-              </p>
-            </div>
-
-            {/* Mock Exams */}
-            <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/15 space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-300 font-medium">Full Mock Exams (All sections)</span>
-                <span className="text-emerald font-bold">
-                  {sub?.plan.limitMockTests === -1 
-                    ? 'Unlimited' 
-                    : `${profile.totalMockTestsCount || 0} / ${sub?.plan.limitMockTests || 1} Completed`}
-                </span>
-              </div>
-              <div className="w-full bg-primary/40 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-emerald h-full rounded-full transition-all duration-500"
-                  style={{ 
-                    width: `${sub?.plan.limitMockTests === -1 
-                      ? 0 
-                      : Math.min(100, ((profile.totalMockTestsCount || 0) / (sub?.plan.limitMockTests || 1)) * 100)}%` 
-                  }}
-                />
-              </div>
-              <p className="text-[10px] text-slate-500">
-                {sub?.plan.limitMockTests === -1 
-                  ? 'Take unlimited complete mock tests anytime.' 
-                  : `You have ${Math.max(0, (sub?.plan.limitMockTests || 1) - (profile.totalMockTestsCount || 0))} mock exams remaining on your current cycle.`}
-              </p>
             </div>
           </div>
-
-          <div className="pt-4 border-t border-primary-light/20 flex justify-end">
-            <button
-              onClick={() => {
-                loadPaymentDetails();
-                setShowPaymentModal(true);
-              }}
-              className="bg-gold hover:bg-gold-dark text-primary font-bold px-4 py-2 rounded-lg text-xs transition-colors cursor-pointer"
-            >
-              💸 Upgrade via Manual Bank Transfer
-            </button>
-          </div>
-        </div>
-
-        {/* Quick Navigation Cards for Mobile Parity */}
-        <div className="grid grid-cols-3 gap-3 md:hidden">
-          <Link href="/dashboard/progress" className="bg-primary/30 border border-primary-light/45 rounded-xl p-3.5 text-center flex flex-col items-center justify-center space-y-2 hover:border-gold/30 transition-colors">
-            <span className="text-lg">📈</span>
-            <span className="text-[10px] font-extrabold text-slate-200">AI Report</span>
-          </Link>
-          <Link href="/dashboard/history" className="bg-primary/30 border border-primary-light/45 rounded-xl p-3.5 text-center flex flex-col items-center justify-center space-y-2 hover:border-gold/30 transition-colors">
-            <span className="text-lg">📜</span>
-            <span className="text-[10px] font-extrabold text-slate-200">History</span>
-          </Link>
-          <Link href="/dashboard/referrals" className="bg-primary/30 border border-primary-light/45 rounded-xl p-3.5 text-center flex flex-col items-center justify-center space-y-2 hover:border-gold/30 transition-colors">
-            <span className="text-lg">💸</span>
-            <span className="text-[10px] font-extrabold text-slate-200">Referrals</span>
-          </Link>
-        </div>
-
-        {/* Practice Grid */}
-        <div className="space-y-4">
-          <h3 className="text-white font-bold text-lg">Practice Modules</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {modules.map((m) => (
-              <div
-                key={m.name}
-                className={`bg-primary/25 border border-primary-light/30 border-l-4 ${m.color} rounded-2xl p-6 shadow-xl relative group hover:border-gold/30 transition-all duration-200`}
-              >
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <div className="text-2xl">{m.icon}</div>
-                    <h4 className="text-white font-bold text-base">{m.name}</h4>
-                    <p className="text-slate-400 text-xs leading-relaxed max-w-sm">{m.desc}</p>
-                  </div>
-                  <Link
-                    href={m.path}
-                    className="bg-primary-light/50 border border-primary-light hover:bg-gold hover:text-primary text-slate-300 hover:border-gold font-bold px-4 py-2 rounded-lg text-xs transition-all duration-200 cursor-pointer"
-                  >
-                    Start Practice
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Analytics & Weak Areas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Weak areas card */}
-          <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl col-span-2">
-            <h4 className="text-white font-bold text-sm mb-4">Focus areas (Identified Weaknesses)</h4>
-            {stats.weakQuestionTypes.length === 0 ? (
-              <p className="text-slate-500 text-xs py-6 text-center">Great job! No persistent weaknesses detected so far.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {stats.weakQuestionTypes.map((type: string) => (
-                  <span key={type} className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider">
-                    {type.replace('_', ' ')}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Mock exams card */}
-          <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4">
-            <h4 className="text-white font-bold text-sm">Full Mock Exam</h4>
-            <p className="text-slate-400 text-xs leading-relaxed">Take a timed 2.5-hour complete mock exam to simulate the official test conditions.</p>
-            
-            <Link 
-              href="/dashboard/mock-exam"
-              className="block w-full text-center bg-gold hover:bg-gold-dark text-primary font-bold py-2.5 rounded-lg text-xs transition-colors duration-200 cursor-pointer shadow-lg shadow-gold/10"
-            >
-              Start Full Mock Exam
-            </Link>
-          </div>
-        </div>
+        )}
 
       </main>
 
@@ -633,4 +980,13 @@ export default function StudentDashboard() {
       )}
     </div>
   );
+}
+
+// Helpers
+function DateTimeGreeting(locale: string): string {
+  const hr = new Date().getHours();
+  if (locale === 'AR') {
+    return hr < 12 ? 'صباح الخير ☀️' : 'مساء الخير 🌙';
+  }
+  return hr < 12 ? 'Good Morning ☀️' : 'Good Night 🌙';
 }

@@ -227,4 +227,10 @@ export class ContentController {
   ) {
     return this.contentService.gradeAssignmentSubmission(req.user.sub, submissionId, dto);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('schedule')
+  async getPersonalizedSchedule(@Req() req: any) {
+    return this.contentService.getPersonalizedSchedule(req.user.sub);
+  }
 }

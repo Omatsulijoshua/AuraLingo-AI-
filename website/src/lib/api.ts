@@ -13,6 +13,10 @@ export interface User {
 }
 
 class ApiClient {
+  public get baseUrl(): string {
+    return API_BASE_URL;
+  }
+
   private getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('accessToken');

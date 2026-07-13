@@ -1,20 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
-import 'writing_practice_screen.dart';
+import '../services/localization.dart';
 import 'listening_practice_screen.dart';
 import 'reading_practice_screen.dart';
+import 'writing_practice_screen.dart';
 import 'speaking_practice_screen.dart';
-import 'mock_exams_screen.dart';
-import 'referrals_screen.dart';
-import 'subscription_screen.dart';
-import 'subscription_history_screen.dart';
-import 'support_screen.dart';
+import 'plan_screen.dart';
+import 'tools_screen.dart';
 import 'history_screen.dart';
-import 'progress_report_screen.dart';
+import 'settings_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -24,724 +21,318 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const HomeTabView(),
+    const PlanScreen(),
+    const ToolsScreen(),
+    const HistoryScreen(),
+    const SettingsScreen(),
+  ];
+
+  String _t(String key) => LocalizationService.translate(key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF050E1A),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFF0B1E36),
+        selectedItemColor: const Color(0xFFA3001E),
+        unselectedItemColor: Colors.white54,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+        unselectedLabelStyle: const TextStyle(fontSize: 10),
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: _t('menu_home')),
+          BottomNavigationBarItem(icon: const Icon(Icons.calendar_month), label: _t('menu_plan')),
+          BottomNavigationBarItem(icon: const Icon(Icons.construction), label: _t('menu_tools')),
+          BottomNavigationBarItem(icon: const Icon(Icons.history), label: _t('menu_history')),
+          BottomNavigationBarItem(icon: const Icon(Icons.settings), label: _t('menu_settings')),
+        ],
+      ),
+    );
+  }
+}
+
+class HomeTabView extends ConsumerStatefulWidget {
+  const HomeTabView({super.key});
+
+  @override
+  ConsumerState<HomeTabView> createState() => _HomeTabViewState();
+}
+
+class _HomeTabViewState extends ConsumerState<HomeTabView> {
   final ApiService _apiService = ApiService();
-  List<dynamic> _notifications = [];
+  List<dynamic> _todayTasks = [];
+  bool _isLoadingTasks = true;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).fetchProfile();
-      _fetchNotifications();
-    });
+    _fetchTodayTasks();
   }
 
-  Future<void> _fetchNotifications() async {
+  Future<void> _fetchTodayTasks() async {
     try {
       final response = await _apiService.request(
-        path: '/notifications',
+        path: '/content/schedule',
         method: 'GET',
       );
-      if (response.statusCode == 200 && mounted) {
-        setState(() {
-          _notifications = jsonDecode(response.body);
-        });
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _markNotificationRead(String id) async {
-    try {
-      final response = await _apiService.request(
-        path: '/notifications/$id/read',
-        method: 'PUT',
-      );
       if (response.statusCode == 200) {
-        _fetchNotifications();
+        final schedule = jsonDecode(response.body);
+        if (schedule.isNotEmpty && mounted) {
+          setState(() {
+            _todayTasks = schedule[0]['tasks'] ?? [];
+            _isLoadingTasks = false;
+          });
+        }
       }
-    } catch (_) {}
+    } catch (_) {
+      setState(() => _isLoadingTasks = false);
+    }
   }
 
-  void _showNotificationsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0B1E36),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final unread = _notifications.where((n) => !(n['read'] ?? false)).toList();
-            return Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Notifications',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      if (unread.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${unread.length} new',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: _notifications.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No notifications yet.',
-                              style: TextStyle(color: Colors.white30, fontSize: 12),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: _notifications.length,
-                            itemBuilder: (context, idx) {
-                              final item = _notifications[idx];
-                              final isRead = item['read'] ?? false;
-                              return InkWell(
-                                onTap: () async {
-                                  if (!isRead) {
-                                    await _markNotificationRead(item['id']);
-                                    setModalState(() {
-                                      item['read'] = true;
-                                    });
-                                  }
-                                },
-                                child: Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: isRead ? Colors.transparent : const Color(0xFF1E3E6E).withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: isRead ? const Color(0xFF1E3E6E).withValues(alpha: 0.5) : const Color(0xFFD4AF37).withValues(alpha: 0.3),
-                                    ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['title'] ?? 'Notification',
-                                        style: TextStyle(
-                                          color: isRead ? Colors.white70 : Colors.white,
-                                          fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        item['message'] ?? '',
-                                        style: TextStyle(
-                                          color: isRead ? Colors.white30 : Colors.white70,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
+  String _t(String key) => LocalizationService.translate(key);
+
+  void _launchTask(Map<String, dynamic> task) {
+    final module = task['module'];
+    final entityId = task['entityId'];
+
+    if (entityId == 'practice-session') return;
+
+    Widget targetScreen;
+    if (module == 'LISTENING') {
+      targetScreen = const ListeningPracticeScreen();
+    } else if (module == 'READING') {
+      targetScreen = const ReadingPracticeScreen();
+    } else if (module == 'WRITING') {
+      targetScreen = const WritingPracticeScreen();
+    } else if (module == 'SPEAKING') {
+      targetScreen = const SpeakingPracticeScreen();
+    } else {
+      return;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen));
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
-    final unreadCount = _notifications.where((n) => !(n['read'] ?? false)).length;
+    final user = ref.watch(authProvider).user;
+    final String greeting = DateTime.now().hour < 12 ? _t('dashboard_greeting_morning') : _t('dashboard_greeting_night');
+    final double targetBand = (user?['targetBand'] ?? 7.0) as double;
+    final String level = user?['currentLevel'] ?? 'INTERMEDIATE';
+    final String levelName = level == 'BEGINNER' ? _t('level_beg') : (level == 'ADVANCED' ? _t('level_adv') : 'Advance');
 
     return Scaffold(
-      backgroundColor: const Color(0xFF050E1A), // Deep Navy
+      backgroundColor: const Color(0xFF050E1A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B1E36),
-        title: const Text(
-          'Student Dashboard',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        elevation: 0,
+        title: Row(
+          children: [
+            const Icon(Icons.waving_hand, color: Color(0xFFD4AF37), size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '$greeting, ${user?['name'] ?? 'User'}',
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: Color(0xFFD4AF37)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SupportScreen()),
-              );
-            },
-          ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white70),
-                onPressed: () => _showNotificationsBottomSheet(context),
-              ),
-              if (unreadCount > 0)
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 8,
-                      minHeight: 8,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.white70),
-            onPressed: () {
-              ref.read(authProvider.notifier).logout();
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Global Expiry/Upgrade Notification Bar
-            (() {
-              final subs = user?['subscriptions'] as List?;
-              final Map<String, dynamic>? sub = (() {
-                if (subs == null || subs.isEmpty) return null;
-                final activeSub = subs.firstWhere(
-                  (s) => s['status'] == 'ACTIVE',
-                  orElse: () => subs[0],
-                );
-                return Map<String, dynamic>.from(activeSub);
-              })();
-              final planCode = sub != null ? (sub['plan']?['code'] ?? 'FREE') : 'FREE';
-              
-              if (planCode == 'FREE') {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            // Current Level Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1E36),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E3E6E)),
+              ),
+              child: Row(
+                children: [
+                  // Circle gauge widget
+                  Container(
+                    width: 72,
+                    height: 72,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E1B10), // Amber tinted background
-                      border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-                      borderRadius: BorderRadius.circular(12),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFA3001E), width: 6),
                     ),
-                    child: Row(
-                      children: const [
-                        Icon(Icons.stars_rounded, color: Color(0xFFD4AF37), size: 20),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            '✨ Upgrade to Premium for unlimited AI correction and mock tests! (Tap to Upgrade)',
-                            style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('$targetBand', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                        const Text('Band', style: TextStyle(color: Colors.white54, fontSize: 8)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Current Level', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                        const SizedBox(height: 4),
+                        Text(
+                          levelName,
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _t('level_sub'),
+                          style: const TextStyle(color: Colors.white38, fontSize: 9),
                         ),
                       ],
                     ),
                   ),
-                );
-              } else if (sub != null && sub['endDate'] != null) {
-                try {
-                  final endDate = DateTime.parse(sub['endDate']);
-                  final daysLeft = endDate.difference(DateTime.now()).inDays;
-                  if (daysLeft >= 0 && daysLeft <= 3) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2D1616), // Red tinted background
-                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              '⚠️ Your subscription expires in $daysLeft ${daysLeft == 1 ? 'day' : 'days'}! Renew now.',
-                              style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-                } catch (_) {}
-              }
-              return const SizedBox.shrink();
-            })(),
-
-            // Welcome Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF0B1E36), Color(0xFF1E3E6E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF1E3E6E)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome back, ${user?['name'] ?? 'Student'}!',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Target Exam: ${user?['targetExam'] ?? 'ACADEMIC'}',
-                    style: const TextStyle(
-                      color: Color(0xFFD4AF37),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () {
-                      Clipboard.setData(ClipboardData(text: user?['id'] ?? ''));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Personal ID copied to clipboard!'),
-                          backgroundColor: Color(0xFF0B1E36),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'ID: ',
-                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
-                          ),
-                          Text(
-                            user?['id'] ?? '',
-                            style: const TextStyle(color: Colors.white70, fontSize: 10, fontFamily: 'monospace'),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.copy_rounded, color: Color(0xFFD4AF37), size: 10),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatItem(
-                          'Target Band',
-                          'Band ${(user?['targetBand'] ?? 7.0).toStringAsFixed(1)}',
-                          onTap: () {
-                            showModalBottomSheet(
-                              context: context,
-                              backgroundColor: const Color(0xFF0B1E36),
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                              ),
-                              builder: (context) {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      const Text(
-                                        'Select Target Band Score',
-                                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      SizedBox(
-                                        height: 200,
-                                        child: ListView(
-                                          children: [4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((band) {
-                                            final isSelected = (user?['targetBand'] ?? 7.0).toString() == band.toString();
-                                            return ListTile(
-                                              title: Text(
-                                                'Band $band',
-                                                style: TextStyle(
-                                                  color: isSelected ? const Color(0xFFD4AF37) : Colors.white,
-                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                              onTap: () async {
-                                                Navigator.pop(context);
-                                                final success = await ref.read(authProvider.notifier).updateTargetBand(band);
-                                                if (success) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text('Target Band updated to $band!'),
-                                                      backgroundColor: const Color(0xFF0B1E36),
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                            );
-                                          }).toList(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                      Expanded(
-                        child: (() {
-                          final progressStats = user?['progressStats'] as Map?;
-                          final currentEstimate = progressStats != null ? (progressStats['overallBandEstimate'] ?? 0.0) : 0.0;
-                          return _buildStatItem(
-                            'Current Estimate',
-                            currentEstimate > 0 ? 'Band ${currentEstimate.toStringAsFixed(1)}' : 'Band 0.0',
-                          );
-                        })(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: (() {
-                          final progressStats = user?['progressStats'] as Map?;
-                          final completedLessons = progressStats != null ? (progressStats['lessonsCompletedCount'] ?? 0) : 0;
-                          return _buildStatItem(
-                            'Completed Lessons',
-                            '$completedLessons Lessons',
-                          );
-                        })(),
-                      ),
-                      Expanded(
-                        child: (() {
-                          final subs = user?['subscriptions'] as List?;
-                          final Map<String, dynamic>? sub = (() {
-                            if (subs == null || subs.isEmpty) return null;
-                            final activeSub = subs.firstWhere(
-                              (s) => s['status'] == 'ACTIVE',
-                              orElse: () => subs[0],
-                            );
-                            return Map<String, dynamic>.from(activeSub);
-                          })();
-                          final planCode = sub != null ? (sub['plan']?['code'] ?? 'FREE') : 'FREE';
-
-                          int diffDays = 0;
-                          String expiryDate = '';
-                          if (sub != null && sub['status'] == 'ACTIVE' && sub['endDate'] != null) {
-                            final end = DateTime.tryParse(sub['endDate']);
-                            if (end != null) {
-                              diffDays = end.difference(DateTime.now()).inDays + 1;
-                              expiryDate = _formatDate(end);
-                            }
-                          }
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Billing Status', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                              const SizedBox(height: 4),
-                              Text(
-                                planCode,
-                                style: TextStyle(
-                                  color: planCode == 'PREMIUM' ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              if (planCode == 'PREMIUM' && expiryDate.isNotEmpty) ...[
-                                const SizedBox(height: 6),
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFF1E3E6E)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text('DAYS LEFT: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 8, fontWeight: FontWeight.bold)),
-                                          Text(
-                                            '$diffDays Days',
-                                            style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w900),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text('EXPIRES: ', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 8, fontWeight: FontWeight.bold)),
-                                          Text(
-                                            expiryDate,
-                                            style: const TextStyle(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          );
-                        })(),
-                      ),
-                    ],
-                  ),
+                  const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
 
-            // Quick Navigation Panel
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildQuickAction(context, 'Progress', Icons.insights_rounded, const ProgressReportScreen()),
-                _buildQuickAction(context, 'History', Icons.history_rounded, const HistoryScreen()),
-                _buildQuickAction(context, 'Billing', Icons.receipt_long_rounded, const SubscriptionHistoryScreen()),
-                _buildQuickAction(context, 'Referrals', Icons.card_giftcard_rounded, const ReferralsScreen()),
-              ],
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-            const Text(
-              'IELTS Practice Modules',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            
+            // Practice Area Title
+            Text(_t('practice_area'), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+
+            // 4-Grid practices area widget
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.35,
+              childAspectRatio: 1.5,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
               children: [
-                _buildModuleCard(context, 'Listening', Icons.headphones_rounded, const Color(0xFF3B82F6)),
-                _buildModuleCard(context, 'Reading', Icons.menu_book_rounded, const Color(0xFF10B981)),
-                _buildModuleCard(context, 'Writing', Icons.edit_note_rounded, const Color(0xFFF59E0B)),
-                _buildModuleCard(context, 'Speaking', Icons.mic_external_on_rounded, Colors.purple),
+                _buildPracticeGridItem('Speaking', Icons.mic, const Color(0xFFA3001E), () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
+                }),
+                _buildPracticeGridItem('Writing', Icons.edit, Colors.amberAccent, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+                }),
+                _buildPracticeGridItem('Reading', Icons.menu_book, Colors.blueAccent, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
+                }),
+                _buildPracticeGridItem('Listening', Icons.headphones, Colors.greenAccent, () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
+                }),
               ],
             ),
-            const SizedBox(height: 24),
 
-            // Mock Exam Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1E36),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.stars_rounded, color: Color(0xFFD4AF37), size: 36),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Full Mock Exam',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Simulate a timed 2.5-hour complete IELTS exam.',
-                          style: TextStyle(color: Colors.white60, fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const MockExamsScreen()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      foregroundColor: const Color(0xFF050E1A),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: const Text('Start', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 28),
+
+            // Continue Learning Title
+            Text(_t('continue_learning'), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+
+            // Today's dynamic planner task entries
+            _isLoadingTasks
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
+                : _todayTasks.isEmpty
+                    ? const Center(child: Text('No daily tasks found.', style: TextStyle(color: Colors.white30, fontSize: 11)))
+                    : Column(
+                        children: _todayTasks.map<Widget>((t) {
+                          final task = Map<String, dynamic>.from(t);
+                          final module = task['module'] ?? '';
+
+                          IconData icon;
+                          Color iconColor;
+                          if (module == 'LISTENING') {
+                            icon = Icons.headphones;
+                            iconColor = Colors.greenAccent;
+                          } else if (module == 'READING') {
+                            icon = Icons.book;
+                            iconColor = Colors.blueAccent;
+                          } else if (module == 'WRITING') {
+                            icon = Icons.edit;
+                            iconColor = Colors.amberAccent;
+                          } else {
+                            icon = Icons.mic;
+                            iconColor = Colors.redAccent;
+                          }
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0B1E36),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFF1E3E6E)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(icon, color: iconColor, size: 20),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        task['title'] ?? '',
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      const Text('Daily Practice Task', style: TextStyle(color: Colors.white38, fontSize: 9)),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+                                  onPressed: () => _launchTask(task),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildQuickAction(BuildContext context, String label, IconData icon, Widget screen) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0B1E36),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF1E3E6E)),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: const Color(0xFFD4AF37), size: 20),
-              const SizedBox(height: 6),
-              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, {VoidCallback? onTap}) {
+  Widget _buildPracticeGridItem(String title, IconData icon, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              if (onTap != null) ...[
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFFD4AF37), size: 18),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModuleCard(BuildContext context, String title, IconData icon, Color accentColor) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1E36),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3E6E)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B1E36),
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            if (title == 'Writing') {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
-            } else if (title == 'Listening') {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
-            } else if (title == 'Reading') {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
-            } else if (title == 'Speaking') {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: accentColor, size: 28),
-                ),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          border: Border.all(color: const Color(0xFF1E3E6E)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 10),
+            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            const Text('Start Practice', style: TextStyle(color: Colors.white30, fontSize: 9)),
+          ],
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime dt) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 }

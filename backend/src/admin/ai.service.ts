@@ -144,7 +144,7 @@ export class AiService {
     throw new BadRequestException(`All configured AI Providers failed. Last error: ${errMsg}`);
   }
 
-  private decryptKey(val: string): string {
+  public decryptKey(val: string): string {
     if (!val) return '';
     try {
       return decrypt(val, this.encryptionKey);
