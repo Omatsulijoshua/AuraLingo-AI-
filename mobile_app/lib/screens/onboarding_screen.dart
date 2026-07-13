@@ -74,30 +74,42 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _finishOnboarding() async {
     setState(() => _isSubmitting = true);
     try {
-      // 1. Submit onboarding profile settings to the backend
-      await _apiService.request(
-        path: '/auth/onboarding',
-        method: 'PUT',
-        body: jsonEncode({
-          'targetExam': _testType,
-          'targetBand': _targetBand,
-          'currentLevel': _currentLevel,
-          'weaknesses': _selectedWeaknesses,
-          'studyTimeCommitment': _studyTimeCommitment,
-          'hasBookedTest': _hasBookedTest,
-          'testDate': _hasBookedTest ? DateTime.now().add(const Duration(days: 60)).toIso8601String() : null,
-          'preferredLanguage': _selectedLang,
-        }),
-      );
-
-      // 2. Lock active mock premium sub in SharedPreferences
+      final auth = ref.read(authProvider);
       final prefs = await SharedPreferences.getInstance();
+
+      if (auth.isAuthenticated) {
+        // Submit onboarding profile settings to the backend
+        await _apiService.request(
+          path: '/auth/onboarding',
+          method: 'PUT',
+          body: jsonEncode({
+            'targetExam': _testType,
+            'targetBand': _targetBand,
+            'currentLevel': _currentLevel,
+            'weaknesses': _selectedWeaknesses,
+            'studyTimeCommitment': _studyTimeCommitment,
+            'hasBookedTest': _hasBookedTest,
+            'testDate': _hasBookedTest ? DateTime.now().add(const Duration(days: 60)).toIso8601String() : null,
+            'preferredLanguage': _selectedLang,
+          }),
+        );
+      } else {
+        // Store onboarding settings locally to sync after auth
+        await prefs.setString('pendingOnboardingExam', _testType);
+        await prefs.setDouble('pendingOnboardingBand', _targetBand);
+        await prefs.setString('pendingOnboardingLevel', _currentLevel);
+        await prefs.setStringList('pendingOnboardingWeaknesses', _selectedWeaknesses);
+        await prefs.setString('pendingOnboardingCommitment', _studyTimeCommitment);
+        await prefs.setBool('pendingOnboardingHasBooked', _hasBookedTest);
+        await prefs.setString('pendingOnboardingLang', _selectedLang);
+      }
+
+      // Lock active onboarding seen & mockup premium subscription locally
       await prefs.setBool('hasSeenOnboarding', true);
       await prefs.setBool('isPremium', true);
 
       if (!mounted) return;
       
-      final auth = ref.read(authProvider);
       if (auth.isAuthenticated) {
         Navigator.pushReplacement(
           context,
@@ -110,11 +122,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         );
       }
     } catch (e) {
-      debugPrint('Onboarding submission failed: $e');
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('hasSeenOnboarding', true);
-      if (!mounted) return;
-
       final auth = ref.read(authProvider);
       if (auth.isAuthenticated) {
         Navigator.pushReplacement(

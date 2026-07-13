@@ -174,8 +174,53 @@ class AuthNotifier extends StateNotifier<AuthState> {
         method: 'GET',
       );
       if (response.statusCode == 200) {
-        final profile = jsonDecode(response.body);
+        var profile = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
+        
+        // Sync pending onboarding details if any exist
+        final pendingExam = prefs.getString('pendingOnboardingExam');
+        if (pendingExam != null) {
+          final pendingBand = prefs.getDouble('pendingOnboardingBand') ?? 7.0;
+          final pendingLevel = prefs.getString('pendingOnboardingLevel') ?? 'INTERMEDIATE';
+          final pendingWeaknesses = prefs.getStringList('pendingOnboardingWeaknesses') ?? [];
+          final pendingCommitment = prefs.getString('pendingOnboardingCommitment') ?? '30m';
+          final pendingHasBooked = prefs.getBool('pendingOnboardingHasBooked') ?? false;
+          final pendingLang = prefs.getString('pendingOnboardingLang') ?? 'EN';
+
+          final syncResponse = await _apiService.request(
+            path: '/auth/onboarding',
+            method: 'PUT',
+            body: jsonEncode({
+              'targetExam': pendingExam,
+              'targetBand': pendingBand,
+              'currentLevel': pendingLevel,
+              'weaknesses': pendingWeaknesses,
+              'studyTimeCommitment': pendingCommitment,
+              'hasBookedTest': pendingHasBooked,
+              'testDate': pendingHasBooked ? DateTime.now().add(const Duration(days: 60)).toIso8601String() : null,
+              'preferredLanguage': pendingLang,
+            }),
+          );
+
+          if (syncResponse.statusCode == 200 || syncResponse.statusCode == 201) {
+            await prefs.remove('pendingOnboardingExam');
+            await prefs.remove('pendingOnboardingBand');
+            await prefs.remove('pendingOnboardingLevel');
+            await prefs.remove('pendingOnboardingWeaknesses');
+            await prefs.remove('pendingOnboardingCommitment');
+            await prefs.remove('pendingOnboardingHasBooked');
+            await prefs.remove('pendingOnboardingLang');
+
+            final refetchedResponse = await _apiService.request(
+              path: '/auth/profile',
+              method: 'GET',
+            );
+            if (refetchedResponse.statusCode == 200) {
+              profile = jsonDecode(refetchedResponse.body);
+            }
+          }
+        }
+
         await prefs.setString('user', jsonEncode(profile));
         state = state.copyWith(user: profile);
       }
