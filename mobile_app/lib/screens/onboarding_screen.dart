@@ -1,19 +1,22 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/localization.dart';
 import 'dashboard_screen.dart';
+import 'login_screen.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final ApiService _apiService = ApiService();
   final PageController _pageController = PageController();
   int _currentStep = 0;
@@ -87,32 +90,48 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         }),
       );
 
-      // 2. Lock active mock premium sub in SQLite / SharedPreferences
+      // 2. Lock active mock premium sub in SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('hasSeenOnboarding', true);
       await prefs.setBool('isPremium', true);
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+      
+      final auth = ref.read(authProvider);
+      if (auth.isAuthenticated) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
     } catch (e) {
       debugPrint('Onboarding submission failed: $e');
-      // Fallback redirect if offline/development
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('hasSeenOnboarding', true);
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+
+      final auth = ref.read(authProvider);
+      if (auth.isAuthenticated) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
     } finally {
       setState(() => _isSubmitting = false);
     }
   }
 
-  // Translates keys using localization utility
   String _t(String key) => LocalizationService.translate(key);
 
   @override
@@ -138,9 +157,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   minHeight: 6,
                 ),
               )
-            : const Text('IELTS Prep', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            : const Text('bandUp IELTS', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
         actions: [
-          // Language picker dropdown
           if (_currentStep == 0)
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
@@ -201,21 +219,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Spacer(),
-          // App Logo Graphic
           Container(
             height: 120,
             width: 120,
             decoration: BoxDecoration(
-              color: const Color(0xFFA3001E),
+              color: const Color(0xFFD4AF37),
               shape: BoxShape.circle,
               boxShadow: [
-                BoxShadow(color: const Color(0xFFA3001E).withOpacity(0.3), blurRadius: 20, spreadRadius: 5),
+                BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.3), blurRadius: 20, spreadRadius: 5),
               ],
             ),
             alignment: Alignment.center,
             child: const Text(
               'IELTS',
-              style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+              style: TextStyle(color: Color(0xFF050E1A), fontSize: 32, fontWeight: FontWeight.w900),
             ),
           ),
           const SizedBox(height: 40),
@@ -231,7 +248,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.5),
           ),
           const Spacer(),
-          // Rating details row card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -272,8 +288,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -311,17 +327,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFFA3001E) : const Color(0xFF0B1E36),
+                      color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF0B1E36),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Band $band', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          'Band $band',
+                          style: TextStyle(
+                            color: isSelected ? const Color(0xFF050E1A) : Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         Text(
                           band >= 7.5 ? 'Expert level' : (band >= 7.0 ? 'Very good user' : 'Competent user'),
-                          style: TextStyle(color: isSelected ? Colors.white70 : Colors.white30, fontSize: 11),
+                          style: TextStyle(color: isSelected ? const Color(0xFF050E1A).withOpacity(0.8) : Colors.white30, fontSize: 11),
                         ),
                       ],
                     ),
@@ -335,8 +358,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -362,7 +385,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(_t('test_type_desc'), style: const TextStyle(color: Colors.white54, fontSize: 13)),
           const SizedBox(height: 40),
 
-          // Academic selection Card
           GestureDetector(
             onTap: () => setState(() => _testType = 'ACADEMIC'),
             child: Container(
@@ -370,7 +392,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF0B1E36),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _testType == 'ACADEMIC' ? const Color(0xFFA3001E) : const Color(0xFF1E3E6E), width: 2),
+                border: Border.all(color: _testType == 'ACADEMIC' ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E), width: 2),
               ),
               child: Row(
                 children: [
@@ -389,7 +411,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Radio<String>(
                     value: 'ACADEMIC',
                     groupValue: _testType,
-                    activeColor: const Color(0xFFA3001E),
+                    activeColor: const Color(0xFFD4AF37),
                     onChanged: (val) => setState(() => _testType = val!),
                   ),
                 ],
@@ -398,7 +420,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 20),
 
-          // General selection Card
           GestureDetector(
             onTap: () => setState(() => _testType = 'GENERAL'),
             child: Container(
@@ -406,7 +427,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF0B1E36),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _testType == 'GENERAL' ? const Color(0xFFA3001E) : const Color(0xFF1E3E6E), width: 2),
+                border: Border.all(color: _testType == 'GENERAL' ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E), width: 2),
               ),
               child: Row(
                 children: [
@@ -425,7 +446,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Radio<String>(
                     value: 'GENERAL',
                     groupValue: _testType,
-                    activeColor: const Color(0xFFA3001E),
+                    activeColor: const Color(0xFFD4AF37),
                     onChanged: (val) => setState(() => _testType = val!),
                   ),
                 ],
@@ -439,8 +460,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -487,7 +508,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Informative card
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
@@ -516,8 +536,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -555,21 +575,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFA3001E) : const Color(0xFF0B1E36),
+                  color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF0B1E36),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E)),
                 ),
                 child: Row(
                   children: [
-                    Icon(icon, color: isSelected ? Colors.white : const Color(0xFFD4AF37), size: 24),
+                    Icon(icon, color: isSelected ? const Color(0xFF050E1A) : const Color(0xFFD4AF37), size: 24),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_t(titleKey), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text(
+                            _t(titleKey),
+                            style: TextStyle(
+                              color: isSelected ? const Color(0xFF050E1A) : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(_t(descKey), style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                          Text(
+                            _t(descKey),
+                            style: TextStyle(
+                              color: isSelected ? const Color(0xFF050E1A).withOpacity(0.8) : Colors.white54,
+                              fontSize: 10,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -585,8 +618,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -622,17 +655,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFA3001E) : const Color(0xFF0B1E36),
+                    color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF0B1E36),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E)),
                   ),
                   child: CheckboxListTile(
                     value: isSelected,
-                    activeColor: const Color(0xFFD4AF37),
-                    checkColor: const Color(0xFF050E1A),
+                    activeColor: const Color(0xFF050E1A),
+                    checkColor: const Color(0xFFD4AF37),
                     title: Text(
                       _t(labelKey).isEmpty ? key.replaceAll('_', ' ') : _t(labelKey),
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: isSelected ? const Color(0xFF050E1A) : Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     onChanged: (val) {
                       setState(() {
@@ -654,8 +691,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -693,21 +730,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFA3001E) : const Color(0xFF0B1E36),
+                  color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF0B1E36),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E)),
                 ),
                 child: Row(
                   children: [
-                    Icon(icon, color: isSelected ? Colors.white : const Color(0xFFD4AF37)),
+                    Icon(icon, color: isSelected ? const Color(0xFF050E1A) : const Color(0xFFD4AF37)),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(_t(labelKey), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text(
+                            _t(labelKey),
+                            style: TextStyle(
+                              color: isSelected ? const Color(0xFF050E1A) : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(_t(descKey), style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                          Text(
+                            _t(descKey),
+                            style: TextStyle(
+                              color: isSelected ? const Color(0xFF050E1A).withOpacity(0.8) : Colors.white54,
+                              fontSize: 10,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -723,8 +773,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -750,14 +800,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(_t('projected_desc'), style: const TextStyle(color: Colors.white54, fontSize: 13)),
           const SizedBox(height: 30),
 
-          // Custom gauge radial circle representation
           Center(
             child: Container(
               width: 160,
               height: 160,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFA3001E), width: 10),
+                border: Border.all(color: const Color(0xFFD4AF37), width: 10),
               ),
               alignment: Alignment.center,
               child: Column(
@@ -777,7 +826,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(_t('projected_by_skill'), style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
 
-          // Mapped skills grid list representation
           GridView.count(
             shrinkWrap: true,
             crossAxisCount: 2,
@@ -798,8 +846,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -916,8 +964,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -967,7 +1015,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Plan 1: 12 months at 71% off
           GestureDetector(
             onTap: () => setState(() => _selectedPlan = '12_MONTHS'),
             child: Container(
@@ -1002,7 +1049,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Plan 2: 1 Month
           GestureDetector(
             onTap: () => setState(() => _selectedPlan = '1_MONTH'),
             child: Container(
@@ -1036,7 +1082,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(_t('included_title'), style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
 
-          // List of features included
           Expanded(
             child: ListView(
               children: [
@@ -1055,8 +1100,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: ElevatedButton(
               onPressed: _isSubmitting ? null : _finishOnboarding,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA3001E),
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF050E1A),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
@@ -1082,7 +1127,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFFA3001E), size: 20),
+          Icon(icon, color: const Color(0xFFD4AF37), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

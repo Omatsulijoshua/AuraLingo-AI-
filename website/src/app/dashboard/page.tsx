@@ -209,7 +209,8 @@ export default function StudentDashboard() {
           preferredLanguage: locale,
         }),
       });
-      await loadProfile();
+      api.clearTokens();
+      window.location.href = '/auth/login';
     } catch (e: any) {
       alert(e.message || 'Failed to submit preferences');
       setLoading(false);
@@ -259,7 +260,7 @@ export default function StudentDashboard() {
           {/* Steps */}
           {onboardingStep === 0 && (
             <div className="space-y-6 text-center">
-              <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center text-white text-3xl font-extrabold mx-auto shadow-lg shadow-red-600/30">
+              <div className="w-20 h-20 bg-[#D4AF37] rounded-full flex items-center justify-center text-[#050E1A] text-3xl font-extrabold mx-auto shadow-lg shadow-[#D4AF37]/30">
                 IELTS
               </div>
               <h2 className="text-2xl font-black text-white">{_t('welcome_title')}</h2>
@@ -282,7 +283,7 @@ export default function StudentDashboard() {
 
               <button
                 onClick={() => setOnboardingStep(1)}
-                className="w-full max-w-md mx-auto block bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer"
+                className="w-full max-w-md mx-auto block bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer"
               >
                 {_t('get_started')}
               </button>
@@ -301,7 +302,7 @@ export default function StudentDashboard() {
                     onClick={() => setTargetBand(band)}
                     className={`p-4 rounded-xl border text-left flex justify-between items-center transition-all ${
                       targetBand === band
-                        ? 'bg-red-600/25 border-gold text-white'
+                        ? 'bg-[#D4AF37]/25 border-[#D4AF37] text-white'
                         : 'bg-navy/60 border-primary-light/50 text-slate-300'
                     }`}
                   >
@@ -315,7 +316,7 @@ export default function StudentDashboard() {
 
               <div className="flex gap-4 pt-4">
                 <button onClick={() => setOnboardingStep(0)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
@@ -329,7 +330,7 @@ export default function StudentDashboard() {
                 <button
                   onClick={() => setTestType('ACADEMIC')}
                   className={`w-full p-5 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                    testType === 'ACADEMIC' ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                    testType === 'ACADEMIC' ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
                   }`}
                 >
                   <span className="text-2xl">🎓</span>
@@ -342,7 +343,7 @@ export default function StudentDashboard() {
                 <button
                   onClick={() => setTestType('GENERAL')}
                   className={`w-full p-5 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                    testType === 'GENERAL' ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                    testType === 'GENERAL' ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
                   }`}
                 >
                   <span className="text-2xl">💼</span>
@@ -355,7 +356,7 @@ export default function StudentDashboard() {
 
               <div className="flex gap-4 pt-4">
                 <button onClick={() => setOnboardingStep(1)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
@@ -371,19 +372,19 @@ export default function StudentDashboard() {
                   type="checkbox"
                   checked={hasBookedTest}
                   onChange={(e) => setHasBookedTest(e.target.checked)}
-                  className="w-5 h-5 rounded accent-gold"
+                  className="w-5 h-5 rounded accent-[#D4AF37]"
                 />
               </div>
 
               <div className="bg-navy/40 border border-primary-light/20 p-6 rounded-xl text-center space-y-3">
-                <span className="text-3xl text-gold">📅</span>
+                <span className="text-3xl text-[#D4AF37]">📅</span>
                 <h4 className="font-bold text-sm">{_t('no_worries')}</h4>
                 <p className="text-slate-400 text-[10px] leading-relaxed max-w-sm mx-auto">{_t('flexible_plan')}</p>
               </div>
 
               <div className="flex gap-4 pt-4">
                 <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
@@ -403,7 +404,7 @@ export default function StudentDashboard() {
                     key={lvl.code}
                     onClick={() => setCurrentLevel(lvl.code)}
                     className={`w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                      currentLevel === lvl.code ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                      currentLevel === lvl.code ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
                     }`}
                   >
                     <span className="text-xl">{lvl.icon}</span>
@@ -417,7 +418,7 @@ export default function StudentDashboard() {
 
               <div className="flex gap-4 pt-4">
                 <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
@@ -448,7 +449,7 @@ export default function StudentDashboard() {
                         }
                       }}
                       className={`p-3 rounded-xl border text-left text-xs font-bold transition-all ${
-                        isSelected ? 'bg-red-600/25 border-gold text-white' : 'bg-navy/60 border-primary-light/50 text-slate-300'
+                        isSelected ? 'bg-[#D4AF37]/25 border-[#D4AF37] text-white' : 'bg-navy/60 border-primary-light/50 text-slate-300'
                       }`}
                     >
                       {item.label}
@@ -459,7 +460,7 @@ export default function StudentDashboard() {
 
               <div className="flex gap-4 pt-4">
                 <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(6)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+                <button onClick={() => setOnboardingStep(6)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
@@ -480,7 +481,7 @@ export default function StudentDashboard() {
                     key={item.code}
                     onClick={() => setStudyTimeCommitment(item.code)}
                     className={`w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                      studyTimeCommitment === item.code ? 'bg-red-600/25 border-gold' : 'bg-navy/60 border-primary-light/50'
+                      studyTimeCommitment === item.code ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
                     }`}
                   >
                     <span className="text-xl">{item.icon}</span>
@@ -494,7 +495,7 @@ export default function StudentDashboard() {
 
               <div className="flex gap-4 pt-4">
                 <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(7)} className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+                <button onClick={() => setOnboardingStep(7)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
@@ -504,7 +505,7 @@ export default function StudentDashboard() {
               <h3 className="text-xl font-bold">{_t('projected_title')}</h3>
               <p className="text-slate-400 text-xs">{_t('projected_desc')}</p>
 
-              <div className="w-40 h-40 rounded-full border-8 border-red-600 flex flex-col justify-center items-center mx-auto bg-navy/40">
+              <div className="w-40 h-40 rounded-full border-8 border-[#D4AF37] flex flex-col justify-center items-center mx-auto bg-navy/40">
                 <span className="text-[10px] text-slate-500">Band</span>
                 <span className="text-3xl font-black text-white">{targetBand}</span>
                 <span className="text-[10px] text-green-400 font-bold mt-1">↗ +2.5</span>
@@ -512,9 +513,9 @@ export default function StudentDashboard() {
 
               <button
                 onClick={() => saveOnboardingProfile(true)}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer mt-4"
+                className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer mt-4"
               >
-                Finish & Open Dashboard
+                Finish & Go to Sign In
               </button>
             </div>
           )}
@@ -609,7 +610,7 @@ export default function StudentDashboard() {
 
             {/* Current Level Widget */}
             <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl flex items-center gap-6 max-w-2xl">
-              <div className="w-20 h-20 rounded-full border-4 border-red-600 flex flex-col justify-center items-center bg-navy/40">
+              <div className="w-20 h-20 rounded-full border-4 border-[#D4AF37] flex flex-col justify-center items-center bg-navy/40">
                 <span className="text-xs font-bold text-white">{targetBand}</span>
                 <span className="text-[8px] text-slate-400">Band</span>
               </div>
@@ -692,7 +693,7 @@ export default function StudentDashboard() {
                       key={day.date}
                       onClick={() => setSelectedDayIndex(idx)}
                       className={`p-3 rounded-xl border text-left transition-all ${
-                        selectedDayIndex === idx ? 'bg-red-600/20 border-gold text-white' : 'bg-primary/20 border-primary-light/20 text-slate-400'
+                        selectedDayIndex === idx ? 'bg-[#D4AF37]/20 border-gold text-white' : 'bg-primary/20 border-primary-light/20 text-slate-400'
                       }`}
                     >
                       <p className="text-[10px] uppercase font-bold">{day.dayLabel}</p>
@@ -760,7 +761,7 @@ export default function StudentDashboard() {
             <div className="bg-primary/20 border border-primary-light/30 rounded-2xl p-8 max-w-xl">
               <h3 className="text-sm font-bold text-gold uppercase tracking-wide mb-6">{_t('band_calculator')}</h3>
               
-              <div className="bg-navy/60 border border-red-500/30 p-6 rounded-xl text-center mb-6 space-y-1">
+              <div className="bg-navy/60 border border-[#D4AF37]/30 p-6 rounded-xl text-center mb-6 space-y-1">
                 <p className="text-[10px] text-slate-500">Calculated Overall Band Score</p>
                 <p className="text-4xl font-black text-white">{calculatedBand}</p>
               </div>

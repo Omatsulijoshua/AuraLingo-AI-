@@ -103,7 +103,7 @@ class _PlanScreenState extends State<PlanScreen> {
                               width: 60,
                               margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFA3001E) : Colors.transparent,
+                                color: isSelected ? const Color(0xFFD4AF37) : Colors.transparent,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E),
@@ -112,9 +112,9 @@ class _PlanScreenState extends State<PlanScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(dayShort, style: TextStyle(color: isSelected ? Colors.white : Colors.white60, fontSize: 10)),
+                                  Text(dayShort, style: TextStyle(color: isSelected ? const Color(0xFF050E1A) : Colors.white60, fontSize: 10)),
                                   const SizedBox(height: 4),
-                                  Text(dayNumber, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  Text(dayNumber, style: TextStyle(color: isSelected ? const Color(0xFF050E1A) : Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
                                 ],
                               ),
                             ),

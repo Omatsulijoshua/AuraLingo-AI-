@@ -108,11 +108,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFA3001E),
+                      backgroundColor: const Color(0xFFD4AF37),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
-                    child: Text(_t('upgrade'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    child: Text(_t('upgrade'), style: const TextStyle(color: Color(0xFF050E1A), fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 ],
               ),
@@ -134,7 +134,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('Notifications', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                     subtitle: Text(_t('daily_reminders'), style: const TextStyle(color: Colors.white38, fontSize: 10)),
                     value: _notifications,
-                    activeColor: const Color(0xFFA3001E),
+                    activeColor: const Color(0xFFD4AF37),
                     onChanged: (val) {
                       setState(() => _notifications = val);
                     },

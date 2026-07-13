@@ -110,7 +110,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF050E1A),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFA3001E)),
+                      border: Border.all(color: const Color(0xFFD4AF37)),
                     ),
                     child: Column(
                       children: [
@@ -203,7 +203,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
               max: 9.0,
               divisions: 10,
               label: val.toString(),
-              activeColor: const Color(0xFFA3001E),
+              activeColor: const Color(0xFFD4AF37),
               inactiveColor: const Color(0xFF1E3E6E),
               onChanged: onChanged,
             ),

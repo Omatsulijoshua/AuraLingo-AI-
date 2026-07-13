@@ -8,6 +8,7 @@ import 'listening_practice_screen.dart';
 import 'reading_practice_screen.dart';
 import 'writing_practice_screen.dart';
 import 'speaking_practice_screen.dart';
+import 'onboarding_screen.dart';
 import 'plan_screen.dart';
 import 'tools_screen.dart';
 import 'history_screen.dart';
@@ -35,6 +36,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authProvider).user;
+    if (user != null && user['currentLevel'] == null) {
+      return const OnboardingScreen();
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF050E1A),
       body: IndexedStack(
@@ -45,7 +51,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFF0B1E36),
-        selectedItemColor: const Color(0xFFA3001E),
+        selectedItemColor: const Color(0xFFD4AF37),
         unselectedItemColor: Colors.white54,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
         unselectedLabelStyle: const TextStyle(fontSize: 10),
@@ -173,7 +179,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                     height: 72,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFA3001E), width: 6),
+                      border: Border.all(color: const Color(0xFFD4AF37), width: 6),
                     ),
                     alignment: Alignment.center,
                     child: Column(
@@ -223,7 +229,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               children: [
-                _buildPracticeGridItem('Speaking', Icons.mic, const Color(0xFFA3001E), () {
+                _buildPracticeGridItem('Speaking', Icons.mic, const Color(0xFFD4AF37), () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
                 }),
                 _buildPracticeGridItem('Writing', Icons.edit, Colors.amberAccent, () {
