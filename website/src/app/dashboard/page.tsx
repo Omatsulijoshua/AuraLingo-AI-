@@ -241,15 +241,18 @@ export default function StudentDashboard() {
   // 2. Onboarding wizard blocker
   if (profile && !profile.currentLevel) {
     return (
-      <div className="min-h-screen bg-navy text-white flex flex-col items-center justify-center p-4">
-        <div className="bg-primary border border-primary-light rounded-2xl w-full max-w-2xl p-8 shadow-2xl relative">
+      <div className="min-h-screen bg-gradient-to-tr from-[#020617] via-[#0b1329] to-[#0f172a] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        {/* Ambient background glow ring */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-[#D4AF37]/5 rounded-full blur-[130px] pointer-events-none" />
+        
+        <div className="backdrop-blur-xl bg-slate-950/65 border border-slate-800/80 rounded-3xl w-full max-w-md p-8 md:p-10 shadow-2xl relative transition-all duration-300 z-10 flex flex-col">
           
-          {/* Header language switcher */}
-          <div className="absolute top-4 right-4">
+          {/* Header language selector */}
+          <div className="absolute top-6 right-6">
             <select
               value={locale}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="bg-navy/80 border border-primary-light rounded-lg px-2 py-1 text-xs text-white"
+              className="bg-slate-900/90 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none cursor-pointer focus:border-[#D4AF37] transition-all"
             >
               {languagesList.map(l => (
                 <option key={l.code} value={l.code}>{l.name}</option>
@@ -257,33 +260,45 @@ export default function StudentDashboard() {
             </select>
           </div>
 
+          {/* Progress Indicator */}
+          {onboardingStep > 0 && (
+            <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden mb-8">
+              <div 
+                className="bg-[#D4AF37] h-full transition-all duration-300 rounded-full" 
+                style={{ width: `${(onboardingStep / 7) * 100}%` }}
+              />
+            </div>
+          )}
+
           {/* Steps */}
           {onboardingStep === 0 && (
             <div className="space-y-6 text-center">
-              <div className="w-20 h-20 bg-[#D4AF37] rounded-full flex items-center justify-center text-[#050E1A] text-3xl font-extrabold mx-auto shadow-lg shadow-[#D4AF37]/30">
+              <div className="w-20 h-20 bg-[#D4AF37] rounded-full flex items-center justify-center text-[#050E1A] text-3xl font-extrabold mx-auto shadow-lg shadow-[#D4AF37]/30 transform hover:scale-105 transition-transform duration-300">
                 IELTS
               </div>
-              <h2 className="text-2xl font-black text-white">{_t('welcome_title')}</h2>
-              <p className="text-slate-400 text-sm max-w-md mx-auto">{_t('welcome_desc')}</p>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-white tracking-tight">{_t('welcome_title')}</h2>
+                <p className="text-slate-400 text-xs leading-relaxed max-w-sm mx-auto">{_t('welcome_desc')}</p>
+              </div>
               
-              <div className="grid grid-cols-3 gap-4 py-4 bg-navy/40 rounded-xl border border-primary-light/10 max-w-md mx-auto">
-                <div>
-                  <p className="text-lg font-black text-white">4.8 ★</p>
-                  <p className="text-[10px] text-slate-500">Rating</p>
+              <div className="grid grid-cols-3 gap-3 py-4 bg-slate-900/40 rounded-2xl border border-slate-800/60 max-w-sm mx-auto">
+                <div className="text-center">
+                  <p className="text-base font-black text-white">4.8 ★</p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Rating</p>
                 </div>
-                <div>
-                  <p className="text-lg font-black text-white">300+</p>
-                  <p className="text-[10px] text-slate-500">Mock Tests</p>
+                <div className="text-center border-x border-slate-800/60">
+                  <p className="text-base font-black text-white">300+</p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Mock Tests</p>
                 </div>
-                <div>
-                  <p className="text-lg font-black text-white">+1.5</p>
-                  <p className="text-[10px] text-slate-500">Avg Band ↑</p>
+                <div className="text-center">
+                  <p className="text-base font-black text-white">+1.5</p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">Avg Band ↑</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setOnboardingStep(1)}
-                className="w-full max-w-md mx-auto block bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer"
+                className="w-full max-w-sm mx-auto block bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold py-3.5 rounded-full text-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-lg shadow-[#D4AF37]/10"
               >
                 {_t('get_started')}
               </button>
@@ -292,107 +307,118 @@ export default function StudentDashboard() {
 
           {onboardingStep === 1 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold">{_t('target_score_title')}</h3>
-              <p className="text-slate-400 text-xs">{_t('target_score_desc')}</p>
-
-              <div className="grid grid-cols-2 gap-4">
-                {[5.5, 6.0, 6.5, 7.0, 7.5, 8.0].map((band) => (
-                  <button
-                    key={band}
-                    onClick={() => setTargetBand(band)}
-                    className={`p-4 rounded-xl border text-left flex justify-between items-center transition-all ${
-                      targetBand === band
-                        ? 'bg-[#D4AF37]/25 border-[#D4AF37] text-white'
-                        : 'bg-navy/60 border-primary-light/50 text-slate-300'
-                    }`}
-                  >
-                    <span className="font-bold text-sm">Band {band}</span>
-                    <span className="text-[10px] opacity-60">
-                      {band >= 7.5 ? 'Expert' : (band >= 7.0 ? 'Very Good' : 'Competent')}
-                    </span>
-                  </button>
-                ))}
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">{_t('target_score_title')}</h3>
+                <p className="text-slate-400 text-xs mt-1">{_t('target_score_desc')}</p>
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button onClick={() => setOnboardingStep(0)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              <div className="grid grid-cols-2 gap-3">
+                {[5.5, 6.0, 6.5, 7.0, 7.5, 8.0].map((band) => {
+                  const isSelected = targetBand === band;
+                  return (
+                    <button
+                      key={band}
+                      onClick={() => setTargetBand(band)}
+                      className={`p-3.5 rounded-xl border text-left flex justify-between items-center transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                        isSelected
+                          ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-white shadow-md shadow-[#D4AF37]/5'
+                          : 'bg-slate-900/50 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <span className="font-bold text-xs">Band {band}</span>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-[#D4AF37] text-[#050E1A]' : 'bg-slate-800 text-slate-400'}`}>
+                        {band >= 7.5 ? 'Expert' : (band >= 7.0 ? 'Very Good' : 'Competent')}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-slate-900/60">
+                <button onClick={() => setOnboardingStep(0)} className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 py-3 rounded-full text-xs font-bold transition-all active:scale-[0.98]">Back</button>
+                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
 
           {onboardingStep === 2 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold">{_t('test_type_title')}</h3>
-              <p className="text-slate-400 text-xs">{_t('test_type_desc')}</p>
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">{_t('test_type_title')}</h3>
+                <p className="text-slate-400 text-xs mt-1">{_t('test_type_desc')}</p>
+              </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <button
                   onClick={() => setTestType('ACADEMIC')}
-                  className={`w-full p-5 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                    testType === 'ACADEMIC' ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
+                  className={`w-full p-4.5 rounded-xl border text-left flex items-center gap-4 transition-all hover:scale-[1.01] active:scale-[0.99] ${
+                    testType === 'ACADEMIC' ? 'bg-[#D4AF37]/15 border-[#D4AF37] shadow-md shadow-[#D4AF37]/5' : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
                   }`}
                 >
                   <span className="text-2xl">🎓</span>
                   <div>
-                    <h4 className="font-bold text-sm">{_t('academic')}</h4>
-                    <p className="text-slate-400 text-[10px] mt-1">{_t('academic_desc')}</p>
+                    <h4 className="font-bold text-xs text-white">{_t('academic')}</h4>
+                    <p className="text-slate-400 text-[10px] mt-0.5 leading-relaxed">{_t('academic_desc')}</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => setTestType('GENERAL')}
-                  className={`w-full p-5 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                    testType === 'GENERAL' ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
+                  className={`w-full p-4.5 rounded-xl border text-left flex items-center gap-4 transition-all hover:scale-[1.01] active:scale-[0.99] ${
+                    testType === 'GENERAL' ? 'bg-[#D4AF37]/15 border-[#D4AF37] shadow-md shadow-[#D4AF37]/5' : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
                   }`}
                 >
                   <span className="text-2xl">💼</span>
                   <div>
-                    <h4 className="font-bold text-sm">{_t('general')}</h4>
-                    <p className="text-slate-400 text-[10px] mt-1">{_t('general_desc')}</p>
+                    <h4 className="font-bold text-xs text-white">{_t('general')}</h4>
+                    <p className="text-slate-400 text-[10px] mt-0.5 leading-relaxed">{_t('general_desc')}</p>
                   </div>
                 </button>
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button onClick={() => setOnboardingStep(1)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              <div className="flex gap-3 pt-4 border-t border-slate-900/60">
+                <button onClick={() => setOnboardingStep(1)} className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 py-3 rounded-full text-xs font-bold transition-all active:scale-[0.98]">Back</button>
+                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
 
           {onboardingStep === 3 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold">{_t('test_date_title')}</h3>
-              <p className="text-slate-400 text-xs">{_t('test_date_desc')}</p>
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">{_t('test_date_title')}</h3>
+                <p className="text-slate-400 text-xs mt-1">{_t('test_date_desc')}</p>
+              </div>
 
-              <div className="bg-navy/60 border border-primary-light/50 p-4 rounded-xl flex justify-between items-center">
-                <span className="text-sm font-bold">{_t('booked_switch')}</span>
+              <div className="bg-slate-900/50 border border-slate-800/80 p-4 rounded-xl flex justify-between items-center">
+                <span className="text-xs font-bold text-white">{_t('booked_switch')}</span>
                 <input
                   type="checkbox"
                   checked={hasBookedTest}
                   onChange={(e) => setHasBookedTest(e.target.checked)}
-                  className="w-5 h-5 rounded accent-[#D4AF37]"
+                  className="w-4.5 h-4.5 rounded accent-[#D4AF37] cursor-pointer"
                 />
               </div>
 
-              <div className="bg-navy/40 border border-primary-light/20 p-6 rounded-xl text-center space-y-3">
-                <span className="text-3xl text-[#D4AF37]">📅</span>
-                <h4 className="font-bold text-sm">{_t('no_worries')}</h4>
-                <p className="text-slate-400 text-[10px] leading-relaxed max-w-sm mx-auto">{_t('flexible_plan')}</p>
+              <div className="bg-slate-900/40 border border-slate-800/40 p-5 rounded-2xl text-center space-y-2.5">
+                <span className="text-3xl block">📅</span>
+                <h4 className="font-bold text-xs text-white">{_t('no_worries')}</h4>
+                <p className="text-slate-400 text-[10px] leading-relaxed max-w-xs mx-auto">{_t('flexible_plan')}</p>
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              <div className="flex gap-3 pt-4 border-t border-slate-900/60">
+                <button onClick={() => setOnboardingStep(2)} className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 py-3 rounded-full text-xs font-bold transition-all active:scale-[0.98]">Back</button>
+                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
 
           {onboardingStep === 4 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold">{_t('level_title')}</h3>
-              <p className="text-slate-400 text-xs">{_t('level_desc')}</p>
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">{_t('level_title')}</h3>
+                <p className="text-slate-400 text-xs mt-1">{_t('level_desc')}</p>
+              </div>
 
               <div className="space-y-3">
                 {[
@@ -403,32 +429,34 @@ export default function StudentDashboard() {
                   <button
                     key={lvl.code}
                     onClick={() => setCurrentLevel(lvl.code)}
-                    className={`w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                      currentLevel === lvl.code ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
+                    className={`w-full p-3.5 rounded-xl border text-left flex items-center gap-4 transition-all hover:scale-[1.01] active:scale-[0.99] ${
+                      currentLevel === lvl.code ? 'bg-[#D4AF37]/15 border-[#D4AF37] shadow-md shadow-[#D4AF37]/5' : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
                     }`}
                   >
                     <span className="text-xl">{lvl.icon}</span>
                     <div>
-                      <h4 className="font-bold text-sm">{lvl.label}</h4>
-                      <p className="text-slate-400 text-[10px] mt-0.5">{lvl.desc}</p>
+                      <h4 className="font-bold text-xs text-white">{lvl.label}</h4>
+                      <p className="text-slate-400 text-[10px] mt-0.5 leading-relaxed">{lvl.desc}</p>
                     </div>
                   </button>
                 ))}
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              <div className="flex gap-3 pt-4 border-t border-slate-900/60">
+                <button onClick={() => setOnboardingStep(3)} className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 py-3 rounded-full text-xs font-bold transition-all active:scale-[0.98]">Back</button>
+                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
 
           {onboardingStep === 5 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold">{_t('stoppers_title')}</h3>
-              <p className="text-slate-400 text-xs">{_t('stoppers_desc')}</p>
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">{_t('stoppers_title')}</h3>
+                <p className="text-slate-400 text-xs mt-1">{_t('stoppers_desc')}</p>
+              </div>
 
-              <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
                 {[
                   { key: 'speaking_confidence', label: _t('stop_speaking') },
                   { key: 'reading_speed', label: _t('stop_reading') },
@@ -448,8 +476,10 @@ export default function StudentDashboard() {
                           setSelectedWeaknesses([...selectedWeaknesses, item.key]);
                         }
                       }}
-                      className={`p-3 rounded-xl border text-left text-xs font-bold transition-all ${
-                        isSelected ? 'bg-[#D4AF37]/25 border-[#D4AF37] text-white' : 'bg-navy/60 border-primary-light/50 text-slate-300'
+                      className={`p-3 rounded-xl border text-left text-[11px] font-bold transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                        isSelected
+                          ? 'bg-[#D4AF37]/15 border-[#D4AF37] text-white shadow-md shadow-[#D4AF37]/5'
+                          : 'bg-slate-900/50 border-slate-800/80 text-slate-300 hover:border-slate-700'
                       }`}
                     >
                       {item.label}
@@ -458,17 +488,19 @@ export default function StudentDashboard() {
                 })}
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(6)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              <div className="flex gap-3 pt-4 border-t border-slate-900/60">
+                <button onClick={() => setOnboardingStep(4)} className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 py-3 rounded-full text-xs font-bold transition-all active:scale-[0.98]">Back</button>
+                <button onClick={() => setOnboardingStep(6)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
 
           {onboardingStep === 6 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold">{_t('study_time_title')}</h3>
-              <p className="text-slate-400 text-xs">{_t('study_time_desc')}</p>
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">{_t('study_time_title')}</h3>
+                <p className="text-slate-400 text-xs mt-1">{_t('study_time_desc')}</p>
+              </div>
 
               <div className="space-y-3">
                 {[
@@ -480,40 +512,42 @@ export default function StudentDashboard() {
                   <button
                     key={item.code}
                     onClick={() => setStudyTimeCommitment(item.code)}
-                    className={`w-full p-4 rounded-xl border text-left flex items-center gap-4 transition-all ${
-                      studyTimeCommitment === item.code ? 'bg-[#D4AF37]/25 border-[#D4AF37]' : 'bg-navy/60 border-primary-light/50'
+                    className={`w-full p-3.5 rounded-xl border text-left flex items-center gap-4 transition-all hover:scale-[1.01] active:scale-[0.99] ${
+                      studyTimeCommitment === item.code ? 'bg-[#D4AF37]/15 border-[#D4AF37] shadow-md shadow-[#D4AF37]/5' : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
                     }`}
                   >
                     <span className="text-xl">{item.icon}</span>
                     <div>
-                      <h4 className="font-bold text-sm">{item.label}</h4>
-                      <p className="text-slate-400 text-[10px] mt-0.5">{item.desc}</p>
+                      <h4 className="font-bold text-xs text-white">{item.label}</h4>
+                      <p className="text-slate-400 text-[10px] mt-0.5 leading-relaxed">{item.desc}</p>
                     </div>
                   </button>
                 ))}
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-primary-light/30 py-3 rounded-full text-xs font-bold">Back</button>
-                <button onClick={() => setOnboardingStep(7)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold">{_t('continue_btn')}</button>
+              <div className="flex gap-3 pt-4 border-t border-slate-900/60">
+                <button onClick={() => setOnboardingStep(5)} className="flex-1 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 py-3 rounded-full text-xs font-bold transition-all active:scale-[0.98]">Back</button>
+                <button onClick={() => setOnboardingStep(7)} className="flex-1 bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] py-3 rounded-full text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98]">{_t('continue_btn')}</button>
               </div>
             </div>
           )}
 
           {onboardingStep === 7 && (
             <div className="space-y-6 text-center">
-              <h3 className="text-xl font-bold">{_t('projected_title')}</h3>
-              <p className="text-slate-400 text-xs">{_t('projected_desc')}</p>
+              <div>
+                <h3 className="text-lg font-black text-white tracking-tight">{_t('projected_title')}</h3>
+                <p className="text-slate-400 text-xs mt-1">{_t('projected_desc')}</p>
+              </div>
 
-              <div className="w-40 h-40 rounded-full border-8 border-[#D4AF37] flex flex-col justify-center items-center mx-auto bg-navy/40">
-                <span className="text-[10px] text-slate-500">Band</span>
-                <span className="text-3xl font-black text-white">{targetBand}</span>
-                <span className="text-[10px] text-green-400 font-bold mt-1">↗ +2.5</span>
+              <div className="w-36 h-36 rounded-full border-[6px] border-[#D4AF37] flex flex-col justify-center items-center mx-auto bg-slate-900/40 shadow-lg shadow-[#D4AF37]/5">
+                <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Target Band</span>
+                <span className="text-3xl font-black text-white mt-0.5">{targetBand}</span>
+                <span className="text-[10px] text-green-400 font-bold mt-1">↗ +2.5 Boost</span>
               </div>
 
               <button
                 onClick={() => saveOnboardingProfile(true)}
-                className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold py-3.5 rounded-full text-sm transition-colors cursor-pointer mt-4"
+                className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold py-3.5 rounded-full text-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer mt-4 shadow-lg shadow-[#D4AF37]/10"
               >
                 Finish & Go to Sign In
               </button>
