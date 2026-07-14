@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
+import 'dashboard_screen.dart';
+import 'subscription_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -37,25 +40,51 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Color(0xFFD4AF37)),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '🎉 Account created successfully! Please sign in.',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      final loginSuccess = await ref.read(authProvider.notifier).login(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+
+      if (loginSuccess && mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        final hasSeenOnboarding = prefs.getBool('hasSeenOnboarding') ?? false;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Color(0xFFD4AF37)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '🎉 Account created and logged in successfully!',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            backgroundColor: Color(0xFF0F1E36),
+            duration: Duration(seconds: 2),
           ),
-          backgroundColor: Color(0xFF0F1E36),
-          duration: Duration(seconds: 4),
-        ),
-      );
-      Navigator.pop(context); // Go back to Login screen
+        );
+
+        if (hasSeenOnboarding) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const SubscriptionScreen(isRegisterFlow: true)),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('🎉 Account created! Please sign in.')),
+        );
+        Navigator.pop(context);
+      }
     }
   }
 

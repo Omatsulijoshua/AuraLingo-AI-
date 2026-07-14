@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import 'subscription_history_screen.dart';
+import 'dashboard_screen.dart';
 
 class SubscriptionScreen extends StatefulWidget {
-  const SubscriptionScreen({super.key});
+  final bool isRegisterFlow;
+  const SubscriptionScreen({super.key, this.isRegisterFlow = false});
 
   @override
   State<SubscriptionScreen> createState() => _SubscriptionScreenState();
@@ -40,11 +43,24 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         final List<dynamic> allPlans = jsonDecode(plansRes.body);
         final dynamic paymentInfo = jsonDecode(infoRes.body);
 
+        final prefs = await SharedPreferences.getInstance();
+        final pendingPlan = prefs.getString('pendingOnboardingPlan');
+
         setState(() {
           _plans = allPlans.where((p) => p['code'] != 'FREE').toList();
           _paymentInfo = paymentInfo;
+          
           if (_plans.isNotEmpty) {
             _selectedPlanId = _plans[0]['id'];
+            if (pendingPlan != null) {
+              final targetCode = pendingPlan == '12_MONTHS' ? 'PREMIUM' : 'PRO';
+              for (final plan in _plans) {
+                if (plan['code'] == targetCode) {
+                  _selectedPlanId = plan['id'];
+                  break;
+                }
+              }
+            }
           }
         });
       }
@@ -97,7 +113,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context); // Pop dialog
-                    Navigator.pop(context); // Pop screen
+                    if (widget.isRegisterFlow) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                      );
+                    } else {
+                      Navigator.pop(context); // Pop screen
+                    }
                   },
                   child: const Text('OK', style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
                 ),
@@ -129,11 +152,26 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B1E36),
         title: const Text('Upgrade Premium', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: widget.isRegisterFlow
+            ? const SizedBox()
+            : IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
         actions: [
+          if (widget.isRegisterFlow)
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                );
+              },
+              child: const Text(
+                'Skip',
+                style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.history_rounded, color: Color(0xFFD4AF37)),
             onPressed: () {

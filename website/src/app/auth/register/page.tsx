@@ -35,8 +35,18 @@ function RegisterForm() {
         }),
       });
 
-      // Redirect to login page on success
-      router.push('/auth/login?registered=true');
+      // Auto login on successful registration
+      const loginData = await api.request('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+
+      localStorage.setItem('accessToken', loginData.accessToken);
+      localStorage.setItem('refreshToken', loginData.refreshToken);
+      api.setUser(loginData.user);
+
+      // Redirect directly to dashboard
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please check inputs.');
     } finally {

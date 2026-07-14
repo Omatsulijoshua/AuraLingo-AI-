@@ -210,7 +210,7 @@ export default function StudentDashboard() {
         }),
       });
       api.clearTokens();
-      window.location.href = '/auth/login';
+      window.location.href = '/auth/register';
     } catch (e: any) {
       alert(e.message || 'Failed to submit preferences');
       setLoading(false);

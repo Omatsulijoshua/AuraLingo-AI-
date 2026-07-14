@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/localization.dart';
 import 'dashboard_screen.dart';
 import 'login_screen.dart';
+import 'register_screen.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -102,6 +103,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         await prefs.setString('pendingOnboardingCommitment', _studyTimeCommitment);
         await prefs.setBool('pendingOnboardingHasBooked', _hasBookedTest);
         await prefs.setString('pendingOnboardingLang', _selectedLang);
+        await prefs.setString('pendingOnboardingPlan', _selectedPlan); // Save premium selection (12_MONTHS or 1_MONTH)
       }
 
       // Lock active onboarding seen & mockup premium subscription locally
@@ -118,7 +120,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => const RegisterScreen()),
         );
       }
     } catch (e) {
@@ -131,7 +133,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          MaterialPageRoute(builder: (_) => const RegisterScreen()),
         );
       }
     } finally {
