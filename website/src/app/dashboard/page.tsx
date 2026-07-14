@@ -829,56 +829,233 @@ export default function StudentDashboard() {
         )}
 
         {activeTab === 'plan' && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-200">{_t('schedule_title')}</h2>
-            
-            {loadingSchedule ? (
-              <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
-            ) : schedule.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                {/* Horizontal day buttons */}
-                <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
-                  {schedule.map((day, idx) => (
-                    <button
-                      key={day.date}
-                      onClick={() => setSelectedDayIndex(idx)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        selectedDayIndex === idx ? 'bg-[#D4AF37]/20 border-gold text-white' : 'bg-primary/20 border-primary-light/20 text-slate-400'
-                      }`}
-                    >
-                      <p className="text-[10px] uppercase font-bold">{day.dayLabel}</p>
-                      <p className="text-xs font-black mt-0.5">{day.date}</p>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Day Tasks List */}
-                <div className="md:col-span-3 space-y-4">
-                  <h3 className="text-sm font-bold text-slate-400">Tasks for {schedule[selectedDayIndex].dayLabel}</h3>
-                  <div className="space-y-3">
-                    {schedule[selectedDayIndex].tasks.map((task: any) => (
-                      <div key={task.id} className="bg-primary/20 border border-primary-light/30 rounded-xl p-4 flex justify-between items-center">
-                        <div className="flex items-center gap-4">
-                          <span className="text-lg">📚</span>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-200">{task.title}</h4>
-                            <p className="text-[9px] text-slate-500 uppercase font-semibold mt-1">{task.module} PRACTICE</p>
-                          </div>
-                        </div>
-                        <Link
-                          href={`/dashboard/${task.module.toLowerCase()}`}
-                          className="bg-gold text-primary font-bold px-4 py-2 rounded-lg text-xs"
-                        >
-                          Start
-                        </Link>
-                      </div>
-                    ))}
+          <div className="space-y-8 max-w-5xl">
+            {/* Header Section */}
+            <div className="flex justify-between items-center">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-white tracking-normal">Your Study Plan</h2>
+                <div className="flex items-center gap-4 text-xs font-bold">
+                  <div className="flex items-center gap-1.5 text-red-400">
+                    <span>🎯</span>
+                    <span>Band {profile.targetBand ?? '7.0'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-400">
+                    <span>📅</span>
+                    <span>
+                      {profile.testDate
+                        ? new Date(profile.testDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })
+                        : 'Oct 11, 2026'}
+                    </span>
                   </div>
                 </div>
               </div>
-            ) : (
-              <p className="text-slate-400 text-xs">No schedule generated yet. Please save your onboarding preferences in Settings.</p>
-            )}
+
+              <button
+                onClick={fetchSchedule}
+                className="p-2.5 bg-primary/30 border border-primary-light/45 hover:border-gold/30 hover:text-gold transition-all rounded-xl text-slate-300 cursor-pointer"
+                title="Refresh schedule"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3-3 3 3m-3-3v12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Metrics Counters Row */}
+            <div className="bg-primary/25 border border-primary-light/35 rounded-2xl p-5 shadow-xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+              {[
+                { label: 'Listening', val: profile.progressStats?.listeningHistory ? (typeof profile.progressStats.listeningHistory === 'string' ? JSON.parse(profile.progressStats.listeningHistory).length : profile.progressStats.listeningHistory.length) : 0, icon: '🎧', bg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' },
+                { label: 'Reading', val: profile.progressStats?.readingHistory ? (typeof profile.progressStats.readingHistory === 'string' ? JSON.parse(profile.progressStats.readingHistory).length : profile.progressStats.readingHistory.length) : 0, icon: '📖', bg: 'bg-purple-500/10 text-purple-400 border border-purple-500/20' },
+                { label: 'Writing', val: profile.progressStats?.writingHistory ? (typeof profile.progressStats.writingHistory === 'string' ? JSON.parse(profile.progressStats.writingHistory).length : profile.progressStats.writingHistory.length) : 0, icon: '✍️', bg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
+                { label: 'Speaking', val: profile.progressStats?.speakingHistory ? (typeof profile.progressStats.speakingHistory === 'string' ? JSON.parse(profile.progressStats.speakingHistory).length : profile.progressStats.speakingHistory.length) : 0, icon: '🎙️', bg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' },
+              ].map((item) => (
+                <div key={item.label} className="flex flex-col items-center space-y-2">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl ${item.bg}`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-base font-extrabold text-white mt-1">{item.val}</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Split Progress & Schedule Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Left widgets: Progress & Pace */}
+              <div className="space-y-6 md:col-span-1">
+                {/* Weekly progress card */}
+                <div className="bg-primary/25 border border-primary-light/35 rounded-2xl p-5 shadow-xl space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">This Week</h4>
+                      <p className="text-[10px] text-slate-500 font-semibold mt-1">
+                        {(() => {
+                          let completed = 0;
+                          let total = 0;
+                          schedule.forEach((d: any) => d.tasks.forEach((t: any) => {
+                            total++;
+                            if (t.completed) completed++;
+                          }));
+                          return `${completed}/${total > 0 ? total : 23} tasks done`;
+                        })()}
+                      </p>
+                    </div>
+                    <span className="text-xl font-extrabold text-gold">
+                      {(() => {
+                        let completed = 0;
+                        let total = 0;
+                        schedule.forEach((d: any) => d.tasks.forEach((t: any) => {
+                          total++;
+                          if (t.completed) completed++;
+                        }));
+                        const totalTasks = total > 0 ? total : 23;
+                        return `${Math.round((completed / totalTasks) * 100)}%`;
+                      })()}
+                    </span>
+                  </div>
+                  <div className="w-full bg-navy/60 h-1.5 rounded-full overflow-hidden border border-primary-light/10">
+                    <div
+                      className="bg-gold h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${(() => {
+                          let completed = 0;
+                          let total = 0;
+                          schedule.forEach((d: any) => d.tasks.forEach((t: any) => {
+                            total++;
+                            if (t.completed) completed++;
+                          }));
+                          const totalTasks = total > 0 ? total : 23;
+                          return Math.round((completed / totalTasks) * 100);
+                        })()}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Pace Card */}
+                <div className="bg-primary/25 border border-primary-light/35 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg shrink-0">
+                    ↑
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Ahead of Schedule</h4>
+                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Great pace — keep it up!</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right widgets: Schedule timeline */}
+              <div className="md:col-span-2 space-y-6">
+                <h3 className="text-base font-extrabold text-white tracking-normal">Your Schedule</h3>
+                
+                {loadingSchedule ? (
+                  <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+                ) : schedule.length > 0 ? (
+                  <div className="space-y-4">
+                    {schedule.map((day: any, dayIdx: number) => {
+                      const dateObj = new Date(day.date);
+                      const dayNumber = dateObj.getDate();
+                      const dayShort = day.dayLabel.substring(0, 3);
+                      const isToday = dayIdx === 0;
+
+                      return (
+                        <div key={day.date} className="flex gap-4 items-stretch">
+                          {/* Timeline Day Node */}
+                          <div className="flex flex-col items-center shrink-0">
+                            <div
+                              className={`w-12 h-12 rounded-2xl border flex flex-col justify-center items-center font-bold shadow-lg transition-all ${
+                                isToday
+                                  ? 'bg-red-800 border-red-700 text-white'
+                                  : 'bg-primary/20 border-primary-light/35 text-slate-300'
+                              }`}
+                            >
+                              <span className={`text-[8px] uppercase tracking-wider ${isToday ? 'text-white/70' : 'text-slate-500'}`}>
+                                {dayShort}
+                              </span>
+                              <span className="text-sm font-black leading-tight mt-0.5">{dayNumber}</span>
+                            </div>
+                            {dayIdx < schedule.length - 1 && (
+                              <div className="w-0.5 bg-primary-light/25 flex-1 my-1.5" />
+                            )}
+                          </div>
+
+                          {/* Day tasks card list */}
+                          <div className="flex-1 space-y-2 pb-6">
+                            {day.tasks.map((task: any) => {
+                              const module = task.module.toLowerCase();
+                              let themeColor = 'blue';
+                              let icon = '🎧';
+                              let bgStyle = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+
+                              if (module === 'reading') {
+                                themeColor = 'purple';
+                                icon = '📖';
+                                bgStyle = 'bg-purple-500/10 text-purple-400 border border-purple-500/20';
+                              } else if (module === 'writing') {
+                                themeColor = 'amber';
+                                icon = '✍️';
+                                bgStyle = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                              } else if (module === 'speaking') {
+                                themeColor = 'emerald';
+                                icon = '🎙️';
+                                bgStyle = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                              }
+
+                              return (
+                                <Link
+                                  key={task.id}
+                                  href={`/dashboard/${module}`}
+                                  className="bg-primary/20 border border-primary-light/30 hover:border-gold/30 rounded-2xl p-3.5 flex justify-between items-center group cursor-pointer transition-all shadow-md"
+                                >
+                                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                    <div className={`w-9.5 h-9.5 rounded-xl flex items-center justify-center text-base shrink-0 ${bgStyle}`}>
+                                      {icon}
+                                    </div>
+                                    <div className="min-w-0 pr-4">
+                                      <h4 className="text-xs font-bold text-white truncate group-hover:text-gold transition-colors">
+                                        {task.title}
+                                      </h4>
+                                      <p
+                                        className={`text-[8px] font-bold uppercase tracking-wider mt-1 ${
+                                          isToday ? 'text-red-400' : 'text-slate-500'
+                                        }`}
+                                      >
+                                        {isToday ? "Today's Task" : 'Upcoming'}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 shrink-0">
+                                    {/* Status dot */}
+                                    <div
+                                      className={`w-2 h-2 rounded-full ${
+                                        task.completed ? 'bg-emerald-500' : (isToday ? 'bg-red-500' : 'bg-slate-600')
+                                      }`}
+                                    />
+                                    {/* Arrow icon */}
+                                    <div className="text-slate-500 group-hover:text-gold transition-colors pl-1">
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-slate-500 text-xs">No schedule generated yet. Please save your onboarding preferences in Settings.</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/localization.dart';
 import 'listening_practice_screen.dart';
@@ -7,14 +9,14 @@ import 'reading_practice_screen.dart';
 import 'writing_practice_screen.dart';
 import 'speaking_practice_screen.dart';
 
-class PlanScreen extends StatefulWidget {
+class PlanScreen extends ConsumerStatefulWidget {
   const PlanScreen({super.key});
 
   @override
-  State<PlanScreen> createState() => _PlanScreenState();
+  ConsumerState<PlanScreen> createState() => _PlanScreenState();
 }
 
-class _PlanScreenState extends State<PlanScreen> {
+class _PlanScreenState extends ConsumerState<PlanScreen> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
   List<dynamic> _schedule = [];
@@ -67,163 +69,499 @@ class _PlanScreenState extends State<PlanScreen> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen));
   }
 
+  int _getHistoryCount(dynamic history) {
+    if (history == null) return 0;
+    if (history is List) return history.length;
+    if (history is String) {
+      try {
+        final decoded = jsonDecode(history);
+        if (decoded is List) return decoded.length;
+      } catch (_) {}
+    }
+    return 0;
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return 'Oct 11, 2026';
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    } catch (_) {
+      return 'Oct 11, 2026';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authProvider).user;
+    
+    // Calculate total and completed tasks from the schedule
+    int totalTasksCount = 0;
+    int completedTasksCount = 0;
+    for (final day in _schedule) {
+      final tasks = day['tasks'] as List? ?? [];
+      for (final task in tasks) {
+        totalTasksCount++;
+        if (task['completed'] == true) {
+          completedTasksCount++;
+        }
+      }
+    }
+    final int weekTotal = totalTasksCount > 0 ? totalTasksCount : 23;
+    final int weekCompleted = completedTasksCount;
+    final int weekPercent = weekTotal > 0 ? (weekCompleted * 100 ~/ weekTotal) : 0;
+
+    // Get completed count per module from user stats
+    final int listeningDone = _getHistoryCount(user?['progressStats']?['listeningHistory']);
+    final int readingDone = _getHistoryCount(user?['progressStats']?['readingHistory']);
+    final int writingDone = _getHistoryCount(user?['progressStats']?['writingHistory']);
+    final int speakingDone = _getHistoryCount(user?['progressStats']?['speakingHistory']);
+
+    final String targetBand = user?['targetBand']?.toString() ?? '7.0';
+    final String examDateFormatted = _formatDate(user?['testDate']);
+
     return Scaffold(
       backgroundColor: const Color(0xFF050E1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B1E36),
-        title: Text(_t('schedule_title'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        elevation: 0,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
-          : _schedule.isEmpty
-              ? const Center(child: Text('No study schedule generated yet.', style: TextStyle(color: Colors.white30)))
-              : Column(
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
+            : SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Horizontal Weekday Selector
-                    Container(
-                      color: const Color(0xFF0B1E36),
-                      height: 80,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _schedule.length,
-                        itemBuilder: (context, idx) {
-                          final day = _schedule[idx];
-                          final isSelected = _selectedDayIndex == idx;
-                          final dateStr = day['date'] as String;
-                          final dayLabel = day['dayLabel'] as String;
-                          final dayShort = dayLabel.substring(0, 3);
-                          final dayNumber = dateStr.split('-').last;
-
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedDayIndex = idx),
-                            child: Container(
-                              width: 60,
-                              margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFD4AF37) : Colors.transparent,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFF1E3E6E),
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(dayShort, style: TextStyle(color: isSelected ? const Color(0xFF050E1A) : Colors.white60, fontSize: 10)),
-                                  const SizedBox(height: 4),
-                                  Text(dayNumber, style: TextStyle(color: isSelected ? const Color(0xFF050E1A) : Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                ],
-                              ),
+                    // Header Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Your Study Plan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        // Refresh Button
+                        GestureDetector(
+                          onTap: () {
+                            setState(() => _isLoading = true);
+                            _fetchSchedule();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0B1E36),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFF1E3E6E)),
                             ),
-                          );
-                        },
+                            child: const Icon(
+                              Icons.refresh_rounded,
+                              color: Colors.white70,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Badges Row
+                    Row(
+                      children: [
+                        Icon(Icons.track_changes_rounded, color: Colors.redAccent[200], size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Band $targetBand',
+                          style: TextStyle(
+                            color: Colors.redAccent[200],
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Icon(Icons.calendar_month_rounded, color: Colors.white38, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          examDateFormatted,
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // 1. Module Counters Card Grid
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1E36),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF1E3E6E)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildModuleCounterColumn('Listening', listeningDone, Icons.headset_rounded, Colors.blueAccent, Colors.blue.withOpacity(0.08)),
+                          _buildModuleCounterColumn('Reading', readingDone, Icons.menu_book_rounded, Colors.purpleAccent, Colors.purple.withOpacity(0.08)),
+                          _buildModuleCounterColumn('Writing', writingDone, Icons.edit_rounded, Colors.amberAccent, Colors.amber.withOpacity(0.08)),
+                          _buildModuleCounterColumn('Speaking', speakingDone, Icons.mic_rounded, Colors.greenAccent, Colors.green.withOpacity(0.08)),
+                        ],
                       ),
                     ),
-
                     const SizedBox(height: 16),
 
-                    // Tasks list for selected day
-                    Expanded(
-                      child: (() {
-                        final selectedDay = _schedule[_selectedDayIndex];
-                        final tasks = selectedDay['tasks'] as List;
-                        return ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: tasks.length,
-                          itemBuilder: (context, idx) {
-                            final task = Map<String, dynamic>.from(tasks[idx]);
-                            final isCompleted = task['completed'] ?? false;
-                            final module = task['module'] ?? '';
-
-                            IconData icon;
-                            Color iconColor;
-                            if (module == 'LISTENING') {
-                              icon = Icons.headphones;
-                              iconColor = Colors.greenAccent;
-                            } else if (module == 'READING') {
-                              icon = Icons.book;
-                              iconColor = Colors.blueAccent;
-                            } else if (module == 'WRITING') {
-                              icon = Icons.edit;
-                              iconColor = Colors.amberAccent;
-                            } else {
-                              icon = Icons.mic;
-                              iconColor = Colors.redAccent;
-                            }
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0B1E36),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFF1E3E6E)),
-                              ),
-                              child: Row(
+                    // 2. This Week Progress Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1E36),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF1E3E6E)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: iconColor.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(icon, color: iconColor, size: 20),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          task['title'] ?? '',
-                                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white10,
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                task['type'] ?? 'Practice',
-                                                style: const TextStyle(color: Colors.white70, fontSize: 9),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            if (isCompleted)
-                                              const Row(
-                                                children: [
-                                                  Icon(Icons.check_circle, color: Colors.green, size: 12),
-                                                  SizedBox(width: 4),
-                                                  Text('Completed', style: TextStyle(color: Colors.green, fontSize: 9)),
-                                                ],
-                                              ),
-                                          ],
-                                        ),
-                                      ],
+                                  const Text(
+                                    'This Week',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.arrow_forward_ios, color: Colors.white30, size: 16),
-                                    onPressed: () => _launchTask(task),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '$weekCompleted/$weekTotal tasks done',
+                                    style: const TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 11,
+                                    ),
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        );
-                      })(),
+                              Text(
+                                '$weekPercent%',
+                                style: const TextStyle(
+                                  color: Color(0xFFD4AF37),
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: weekTotal > 0 ? (weekCompleted / weekTotal) : 0.0,
+                              backgroundColor: const Color(0xFF1E3E6E),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                              minHeight: 6,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // 3. Ahead of Schedule Pace Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1E36),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF1E3E6E)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.greenAccent.withOpacity(0.08),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_upward_rounded,
+                              color: Colors.greenAccent,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Ahead of Schedule',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Great pace — keep it up!',
+                                  style: TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // 4. Schedule Section Title
+                    const Text(
+                      'Your Schedule',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // 5. Vertical Timeline List
+                    _schedule.isEmpty
+                        ? const Center(child: Text('No schedule tasks found.', style: TextStyle(color: Colors.white38)))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _schedule.length,
+                            itemBuilder: (context, dayIdx) {
+                              final day = _schedule[dayIdx];
+                              final dateStr = day['date'] as String;
+                              final dayLabel = day['dayLabel'] as String;
+                              final dayShort = dayLabel.substring(0, 3);
+                              final dayNumber = dateStr.split('-').last;
+
+                              final tasks = day['tasks'] as List? ?? [];
+                              final bool isToday = dayIdx == 0;
+
+                              return IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    // Timeline Node Column
+                                    Column(
+                                      children: [
+                                        // Circle Date Node
+                                        Container(
+                                          width: 48,
+                                          height: 48,
+                                          decoration: BoxDecoration(
+                                            color: isToday ? const Color(0xFFC62828) : const Color(0xFF0B1E36),
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(
+                                              color: isToday ? const Color(0xFFC62828) : const Color(0xFF1E3E6E),
+                                            ),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                dayShort,
+                                                style: TextStyle(
+                                                  color: isToday ? Colors.white70 : Colors.white38,
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                dayNumber,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        // Vertical connector line
+                                        if (dayIdx < _schedule.length - 1)
+                                          Expanded(
+                                            child: Container(
+                                              width: 2,
+                                              color: const Color(0xFF1E3E6E),
+                                              margin: const EdgeInsets.symmetric(vertical: 4),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 16),
+
+                                    // Tasks List for this day
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(bottom: 20.0),
+                                        child: Column(
+                                          children: tasks.map<Widget>((task) {
+                                            final isCompleted = task['completed'] ?? false;
+                                            final module = task['module'] ?? '';
+
+                                            IconData icon;
+                                            Color iconColor;
+                                            Color iconBg;
+                                            if (module == 'LISTENING') {
+                                              icon = Icons.headset_rounded;
+                                              iconColor = Colors.blueAccent;
+                                              iconBg = Colors.blue.withOpacity(0.08);
+                                            } else if (module == 'READING') {
+                                              icon = Icons.menu_book_rounded;
+                                              iconColor = Colors.purpleAccent;
+                                              iconBg = Colors.purple.withOpacity(0.08);
+                                            } else if (module == 'WRITING') {
+                                              icon = Icons.edit_rounded;
+                                              iconColor = Colors.amberAccent;
+                                              iconBg = Colors.amber.withOpacity(0.08);
+                                            } else {
+                                              icon = Icons.mic_rounded;
+                                              iconColor = Colors.greenAccent;
+                                              iconBg = Colors.green.withOpacity(0.08);
+                                            }
+
+                                            return Container(
+                                              margin: const EdgeInsets.only(bottom: 8),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF0B1E36),
+                                                borderRadius: BorderRadius.circular(16),
+                                                border: Border.all(color: const Color(0xFF1E3E6E)),
+                                              ),
+                                              child: Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  borderRadius: BorderRadius.circular(16),
+                                                  onTap: () => _launchTask(task),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.all(12.0),
+                                                    child: Row(
+                                                      children: [
+                                                        // Icon Box
+                                                        Container(
+                                                          width: 38,
+                                                          height: 38,
+                                                          decoration: BoxDecoration(
+                                                            color: iconBg,
+                                                            borderRadius: BorderRadius.circular(10),
+                                                          ),
+                                                          child: Icon(icon, color: iconColor, size: 18),
+                                                        ),
+                                                        const SizedBox(width: 12),
+
+                                                        // Task title and tags
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                                            children: [
+                                                              Text(
+                                                                task['title'] ?? '',
+                                                                style: const TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  fontSize: 12,
+                                                                ),
+                                                                maxLines: 2,
+                                                                overflow: TextOverflow.ellipsis,
+                                                              ),
+                                                              const SizedBox(height: 4),
+                                                              Text(
+                                                                isToday ? "Today's Task" : 'Upcoming',
+                                                                style: TextStyle(
+                                                                  color: isToday ? Colors.redAccent[200] : Colors.white38,
+                                                                  fontSize: 9,
+                                                                  fontWeight: FontWeight.bold,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 8),
+
+                                                        // Status dot indicator
+                                                        Container(
+                                                          width: 8,
+                                                          height: 8,
+                                                          decoration: BoxDecoration(
+                                                            color: isCompleted ? Colors.green : Colors.redAccent[200],
+                                                            shape: BoxShape.circle,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        const Icon(
+                                                          Icons.arrow_forward_ios_rounded,
+                                                          color: Colors.white24,
+                                                          size: 12,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                   ],
                 ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildModuleCounterColumn(String label, int val, IconData icon, Color color, Color bgColor) {
+    return Column(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '$val',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white38,
+            fontSize: 9,
+          ),
+        ),
+      ],
     );
   }
 }
