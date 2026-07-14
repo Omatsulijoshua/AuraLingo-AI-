@@ -725,32 +725,105 @@ export default function StudentDashboard() {
 
             {/* Continue Learning list */}
             <div className="space-y-4">
-              <h3 className="text-white font-bold text-sm tracking-wide uppercase text-gold">{_t('continue_learning')}</h3>
-              {loadingSchedule ? (
-                <div className="text-xs text-slate-500">Loading daily planner...</div>
-              ) : schedule.length > 0 ? (
-                <div className="space-y-3 max-w-xl">
-                  {schedule[0].tasks.slice(0, 2).map((task: any) => (
-                    <div key={task.id} className="bg-primary/20 border border-primary-light/30 rounded-xl p-4 flex justify-between items-center">
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg">🎯</span>
-                        <div>
-                          <h4 className="text-xs font-bold text-slate-200">{task.title}</h4>
-                          <p className="text-[10px] text-slate-500 mt-1">Daily Planner Practice</p>
+              <h3 className="text-white font-extrabold text-lg tracking-normal">{_t('continue_learning') || 'Continue Learning'}</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
+                {[
+                  {
+                    module: 'Listening',
+                    title: 'IELTS Book 10 Test 1',
+                    progressText: '0/44 tests completed',
+                    progressPercent: 0,
+                    icon: '🎧',
+                    path: '/dashboard/listening',
+                    themeColor: 'blue',
+                    bgIcon: 'bg-blue-500/10 text-blue-400',
+                    pillBg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                  },
+                  {
+                    module: 'Reading',
+                    title: 'History/Architecture',
+                    progressText: '0/132 passages completed',
+                    progressPercent: 0,
+                    icon: '📖',
+                    path: '/dashboard/reading',
+                    themeColor: 'purple',
+                    bgIcon: 'bg-purple-500/10 text-purple-400',
+                    pillBg: 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                  },
+                  {
+                    module: 'Writing',
+                    title: 'Test 1 Task 1',
+                    progressText: '0/88 tasks completed',
+                    progressPercent: 0,
+                    icon: '✍️',
+                    path: '/dashboard/writing',
+                    themeColor: 'amber',
+                    bgIcon: 'bg-amber-500/10 text-amber-400',
+                    pillBg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  },
+                  {
+                    module: 'Speaking',
+                    title: 'IELTS Book 10 Test 1',
+                    progressText: '0/44 tests completed',
+                    progressPercent: 0,
+                    icon: '🎙️',
+                    path: '/dashboard/speaking',
+                    themeColor: 'emerald',
+                    bgIcon: 'bg-emerald-500/10 text-emerald-400',
+                    pillBg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                  }
+                ].map((item) => (
+                  <Link
+                    key={item.module}
+                    href={item.path}
+                    className="bg-primary/20 border border-primary-light/30 hover:border-gold/30 transition-all rounded-2xl p-4 flex justify-between items-center group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4 w-full">
+                      {/* Icon container */}
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 ${item.bgIcon}`}>
+                        {item.icon}
+                      </div>
+ 
+                      {/* Details */}
+                      <div className="space-y-1.5 flex-1 min-w-0 pr-4">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${item.pillBg}`}>
+                          {item.module}
+                        </span>
+                        <h4 className="text-sm font-bold text-white truncate group-hover:text-gold transition-colors">
+                          {item.title}
+                        </h4>
+                        
+                        {/* Progress Bar & Text */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-[9px] text-slate-500">
+                            <span>{item.progressText}</span>
+                            <span>{item.progressPercent}%</span>
+                          </div>
+                          <div className="w-full bg-navy/60 h-1.5 rounded-full overflow-hidden border border-primary-light/10">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                item.themeColor === 'blue' ? 'bg-blue-500' :
+                                item.themeColor === 'purple' ? 'bg-purple-500' :
+                                item.themeColor === 'amber' ? 'bg-amber-500' :
+                                'bg-emerald-500'
+                              }`}
+                              style={{ width: `${item.progressPercent}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-                      <Link
-                        href={`/dashboard/${task.module.toLowerCase()}`}
-                        className="bg-gold text-primary font-bold px-3 py-1.5 rounded-lg text-[10px] transition-colors"
-                      >
-                        Start
-                      </Link>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-slate-500">No tasks generated. Recalculate schedule in Settings.</p>
-              )}
+ 
+                    {/* Chevron right */}
+                    <div className="text-slate-500 group-hover:text-gold transition-colors shrink-0 pl-2">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         )}

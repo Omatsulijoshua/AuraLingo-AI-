@@ -322,6 +322,64 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                           );
                         }).toList(),
                       ),
+            const SizedBox(height: 24),
+            const Text(
+              'Continue Learning',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildContinueCard(
+              module: 'Listening',
+              title: 'IELTS Book 10 Test 1',
+              progressText: '0/44 tests completed',
+              progressValue: 0.0,
+              icon: Icons.headset_rounded,
+              iconColor: Colors.blueAccent,
+              bgColor: Colors.blue.withOpacity(0.08),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
+              },
+            ),
+            _buildContinueCard(
+              module: 'Reading',
+              title: 'History/Architecture',
+              progressText: '0/132 passages completed',
+              progressValue: 0.0,
+              icon: Icons.menu_book_rounded,
+              iconColor: Colors.purpleAccent,
+              bgColor: Colors.purple.withOpacity(0.08),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
+              },
+            ),
+            _buildContinueCard(
+              module: 'Writing',
+              title: 'Test 1 Task 1',
+              progressText: '0/88 tasks completed',
+              progressValue: 0.0,
+              icon: Icons.edit_rounded,
+              iconColor: Colors.amberAccent,
+              bgColor: Colors.amber.withOpacity(0.08),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+              },
+            ),
+            _buildContinueCard(
+              module: 'Speaking',
+              title: 'IELTS Book 10 Test 1',
+              progressText: '0/44 tests completed',
+              progressValue: 0.0,
+              icon: Icons.mic_rounded,
+              iconColor: Colors.greenAccent,
+              bgColor: Colors.green.withOpacity(0.08),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
+              },
+            ),
             const SizedBox(height: 20),
           ],
         ),
@@ -422,6 +480,113 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContinueCard({
+    required String module,
+    required String title,
+    required String progressText,
+    required double progressValue,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1E36),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E3E6E)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: iconColor.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: iconColor.withOpacity(0.24)),
+                        ),
+                        child: Text(
+                          module,
+                          style: TextStyle(
+                            color: iconColor,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            progressText,
+                            style: const TextStyle(color: Colors.white38, fontSize: 9),
+                          ),
+                          Text(
+                            '${(progressValue * 100).toInt()}%',
+                            style: const TextStyle(color: Colors.white38, fontSize: 9),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: progressValue,
+                          backgroundColor: const Color(0xFF1E3E6E),
+                          valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                          minHeight: 4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white24,
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
