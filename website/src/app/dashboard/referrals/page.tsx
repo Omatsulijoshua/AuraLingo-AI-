@@ -106,18 +106,22 @@ export default function ReferralDashboard() {
             <h3 className="text-white font-bold text-base">Referral Earnings Dashboard</h3>
             
             {/* Extended Balances Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div className="bg-navy/40 p-4 rounded-xl border border-primary-light/20">
                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Total Balance</p>
-                <p className="text-white text-2xl font-black mt-1">₦{stats?.referralBalance?.toLocaleString() || '0'}</p>
+                <p className="text-white text-xl font-black mt-1">₦{stats?.referralBalance?.toLocaleString() || '0'}</p>
               </div>
-              <div className="bg-navy/40 p-4 rounded-xl border border-emerald/10">
-                <p className="text-emerald text-[10px] uppercase font-bold tracking-wider">Withdrawable Balance</p>
-                <p className="text-gold text-2xl font-black mt-1">₦{stats?.withdrawableBalance?.toLocaleString() || '0'}</p>
+              <div className="bg-navy/40 p-4 rounded-xl border border-emerald-500/10">
+                <p className="text-emerald text-[10px] uppercase font-bold tracking-wider">Withdrawable</p>
+                <p className="text-gold text-xl font-black mt-1">₦{stats?.withdrawableBalance?.toLocaleString() || '0'}</p>
               </div>
               <div className="bg-navy/40 p-4 rounded-xl border border-amber-500/10">
-                <p className="text-amber-500 text-[10px] uppercase font-bold tracking-wider">Pending Balance</p>
-                <p className="text-amber-500 text-2xl font-black mt-1">₦{stats?.lockedBalance?.toLocaleString() || '0'}</p>
+                <p className="text-amber-500 text-[10px] uppercase font-bold tracking-wider">Pending</p>
+                <p className="text-amber-500 text-xl font-black mt-1">₦{stats?.lockedBalance?.toLocaleString() || '0'}</p>
+              </div>
+              <div className="bg-navy/40 p-4 rounded-xl border border-green-500/10">
+                <p className="text-green-400 text-[10px] uppercase font-bold tracking-wider">This Month</p>
+                <p className="text-green-400 text-xl font-black mt-1">₦{stats?.madeThisMonth?.toLocaleString() || '0'}</p>
               </div>
             </div>
 
@@ -249,13 +253,18 @@ export default function ReferralDashboard() {
                         <p className="text-[10px] text-slate-500">{refUser.email}</p>
                       </div>
                       <div className="text-right space-y-1">
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                          refUser.isPaidUser 
-                            ? 'bg-emerald/10 text-emerald border border-emerald/20' 
-                            : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                        }`}>
-                          {refUser.isPaidUser ? 'PAID USER' : 'TRIAL ONLY'}
-                        </span>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                            refUser.isPaidUser 
+                              ? 'bg-emerald/10 text-emerald border border-emerald/20' 
+                              : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                          }`}>
+                            {refUser.isPaidUser ? 'PAID' : 'PENDING'}
+                          </span>
+                          <span className={`font-bold text-[10px] ${refUser.isPaidUser ? 'text-emerald' : 'text-slate-500'}`}>
+                            {refUser.isPaidUser ? `+₦${(refUser.rewardEarned || stats?.rewardPerUser || 1000).toLocaleString()}` : '₦0'}
+                          </span>
+                        </div>
                         <p className="text-[9px] text-slate-500">{new Date(refUser.createdAt).toLocaleDateString()}</p>
                       </div>
                     </div>

@@ -1075,6 +1075,7 @@ function QuestionTable({ list, selectedIds, onSelect, onSelectAll, onDelete }: Q
             <th className="px-6 py-4">Question Text</th>
             <th className="px-6 py-4">Type</th>
             <th className="px-6 py-4">Difficulty</th>
+            <th className="px-6 py-4">Audio / Track</th>
             <th className="px-6 py-4 text-right">Actions</th>
           </tr>
         </thead>
@@ -1096,6 +1097,26 @@ function QuestionTable({ list, selectedIds, onSelect, onSelectAll, onDelete }: Q
                 <span className="bg-primary-light/40 px-2 py-0.5 rounded text-[9px] font-bold text-slate-300 border border-primary-light/50">
                   {q.difficulty}
                 </span>
+              </td>
+              <td className="px-6 py-4">
+                {q.listeningAudio ? (
+                  <div className="flex items-center gap-3">
+                    <audio 
+                      src={q.listeningAudio.audioUrl.startsWith('http') ? q.listeningAudio.audioUrl : `https://bandup-ielts.onrender.com${q.listeningAudio.audioUrl}`} 
+                      controls 
+                      className="w-44 h-7 accent-gold outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => alert(`Transcript:\n\n${q.listeningAudio.transcript}`)}
+                      className="bg-gold/15 text-gold border border-gold/20 hover:bg-gold hover:text-primary px-2 py-1 rounded text-[9px] font-bold transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      Show Transcript
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-slate-500 italic">None</span>
+                )}
               </td>
               <td className="px-6 py-4 text-right">
                 <button

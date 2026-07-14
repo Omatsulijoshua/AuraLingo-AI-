@@ -1161,8 +1161,8 @@ export default function StudentDashboard() {
               <h3 className="text-xs font-bold text-gold uppercase tracking-wide">My Account</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button 
-                  onClick={() => alert('AI Progress Report is active and analyzing your profile!')}
+                <Link 
+                  href="/dashboard/progress"
                   className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer"
                 >
                   <span className="text-lg">📈</span>
@@ -1170,7 +1170,7 @@ export default function StudentDashboard() {
                     <p className="text-white font-bold">AI Progress Report</p>
                     <p className="text-slate-500 text-[10px] mt-0.5">Real-time profile performance</p>
                   </div>
-                </button>
+                </Link>
 
                 <button 
                   onClick={() => setActiveTab('history')}
@@ -1183,10 +1183,8 @@ export default function StudentDashboard() {
                   </div>
                 </button>
 
-                <button 
-                  onClick={() => {
-                    alert('Referral Program balance: $' + (profile.referralBalance ?? '0.00'));
-                  }}
+                <Link 
+                  href="/dashboard/referrals"
                   className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer"
                 >
                   <span className="text-lg">💸</span>
@@ -1194,7 +1192,7 @@ export default function StudentDashboard() {
                     <p className="text-white font-bold">Referral Program</p>
                     <p className="text-slate-500 text-[10px] mt-0.5">Invite friends and earn rewards</p>
                   </div>
-                </button>
+                </Link>
 
                 <button 
                   onClick={() => {
@@ -1283,6 +1281,23 @@ export default function StudentDashboard() {
                   className="bg-primary-light hover:bg-gold hover:text-primary font-bold px-3 py-1.5 rounded-lg text-[10px] transition-colors"
                 >
                   Reset & Recalculate
+                </button>
+              </div>
+            </div>
+
+            {/* Session Settings Card */}
+            <div className="bg-primary/25 border border-primary-light/30 rounded-xl p-6 space-y-4">
+              <h3 className="text-xs font-bold text-red-400 uppercase tracking-wide">Session</h3>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-slate-300">Log out of your account on this device</span>
+                <button
+                  onClick={() => {
+                    api.clearTokens();
+                    window.location.href = '/auth/login';
+                  }}
+                  className="bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/20 text-red-400 font-bold px-4 py-2 rounded-lg text-xs transition-all cursor-pointer"
+                >
+                  Log Out
                 </button>
               </div>
             </div>

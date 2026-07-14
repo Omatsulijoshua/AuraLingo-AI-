@@ -18,7 +18,7 @@ export class ReferralsService {
             createdAt: true,
             payments: {
               where: { status: 'SUCCESSFUL' },
-              select: { id: true },
+              select: { id: true, createdAt: true },
             },
           },
         },
@@ -40,18 +40,39 @@ export class ReferralsService {
     const lockedBalance = unpaidCount * defaultReward;
     const withdrawableBalance = Math.max(0, user.referralBalance - lockedBalance);
 
-    const referralsFormatted = user.referrals.map(r => ({
-      id: r.id,
-      name: r.name,
-      email: r.email,
-      createdAt: r.createdAt,
-      isPaidUser: r.payments.length > 0,
-    }));
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    let madeThisMonth = 0;
+    const referralsFormatted = user.referrals.map(r => {
+      const isPaid = r.payments.length > 0;
+      const earned = isPaid ? defaultReward : 0.0;
+      
+      // Calculate earnings from payments this month
+      if (isPaid) {
+        const hasPaymentThisMonth = r.payments.some(p => new Date(p.createdAt) >= startOfMonth);
+        if (hasPaymentThisMonth) {
+          madeThisMonth += defaultReward;
+        }
+      }
+
+      return {
+        id: r.id,
+        name: r.name,
+        email: r.email,
+        createdAt: r.createdAt,
+        isPaidUser: isPaid,
+        rewardEarned: earned,
+      };
+    });
 
     return {
       referralBalance: user.referralBalance,
       withdrawableBalance,
       lockedBalance,
+      madeThisMonth,
+      rewardPerUser: defaultReward,
       unpaidReferralsCount: unpaidCount,
       isReferralVerified: user.isReferralVerified,
       bankName: user.referralBankName,
@@ -61,6 +82,7 @@ export class ReferralsService {
       referralsList: referralsFormatted,
       withdrawalsHistory: user.withdrawals,
       userId: user.id,
+      referralLink: `https://bandup-ielts-prep.vercel.app/auth/register?ref=${user.id}`,
     };
   }
 

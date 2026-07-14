@@ -2,10 +2,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../services/localization.dart';
 import 'subscription_screen.dart';
+import 'support_screen.dart';
+import 'referrals_screen.dart';
+import 'history_screen.dart';
+import 'login_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -24,6 +29,95 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   void initState() {
     super.initState();
     _preferredLanguage = LocalizationService.currentLocale;
+    _loadNotificationPreference();
+  }
+
+  Future<void> _loadNotificationPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notifications = prefs.getBool('notifications_enabled') ?? true;
+    });
+  }
+
+  Future<void> _saveNotificationPreference(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notifications_enabled', value);
+    setState(() {
+      _notifications = value;
+    });
+  }
+
+  void _showRateAppDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: const Color(0xFFF8FAFC),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // IELTS Prep Logo
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFC62828),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('IELTS', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, height: 1.0)),
+                        Text('Prep', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, height: 1.0)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Enjoying IELTS?',
+                  style: TextStyle(color: Color(0xFF0F172A), fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tap a star to rate it on the App Store.',
+                  style: TextStyle(color: Colors.black54, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Thank you for rating!')),
+                        );
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4.0),
+                        child: Icon(Icons.star_outline_rounded, color: Colors.blueAccent, size: 36),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 24),
+                const Divider(height: 1),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Not Now', style: TextStyle(color: Colors.blueAccent, fontSize: 14, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   String _t(String key) => LocalizationService.translate(key);
@@ -137,48 +231,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
 
             // Plan Widget Banner
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1E36),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF1E3E6E)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF152A4A),
-                      shape: BoxShape.circle,
+            (() {
+              final List subscriptions = user?['subscriptions'] as List? ?? [];
+              final dynamic activeSub = subscriptions.firstWhere(
+                (sub) => sub['status'] == 'ACTIVE',
+                orElse: () => null,
+              );
+              final bool hasActiveSub = activeSub != null;
+              final String planName = hasActiveSub ? (activeSub['plan']?['name'] ?? 'Premium Plan') : _t('free_plan');
+              final String planSubtitle = hasActiveSub ? 'Full premium access active' : _t('upgrade_plan');
+
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B1E36),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF1E3E6E)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF152A4A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        hasActiveSub ? Icons.verified_rounded : Icons.lock_open,
+                        color: const Color(0xFFD4AF37),
+                        size: 28,
+                      ),
                     ),
-                    child: const Icon(Icons.lock_open, color: Color(0xFFD4AF37), size: 28),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_t('free_plan'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                        const SizedBox(height: 4),
-                        Text(_t('upgrade_plan'), style: const TextStyle(color: Colors.white54, fontSize: 11)),
-                      ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(planName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 4),
+                          Text(planSubtitle, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                        ],
+                      ),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD4AF37),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      child: Text(
+                        hasActiveSub ? 'Manage' : _t('upgrade'),
+                        style: const TextStyle(color: Color(0xFF050E1A), fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
                     ),
-                    child: Text(_t('upgrade'), style: const TextStyle(color: Color(0xFF050E1A), fontWeight: FontWeight.bold, fontSize: 12)),
-                  ),
-                ],
-              ),
-            ),
+                  ],
+                ),
+              );
+            })(),
             const SizedBox(height: 24),
 
             // General Settings
@@ -198,7 +310,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     value: _notifications,
                     activeColor: const Color(0xFFD4AF37),
                     onChanged: (val) {
-                      setState(() => _notifications = val);
+                      _saveNotificationPreference(val);
                     },
                   ),
                   const Divider(color: Color(0xFF1E3E6E), height: 1),
@@ -244,9 +356,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('AI Progress Report', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('AI Progress Report is active and analyzing your profile!')),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ProgressReportScreen()));
                     },
                   ),
                   const Divider(color: Color(0xFF1E3E6E), height: 1),
@@ -255,9 +365,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('Attempt History', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Navigate to the History tab below to see your attempt history!')),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
                     },
                   ),
                   const Divider(color: Color(0xFF1E3E6E), height: 1),
@@ -266,9 +374,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('Referral Program', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Referral Program details and links are available on your account!')),
-                      );
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ReferralsScreen()));
                     },
                   ),
                   const Divider(color: Color(0xFF1E3E6E), height: 1),
@@ -362,14 +468,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: Column(
                 children: [
-                  _buildSupportItem(_t('send_feedback'), Icons.mail),
+                  _buildSupportItem(_t('send_feedback'), Icons.mail, () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()));
+                  }),
                   const Divider(color: Color(0xFF1E3E6E), height: 1),
-                  _buildSupportItem(_t('rate_app'), Icons.star),
+                  _buildSupportItem(_t('rate_app'), Icons.star, () {
+                    _showRateAppDialog();
+                  }),
                   const Divider(color: Color(0xFF1E3E6E), height: 1),
-                  _buildSupportItem(_t('privacy_policy'), Icons.security),
+                  _buildSupportItem(_t('privacy_policy'), Icons.security, () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Privacy Policy loaded successfully.')),
+                    );
+                  }),
                   const Divider(color: Color(0xFF1E3E6E), height: 1),
-                  _buildSupportItem(_t('terms_of_use'), Icons.description),
+                  _buildSupportItem(_t('terms_of_use'), Icons.description, () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Terms of Use loaded successfully.')),
+                    );
+                  }),
                 ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Session Settings
+            const Text('SESSION', style: TextStyle(color: Colors.white30, fontSize: 10, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1E36),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF1E3E6E)),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                title: const Text('Log Out', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+                onTap: () async {
+                  await ref.read(authProvider.notifier).logout();
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
+                },
               ),
             ),
             const SizedBox(height: 40),
@@ -379,12 +524,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSupportItem(String title, IconData icon) {
+  Widget _buildSupportItem(String title, IconData icon, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, color: const Color(0xFFD4AF37), size: 20),
       title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
       trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

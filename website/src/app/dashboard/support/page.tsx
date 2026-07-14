@@ -18,8 +18,9 @@ export default function StudentSupportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // New ticket form state
-  const [subject, setSubject] = useState('');
+  // New ticket form state aligning with mobile view
+  const [selectedType, setSelectedType] = useState<'Suggestion' | 'Complaint'>('Suggestion');
+  const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,16 +41,21 @@ export default function StudentSupportPage() {
 
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim() || !message.trim()) return;
+    if (!message.trim()) return;
 
     setSubmitting(true);
     try {
+      const emailStr = email.trim();
+      const fullMessage = emailStr ? `${message}\n\nContact Email: ${emailStr}` : message;
+
       await api.request('/support/tickets', {
         method: 'POST',
-        body: JSON.stringify({ subject, message }),
+        body: JSON.stringify({
+          subject: `[${selectedType}] Support Request`,
+          message: fullMessage,
+        }),
       });
-      alert('Support ticket submitted successfully! Tutors will review and respond shortly.');
-      setSubject('');
+      alert(`Your ${selectedType} has been submitted successfully! Tutors will review and respond shortly.`);
       setMessage('');
       await fetchTickets();
     } catch (err: any) {
@@ -80,8 +86,8 @@ export default function StudentSupportPage() {
 
       <main className="flex-1 max-w-5xl w-full mx-auto p-8 space-y-8">
         <div>
-          <h2 className="text-2xl font-black">💬 Help & Support Tickets</h2>
-          <p className="text-slate-400 text-xs mt-1">Submit support requests to administrators or check responses from tutors.</p>
+          <h2 className="text-2xl font-black">💬 Help & Support</h2>
+          <p className="text-slate-400 text-xs mt-1">Submit suggestions or complaints to administrators and check responder tutor replies.</p>
         </div>
 
         {error && (
@@ -91,38 +97,71 @@ export default function StudentSupportPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Submit New Ticket Form */}
+          {/* Submit New Suggestion/Complaint Form */}
           <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4 h-fit">
-            <h3 className="text-white font-bold text-base">Submit a Ticket</h3>
+            <h3 className="text-white font-bold text-base">Submit Feedback</h3>
+            
             <form onSubmit={handleSubmitTicket} className="space-y-4">
+              {/* Type Switcher */}
               <div>
-                <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1.5">Subject</label>
+                <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">What is this regarding?</label>
+                <div className="flex bg-navy border border-primary-light/30 rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedType('Suggestion')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      selectedType === 'Suggestion'
+                        ? 'bg-gold text-primary shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Suggestion
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedType('Complaint')}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      selectedType === 'Complaint'
+                        ? 'bg-gold text-primary shadow-md'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Complaint
+                  </button>
+                </div>
+              </div>
+
+              {/* Optional Email */}
+              <div>
+                <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1.5">Email (Optional)</label>
                 <input
-                  type="text"
-                  required
-                  placeholder="e.g. Subscription issue, Speaking feedback lag"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  type="email"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
                 />
               </div>
+
+              {/* Message */}
               <div>
-                <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1.5">Describe your issue</label>
+                <label className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1.5">Message</label>
                 <textarea
                   required
                   rows={5}
-                  placeholder="Provide details about the issue you are facing..."
+                  placeholder={`Describe your ${selectedType.toLowerCase()} here...`}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2 text-xs text-white focus:outline-none placeholder-slate-500"
                 />
               </div>
+
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !message.trim()}
                 className="w-full bg-gold hover:bg-gold-dark text-primary font-bold py-2.5 rounded-lg text-xs transition-colors cursor-pointer disabled:opacity-40"
               >
-                {submitting ? 'Submitting...' : 'Submit Support Ticket'}
+                {submitting ? 'Sending...' : `Send ${selectedType}`}
               </button>
             </form>
           </div>
