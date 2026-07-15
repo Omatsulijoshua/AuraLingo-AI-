@@ -900,5 +900,60 @@ CRITICAL: Return ONLY a valid JSON object matching the format below. Do not incl
 
     return schedule;
   }
+
+  async checkGrammar(text: string) {
+    const prompt = `You are a professional IELTS grammar checker. Please analyze the following text and perform a grammar check.
+Text to analyze: "${text}"
+
+Respond ONLY with a JSON object in this exact format:
+{
+  "correctedText": "The entire text with all grammar/spelling errors corrected",
+  "corrections": [
+    {
+      "original": "Original phrase or sentence containing the error",
+      "correction": "Corrected phrase or sentence",
+      "explanation": "Brief explanation of the grammatical mistake (e.g. subject-verb agreement, spelling, punctuation, tense)"
+    }
+  ]
+}
+
+If the text contains zero errors, the "corrections" array should be empty, and "correctedText" should match the original text. Do not output any markdown formatting or any other text before/after the JSON.`;
+
+    const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+    let cleanText = aiResponse.text.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.substring(7);
+    }
+    if (cleanText.endsWith('```')) {
+      cleanText = cleanText.substring(0, cleanText.length - 3);
+    }
+    return JSON.parse(cleanText.trim());
+  }
+
+  async paraphraseText(text: string) {
+    const prompt = `You are an expert IELTS writing tutor. Please paraphrase the following sentence/text in three distinct, high-scoring ways (e.g., using advanced vocabulary, changing structure, formal style).
+Text to paraphrase: "${text}"
+
+Respond ONLY with a JSON object in this exact format:
+{
+  "versions": [
+    "First paraphrased version",
+    "Second paraphrased version",
+    "Third paraphrased version"
+  ]
+}
+
+Do not output any markdown formatting or any other text before/after the JSON.`;
+
+    const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+    let cleanText = aiResponse.text.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.substring(7);
+    }
+    if (cleanText.endsWith('```')) {
+      cleanText = cleanText.substring(0, cleanText.length - 3);
+    }
+    return JSON.parse(cleanText.trim());
+  }
 }
 

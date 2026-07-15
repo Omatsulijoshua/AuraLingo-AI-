@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/localization.dart';
 import 'essay_checker_screen.dart';
+import 'grammar_checker_screen.dart';
+import 'paraphrase_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -67,9 +69,31 @@ class _ToolsScreenState extends State<ToolsScreen> {
               },
             ),
             const SizedBox(height: 12),
-            _buildToolCard(_t('grammar_check'), _t('grammar_check_desc'), Icons.spellcheck, Colors.greenAccent),
+            _buildToolCard(
+              _t('grammar_check'),
+              _t('grammar_check_desc'),
+              Icons.spellcheck,
+              Colors.greenAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GrammarCheckerScreen()),
+                );
+              },
+            ),
             const SizedBox(height: 12),
-            _buildToolCard(_t('paraphrase'), _t('paraphrase_desc'), Icons.transform, Colors.blueAccent),
+            _buildToolCard(
+              _t('paraphrase'),
+              _t('paraphrase_desc'),
+              Icons.transform,
+              Colors.blueAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ParaphraseScreen()),
+                );
+              },
+            ),
             const SizedBox(height: 12),
             _buildToolCard(_t('vocabulary'), _t('vocabulary_desc'), Icons.translate, Colors.purpleAccent),
 

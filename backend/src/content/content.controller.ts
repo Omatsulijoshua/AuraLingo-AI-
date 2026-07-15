@@ -229,6 +229,18 @@ export class ContentController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('grammar/check')
+  async checkGrammar(@Body('text') text: string) {
+    return this.contentService.checkGrammar(text);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('paraphrase')
+  async paraphraseText(@Body('text') text: string) {
+    return this.contentService.paraphraseText(text);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('schedule')
   async getPersonalizedSchedule(@Req() req: any) {
     return this.contentService.getPersonalizedSchedule(req.user.sub);
