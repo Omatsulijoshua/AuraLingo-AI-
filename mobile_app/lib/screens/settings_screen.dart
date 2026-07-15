@@ -12,6 +12,7 @@ import 'referrals_screen.dart';
 import 'history_screen.dart';
 import 'login_screen.dart';
 import 'progress_report_screen.dart';
+import 'subscription_history_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -384,7 +385,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('Billing History', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionHistoryScreen()));
                     },
                   ),
                 ],
