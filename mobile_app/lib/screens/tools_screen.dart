@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/localization.dart';
+import 'essay_checker_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -53,7 +54,18 @@ class _ToolsScreenState extends State<ToolsScreen> {
             // AI Analysis Grid
             const Text('AI ANALYSIS', style: TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            _buildToolCard(_t('essay_checker'), _t('essay_checker_desc'), Icons.fact_check, Colors.amberAccent),
+            _buildToolCard(
+              _t('essay_checker'),
+              _t('essay_checker_desc'),
+              Icons.fact_check,
+              Colors.amberAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EssayCheckerScreen()),
+                );
+              },
+            ),
             const SizedBox(height: 12),
             _buildToolCard(_t('grammar_check'), _t('grammar_check_desc'), Icons.spellcheck, Colors.greenAccent),
             const SizedBox(height: 12),
@@ -152,37 +164,44 @@ class _ToolsScreenState extends State<ToolsScreen> {
     );
   }
 
-  Widget _buildToolCard(String title, String desc, IconData icon, Color accentColor) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1E36),
+  Widget _buildToolCard(String title, String desc, IconData icon, Color accentColor, {VoidCallback? onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3E6E)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: accentColor, size: 22),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B1E36),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF1E3E6E)),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 4),
-                Text(desc, style: const TextStyle(color: Colors.white38, fontSize: 11)),
-              ],
-            ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: accentColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                    const SizedBox(height: 4),
+                    Text(desc, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+            ],
           ),
-          const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
-        ],
+        ),
       ),
     );
   }
