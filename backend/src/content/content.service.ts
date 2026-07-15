@@ -853,38 +853,27 @@ CRITICAL: Return ONLY a valid JSON object matching the format below. Do not incl
         if (user.weaknesses.includes('listening_comprehension')) prioritizedModules.push('LISTENING');
       }
 
-      const defaultRotation = ['LISTENING', 'WRITING', 'READING', 'SPEAKING'];
-      const modulesToAssign = [...prioritizedModules];
-      while (modulesToAssign.length < dailyTasksCount) {
-        for (const m of defaultRotation) {
-          if (!modulesToAssign.includes(m) && modulesToAssign.length < dailyTasksCount) {
-            modulesToAssign.push(m);
-          }
-        }
-        if (modulesToAssign.length < dailyTasksCount) {
-          modulesToAssign.push(defaultRotation[modulesToAssign.length % defaultRotation.length]);
-        }
-      }
+      const modulesToAssign = ['LISTENING', 'WRITING', 'READING', 'SPEAKING'];
 
-      for (let i = 0; i < dailyTasksCount; i++) {
+      for (let i = 0; i < modulesToAssign.length; i++) {
         const moduleName = modulesToAssign[i];
         let taskTitle = '';
         let entityId = '';
 
         if (moduleName === 'LISTENING' && audios.length > 0) {
-          const item = audios[(dayIndex + i) % audios.length];
+          const item = audios[dayIndex % audios.length];
           taskTitle = `Listening: ${item.title}`;
           entityId = item.id;
         } else if (moduleName === 'READING' && passages.length > 0) {
-          const item = passages[(dayIndex + i) % passages.length];
+          const item = passages[dayIndex % passages.length];
           taskTitle = `Reading: ${item.title}`;
           entityId = item.id;
         } else if (moduleName === 'WRITING' && writingPrompts.length > 0) {
-          const item = writingPrompts[(dayIndex + i) % writingPrompts.length];
+          const item = writingPrompts[dayIndex % writingPrompts.length];
           taskTitle = `Writing: ${item.instruction.substring(0, 40)}...`;
           entityId = item.id;
         } else if (moduleName === 'SPEAKING' && speakingPrompts.length > 0) {
-          const item = speakingPrompts[(dayIndex + i) % speakingPrompts.length];
+          const item = speakingPrompts[dayIndex % speakingPrompts.length];
           taskTitle = `Speaking: ${item.topic}`;
           entityId = item.id;
         } else {
