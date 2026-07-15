@@ -363,45 +363,34 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Book 10 Test 1 Unlocked
-            _buildTestListItem(
-              title: 'IELTS Book 10 Test 1',
-              subtitle: '3 Parts  |  0/3 Completed',
-              isLocked: false,
-              iconData: Icons.mic,
-              onTap: () {
-                setState(() {
-                  _currentScreen = 'TEST_DETAIL';
-                  _selectedPart = 1;
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // Locked tests
-            _buildTestListItem(
-              title: 'IELTS Book 10 Test 2',
-              subtitle: 'Premium Content',
-              isLocked: true,
-              iconData: Icons.lock,
-              onTap: () {},
-            ),
-            const SizedBox(height: 12),
-            _buildTestListItem(
-              title: 'IELTS Book 10 Test 3',
-              subtitle: 'Premium Content',
-              isLocked: true,
-              iconData: Icons.lock,
-              onTap: () {},
-            ),
-            const SizedBox(height: 12),
-            _buildTestListItem(
-              title: 'IELTS Book 10 Test 4',
-              subtitle: 'Premium Content',
-              isLocked: true,
-              iconData: Icons.lock,
-              onTap: () {},
-            ),
+            // Loop through Books 10 to 20 with 4 tests each dynamically
+            ...List.generate(11, (bookIndex) {
+              final bookNum = 10 + bookIndex;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(4, (testIndex) {
+                  final testNum = 1 + testIndex;
+                  final isFirstTest = (bookNum == 10 && testNum == 1);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: _buildTestListItem(
+                      title: 'IELTS Book $bookNum Test $testNum',
+                      subtitle: isFirstTest ? '3 Parts  |  0/3 Completed' : 'Premium Content',
+                      isLocked: !isFirstTest,
+                      iconData: isFirstTest ? Icons.mic : Icons.lock,
+                      onTap: () {
+                        if (isFirstTest) {
+                          setState(() {
+                            _currentScreen = 'TEST_DETAIL';
+                            _selectedPart = 1;
+                          });
+                        }
+                      },
+                    ),
+                  );
+                }),
+              );
+            }),
             const SizedBox(height: 30),
           ],
         ),
