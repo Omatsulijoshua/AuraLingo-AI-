@@ -24,6 +24,31 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
   bool _verifying = false;
   bool _withdrawing = false;
 
+  DateTime _selectedMonth = DateTime.now();
+
+  String _getMonthName(int month) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[month - 1];
+  }
+
+  Future<void> _selectMonth(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedMonth,
+      firstDate: DateTime(2025, 1),
+      lastDate: DateTime(2030, 12),
+      helpText: 'Select Month',
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedMonth = DateTime(picked.year, picked.month);
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -140,7 +165,15 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
     final double withdrawable = (_stats?['withdrawableBalance'] ?? 0.0) as double;
     final double locked = (_stats?['lockedBalance'] ?? 0.0) as double;
     final double thisMonth = (_stats?['madeThisMonth'] ?? 0.0) as double;
-    final referralsList = _stats?['referralsList'] as List? ?? [];
+    final referralsList = (_stats?['referralsList'] as List? ?? []).where((item) {
+      if (item['createdAt'] == null) return false;
+      try {
+        final date = DateTime.parse(item['createdAt']);
+        return date.year == _selectedMonth.year && date.month == _selectedMonth.month;
+      } catch (_) {
+        return false;
+      }
+    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF050E1A),
@@ -272,7 +305,20 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                   const SizedBox(height: 20),
 
                   // 3. Referred Friends List Section
-                  const Text('Invited Friends & Status', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Invited Friends & Status', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                      TextButton.icon(
+                        icon: const Icon(Icons.calendar_month_rounded, color: Color(0xFFD4AF37), size: 16),
+                        label: Text(
+                          '${_getMonthName(_selectedMonth.month)} ${_selectedMonth.year}',
+                          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () => _selectMonth(context),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   referralsList.isEmpty
                       ? Container(

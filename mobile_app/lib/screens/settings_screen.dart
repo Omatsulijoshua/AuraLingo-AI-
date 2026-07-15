@@ -241,7 +241,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               );
               final bool hasActiveSub = activeSub != null;
               final String planName = hasActiveSub ? (activeSub['plan']?['name'] ?? 'Premium Plan') : _t('free_plan');
-              final String planSubtitle = hasActiveSub ? 'Full premium access active' : _t('upgrade_plan');
+              
+              String planSubtitle = hasActiveSub ? 'Full premium access active' : _t('upgrade_plan');
+              if (hasActiveSub && activeSub['endDate'] != null) {
+                try {
+                  final expiry = DateTime.parse(activeSub['endDate']);
+                  final days = expiry.difference(DateTime.now()).inDays;
+                  final formattedDate = '${expiry.day}/${expiry.month}/${expiry.year}';
+                  planSubtitle = 'Expires on $formattedDate ($days days remaining)';
+                } catch (_) {}
+              }
 
               return Container(
                 padding: const EdgeInsets.all(20),
