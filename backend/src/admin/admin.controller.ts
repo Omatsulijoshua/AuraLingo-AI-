@@ -316,7 +316,10 @@ Each object in the array must match this schema:
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   async getAllPracticeQuestions() {
     const questions = await this.prisma.practiceQuestion.findMany({
-      include: { module: true },
+      include: { 
+        module: true,
+        listeningAudio: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
     const writing = await this.prisma.writingPrompt.findMany({
