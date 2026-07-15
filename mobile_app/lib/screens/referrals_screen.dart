@@ -24,27 +24,42 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
   bool _verifying = false;
   bool _withdrawing = false;
 
-  DateTime _selectedMonth = DateTime.now();
+  DateTime? _startDateInput;
+  DateTime? _endDateInput;
+  DateTime? _filterStart;
+  DateTime? _filterEnd;
 
-  String _getMonthName(int month) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return months[month - 1];
+  String _formatDateYMD(DateTime? date) {
+    if (date == null) return 'dd/mm/yyyy';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  Future<void> _selectMonth(BuildContext context) async {
+  Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedMonth,
+      initialDate: _startDateInput ?? DateTime.now(),
       firstDate: DateTime(2025, 1),
       lastDate: DateTime(2030, 12),
-      helpText: 'Select Month',
+      helpText: 'Select Start Date',
     );
     if (picked != null) {
       setState(() {
-        _selectedMonth = DateTime(picked.year, picked.month);
+        _startDateInput = picked;
+      });
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDateInput ?? DateTime.now(),
+      firstDate: DateTime(2025, 1),
+      lastDate: DateTime(2030, 12),
+      helpText: 'Select End Date',
+    );
+    if (picked != null) {
+      setState(() {
+        _endDateInput = picked;
       });
     }
   }
@@ -157,6 +172,8 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isFiltered = _filterStart != null || _filterEnd != null;
+
     final refLink = _stats != null && _stats['referralLink'] != null
         ? _stats['referralLink'] as String
         : 'https://bandup-ielts-prep.vercel.app/auth/register?ref=${_stats?['userId'] ?? 'your-id'}';
@@ -165,15 +182,37 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
     final double withdrawable = (_stats?['withdrawableBalance'] ?? 0.0) as double;
     final double locked = (_stats?['lockedBalance'] ?? 0.0) as double;
     final double thisMonth = (_stats?['madeThisMonth'] ?? 0.0) as double;
-    final referralsList = (_stats?['referralsList'] as List? ?? []).where((item) {
+
+    final rawReferrals = _stats?['referralsList'] as List? ?? [];
+    final referralsList = rawReferrals.where((item) {
       if (item['createdAt'] == null) return false;
       try {
         final date = DateTime.parse(item['createdAt']);
-        return date.year == _selectedMonth.year && date.month == _selectedMonth.month;
+        if (_filterStart != null) {
+          final startVal = DateTime(_filterStart!.year, _filterStart!.month, _filterStart!.day);
+          if (date.isBefore(startVal)) return false;
+        }
+        if (_filterEnd != null) {
+          final endVal = DateTime(_filterEnd!.year, _filterEnd!.month, _filterEnd!.day, 23, 59, 59, 999);
+          if (date.isAfter(endVal)) return false;
+        }
+        return true;
       } catch (_) {
         return false;
       }
     }).toList();
+
+    final double filteredCount = referralsList.length.toDouble();
+    final double filteredEarnings = referralsList.fold(0.0, (sum, item) {
+      final isPaid = item['isPaidUser'] == true;
+      final double earned = (item['rewardEarned'] ?? 0.0) as double;
+      return sum + (isPaid ? (earned > 0 ? earned : (_stats?['rewardPerUser'] ?? 1000.0) as double) : 0.0);
+    });
+    final double filteredPending = referralsList.fold(0.0, (sum, item) {
+      final isPaid = item['isPaidUser'] == true;
+      final double earned = (item['rewardEarned'] ?? 0.0) as double;
+      return sum + (!isPaid ? (earned > 0 ? earned : (_stats?['rewardPerUser'] ?? 1000.0) as double) : 0.0);
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFF050E1A),
@@ -192,68 +231,201 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Balance Overview & Monthly Earnings Grid Card
+                  // 1. Notice Announcement Banner
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF0B1E36), Color(0xFF1E3E6E)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: Colors.amber.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.amber.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.campaign_rounded, color: Color(0xFFD4AF37), size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Notice: Payment of referral earnings is processed on the 21st of every month.',
+                            style: TextStyle(color: Colors.amber[200], fontSize: 11, fontWeight: FontWeight.w600, height: 1.3),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 2. Date Range Filter Panel
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0B1E36),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: const Color(0xFF1E3E6E)),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Total Earnings', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                Text('₦${balance.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 28, fontWeight: FontWeight.bold)),
-                              ],
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _selectStartDate(context),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF050E1A),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFF1E3E6E)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('START DATE', style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      Text(_formatDateYMD(_startDateInput), style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text('This Month', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4),
-                                Text('₦${thisMonth.toStringAsFixed(0)}', style: const TextStyle(color: Colors.greenAccent, fontSize: 24, fontWeight: FontWeight.bold)),
-                              ],
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _selectEndDate(context),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF050E1A),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFF1E3E6E)),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('END DATE', style: TextStyle(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      Text(_formatDateYMD(_endDateInput), style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        const Divider(color: Colors.white10),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Withdrawable', style: TextStyle(color: Colors.white54, fontSize: 10)),
-                                const SizedBox(height: 2),
-                                Text('₦${withdrawable.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                              ],
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _startDateInput = null;
+                                  _endDateInput = null;
+                                  _filterStart = null;
+                                  _filterEnd = null;
+                                });
+                              },
+                              child: const Text('Clear', style: TextStyle(color: Colors.white60, fontSize: 12)),
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text('Locked / Pending', style: TextStyle(color: Colors.white54, fontSize: 10)),
-                                const SizedBox(height: 2),
-                                Text('₦${locked.toStringAsFixed(0)}', style: const TextStyle(color: Colors.amberAccent, fontSize: 14, fontWeight: FontWeight.bold)),
-                              ],
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.search_rounded, size: 14, color: Colors.black),
+                              label: const Text('Filter', style: TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.bold)),
+                              onPressed: () {
+                                setState(() {
+                                  _filterStart = _startDateInput;
+                                  _filterEnd = _endDateInput;
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFD4AF37),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
+
+                  // 3. Balance Overview & Monthly Earnings Grid Card
+                  (() {
+                    final String earningsLabel = isFiltered ? 'Earnings in Range' : 'Total Earnings';
+                    final String withdrawableLabel = isFiltered ? 'Paid (Withdrawable)' : 'Withdrawable';
+                    final String pendingLabel = 'Pending';
+                    final String monthOrCountLabel = isFiltered ? 'Referred Signups' : 'This Month';
+                    
+                    final double displayBalance = isFiltered ? (filteredEarnings + filteredPending) : balance;
+                    final double displayWithdrawable = isFiltered ? filteredEarnings : withdrawable;
+                    final double displayPending = isFiltered ? filteredPending : locked;
+
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0B1E36), Color(0xFF1E3E6E)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFF1E3E6E)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(earningsLabel, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  Text('₦${displayBalance.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 24, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(monthOrCountLabel, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    isFiltered ? '${filteredCount.toInt()} users' : '₦${thisMonth.toStringAsFixed(0)}',
+                                    style: TextStyle(color: isFiltered ? Colors.greenAccent : Colors.greenAccent, fontSize: isFiltered ? 18 : 20, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Divider(color: Colors.white10),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(withdrawableLabel, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                  const SizedBox(height: 2),
+                                  Text('₦${displayWithdrawable.toStringAsFixed(0)}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(pendingLabel, style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                  const SizedBox(height: 2),
+                                  Text('₦${displayPending.toStringAsFixed(0)}', style: const TextStyle(color: Colors.amberAccent, fontSize: 14, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  })(),
                   const SizedBox(height: 16),
 
                   // 2. Master Invite Link Card
@@ -309,14 +481,19 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Invited Friends & Status', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
-                      TextButton.icon(
-                        icon: const Icon(Icons.calendar_month_rounded, color: Color(0xFFD4AF37), size: 16),
-                        label: Text(
-                          '${_getMonthName(_selectedMonth.month)} ${_selectedMonth.year}',
-                          style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold),
+                      if (isFiltered)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.2)),
+                          ),
+                          child: const Text(
+                            'Filtered Range',
+                            style: TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        onPressed: () => _selectMonth(context),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
