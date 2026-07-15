@@ -358,6 +358,52 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                         style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.5, fontStyle: FontStyle.italic),
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Collapsible Tackle Steps Accordion
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1E36).withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF1E3E6E).withValues(alpha: 0.5)),
+                      ),
+                      child: Theme(
+                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        child: ExpansionTile(
+                          iconColor: const Color(0xFFEAB308),
+                          collapsedIconColor: const Color(0xFFEAB308),
+                          title: const Row(
+                            children: [
+                              Icon(Icons.lightbulb_outline, color: Color(0xFFEAB308), size: 16),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'How to Tackle this Writing Task (Steps)',
+                                  style: TextStyle(color: Color(0xFFEAB308), fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  _buildTackleStep('1. Analyze (2 Mins)', 'Deconstruct the prompt. Identify the core topic, target essay type (Opinion, Discussion, Solution), and highlight key keywords.'),
+                                  const SizedBox(height: 8),
+                                  _buildTackleStep('2. Plan (3 Mins)', 'Write a brief outline. Map out your Intro (thesis statement), Body 1 (first point + example), Body 2 (second point + example), and Conclusion.'),
+                                  const SizedBox(height: 8),
+                                  _buildTackleStep('3. Write (32 Mins)', 'Maintain an academic tone. Aim for 150+ words (Task 1) or 250+ words (Task 2). Use linking words and cohesive connectors naturally.'),
+                                  const SizedBox(height: 8),
+                                  _buildTackleStep('4. Check (3 Mins)', 'Proofread immediately. Scan for spelling mistakes, subject-verb agreement errors, and correct punctuation.'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
 
                     if (_selectedPrompt['id'] == 'CUSTOM' && !_timerActive && _feedback == null && !_examSuccess) ...[
@@ -460,6 +506,8 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       TextField(
                         controller: _textController,
                         maxLines: 12,
+                        autocorrect: true,
+                        enableSuggestions: true,
                         style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
                         decoration: InputDecoration(
                           hintText: _mode == 'EXAMINER'
@@ -732,6 +780,8 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                     TextField(
                       controller: _draft2Controller,
                       maxLines: 12,
+                      autocorrect: true,
+                      enableSuggestions: true,
                       style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
                       decoration: InputDecoration(
                         hintText: 'Improve your essay here... You can apply rewrites from weak sentences above.',
@@ -855,6 +905,23 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         Text(label, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Text(score, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildTackleStep(String title, String body) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(color: Color(0xFFEAB308), fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          body,
+          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9, height: 1.4),
+        ),
       ],
     );
   }

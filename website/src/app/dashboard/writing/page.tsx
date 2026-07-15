@@ -27,6 +27,7 @@ export default function WritingPractice() {
   // Timer for Exam Mode (40 minutes = 2400 seconds)
   const [timeLeft, setTimeLeft] = useState(2400);
   const [timerActive, setTimerActive] = useState(false);
+  const [showTackleSteps, setShowTackleSteps] = useState(false);
 
   useEffect(() => {
     fetchPrompts();
@@ -307,6 +308,40 @@ export default function WritingPractice() {
                 {selectedPrompt.promptText}
               </p>
 
+              {/* Collapsible Steps Card */}
+              <div className="bg-navy/45 border border-primary-light/20 rounded-xl overflow-hidden shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setShowTackleSteps(!showTackleSteps)}
+                  className="w-full flex justify-between items-center px-4 py-3 text-xs font-bold text-gold hover:bg-primary-light/10 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">💡 How to Tackle this Writing Task (Fast & Accurately)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{showTackleSteps ? '▲ Hide Steps' : '▼ Show Steps'}</span>
+                </button>
+                {showTackleSteps && (
+                  <div className="p-4 border-t border-primary-light/15 text-[10px] text-slate-300 space-y-3 bg-navy/20 leading-relaxed">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">1. Analyze (2 Mins)</p>
+                        <p className="text-[9px]">Deconstruct the prompt. Identify the core topic, target essay type (Opinion, Discussion, Solution), and highlight key keywords.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">2. Plan (3 Mins)</p>
+                        <p className="text-[9px]">Write a brief outline. Map out your Intro (thesis statement), Body 1 (first point + example), Body 2 (second point + example), and Conclusion.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">3. Write (32 Mins)</p>
+                        <p className="text-[9px]">Maintain an academic tone. Aim for 150+ words (Task 1) or 250+ words (Task 2). Use linking words and cohesive connectors naturally.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">4. Check (3 Mins)</p>
+                        <p className="text-[9px]">Proofread immediately. Scan for spelling mistakes (check red underlines), subject-verb agreement errors, and correct punctuation.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {selectedPrompt.id === 'CUSTOM' && !timerActive && !feedback && !examSuccess && (
                 <div className="space-y-4 p-4 bg-navy/40 rounded-xl border border-primary-light/10 text-xs">
                   <div className="grid grid-cols-2 gap-4">
@@ -341,6 +376,7 @@ export default function WritingPractice() {
                       value={customQuestionText}
                       onChange={(e) => setCustomQuestionText(e.target.value)}
                       className="w-full bg-navy border border-primary-light/40 focus:border-gold rounded p-3 text-white focus:outline-none resize-none"
+                      spellCheck={true}
                     />
                   </div>
                 </div>
@@ -364,6 +400,7 @@ export default function WritingPractice() {
                     onChange={(e) => setUserText(e.target.value)}
                     placeholder="Write your Draft 1 response here under examiner conditions..."
                     className="w-full bg-navy/55 border border-primary-light/60 focus:border-gold rounded-xl p-4 text-white text-xs leading-relaxed focus:outline-none"
+                    spellCheck={true}
                   />
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400">Word Count: <span className="text-white font-bold">{wordCount}</span></span>
@@ -387,6 +424,7 @@ export default function WritingPractice() {
                     onChange={(e) => setUserText(e.target.value)}
                     placeholder="Type your essay response here..."
                     className="w-full bg-navy/55 border border-primary-light/60 focus:border-gold rounded-xl p-4 text-white text-xs leading-relaxed focus:outline-none"
+                    spellCheck={true}
                   />
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-400">Word Count: <span className="text-white font-bold">{wordCount}</span></span>
