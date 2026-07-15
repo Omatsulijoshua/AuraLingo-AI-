@@ -19,6 +19,13 @@ export default function ReferralDashboard() {
   const [withdrawAmount, setWithdrawAmount] = useState(1000);
   const [withdrawing, setWithdrawing] = useState(false);
 
+  // Month Picker Filter
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}`;
+  });
+
   const fetchStats = async () => {
     try {
       const data = await api.request('/referrals/stats');
@@ -241,36 +248,62 @@ export default function ReferralDashboard() {
           {/* Referred signups history & Withdrawal logs */}
           <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl md:col-span-2 space-y-6">
             <div className="space-y-3">
-              <h4 className="text-white font-bold text-sm">Your Referrals List</h4>
-              {stats?.referralsList?.length === 0 ? (
-                <p className="text-slate-500 text-xs py-6 text-center">No referred signups yet. Share your link to start earning!</p>
-              ) : (
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {stats?.referralsList?.map((refUser: any) => (
-                    <div key={refUser.id} className="p-3 bg-navy/40 border border-primary-light/20 rounded-lg flex justify-between text-xs items-center">
-                      <div className="space-y-0.5">
-                        <p className="font-bold text-white">{refUser.name}</p>
-                        <p className="text-[10px] text-slate-500">{refUser.email}</p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <div className="flex items-center gap-1.5 justify-end">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                            refUser.isPaidUser 
-                              ? 'bg-emerald/10 text-emerald border border-emerald/20' 
-                              : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                          }`}>
-                            {refUser.isPaidUser ? 'PAID' : 'PENDING'}
-                          </span>
-                          <span className={`font-bold text-[10px] ${refUser.isPaidUser ? 'text-emerald' : 'text-slate-500'}`}>
-                            {refUser.isPaidUser ? `+₦${(refUser.rewardEarned || stats?.rewardPerUser || 1000).toLocaleString()}` : '₦0'}
-                          </span>
-                        </div>
-                        <p className="text-[9px] text-slate-500">{new Date(refUser.createdAt).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <h4 className="text-white font-bold text-sm">Your Referrals List</h4>
+                
+                {/* Month Picker */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-505 uppercase font-black">Filter Month:</span>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="bg-navy border border-primary-light/45 focus:border-gold rounded-lg px-2.5 py-1 text-[11px] text-white focus:outline-none cursor-pointer"
+                  />
                 </div>
-              )}
+              </div>
+
+              {(() => {
+                const filtered = stats?.referralsList?.filter((refUser: any) => {
+                  if (!selectedMonth) return true;
+                  const refDate = new Date(refUser.createdAt);
+                  const mm = String(refDate.getMonth() + 1).padStart(2, '0');
+                  const referralMonth = `${refDate.getFullYear()}-${mm}`;
+                  return referralMonth === selectedMonth;
+                }) || [];
+
+                if (filtered.length === 0) {
+                  return <p className="text-slate-500 text-xs py-6 text-center">No referred signups found for this month.</p>;
+                }
+
+                return (
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {filtered.map((refUser: any) => (
+                      <div key={refUser.id} className="p-3 bg-navy/40 border border-primary-light/20 rounded-lg flex justify-between text-xs items-center">
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-white">{refUser.name}</p>
+                          <p className="text-[10px] text-slate-500">{refUser.email}</p>
+                        </div>
+                        <div className="text-right space-y-1">
+                          <div className="flex items-center gap-1.5 justify-end">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                              refUser.isPaidUser 
+                                ? 'bg-emerald/10 text-emerald border border-emerald/20' 
+                                : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
+                            }`}>
+                              {refUser.isPaidUser ? 'PAID' : 'PENDING'}
+                            </span>
+                            <span className={`font-bold text-[10px] ${refUser.isPaidUser ? 'text-emerald' : 'text-slate-500'}`}>
+                              {refUser.isPaidUser ? `+₦${(refUser.rewardEarned || stats?.rewardPerUser || 1000).toLocaleString()}` : '₦0'}
+                            </span>
+                          </div>
+                          <p className="text-[9px] text-slate-500">{new Date(refUser.createdAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="space-y-3 border-t border-primary-light/20 pt-4">

@@ -886,7 +886,7 @@ export default function StudentDashboard() {
                   {/* Total monthly practices counter */}
                   <div className="w-full mt-6 pt-4 border-t border-primary-light/30 flex justify-between items-center text-xs">
                     <span className="text-slate-400">Total completed:</span>
-                    <span className="text-gold font-bold">{profile.monthlyPracticesCount ?? 0} practices</span>
+                    <span className="text-gold font-bold">{profile.monthlyPracticesCount ?? 0} / 308 practices</span>
                   </div>
                 </div>
 
@@ -919,7 +919,9 @@ export default function StudentDashboard() {
                     <div className="text-3xl bg-slate-900 p-3 rounded-xl">💳</div>
                     <div>
                       <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">
-                        {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? 'Premium Access' : 'Subscription'}
+                        {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 
+                          ? `Premium Access • Expires ${profile.subscriptionExpiresAt || ''}` 
+                          : 'Subscription'}
                       </p>
                       {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? (
                         <div className="mt-0.5">
@@ -1304,19 +1306,16 @@ export default function StudentDashboard() {
                   </div>
                 </Link>
 
-                <button 
-                  onClick={() => {
-                    loadPaymentDetails();
-                    setShowPaymentModal(true);
-                  }}
-                  className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer"
+                <Link 
+                  href="/dashboard/billing"
+                  className="flex items-center gap-3 bg-navy/50 border border-primary-light/20 p-4 rounded-xl text-left hover:border-gold/30 transition-all text-xs font-medium cursor-pointer block"
                 >
                   <span className="text-lg">💳</span>
                   <div>
                     <p className="text-white font-bold">Billing History</p>
                     <p className="text-slate-500 text-[10px] mt-0.5">Subscriptions and invoices</p>
                   </div>
-                </button>
+                </Link>
               </div>
             </div>
 
