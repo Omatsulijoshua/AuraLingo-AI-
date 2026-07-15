@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MockExamsScreen extends StatefulWidget {
   const MockExamsScreen({super.key});
@@ -364,65 +365,181 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
         backgroundColor: const Color(0xFF0B1E36),
         title: const Text('Mock Exams', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
-      body: _mockTests.isEmpty
-          ? const Center(child: Text('No mock tests published yet.', style: TextStyle(color: Colors.white60)))
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _mockTests.length,
-              itemBuilder: (context, idx) {
-                final test = _mockTests[idx];
-                return Card(
-                  color: const Color(0xFF0B1E36),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    side: const BorderSide(color: Color(0xFF1E3E6E)),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildWebRecommendationCard(),
+          Expanded(
+            child: _mockTests.isEmpty
+                ? const Center(child: Text('No mock tests published yet.', style: TextStyle(color: Colors.white60)))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    itemCount: _mockTests.length,
+                    itemBuilder: (context, idx) {
+                      final test = _mockTests[idx];
+                      return Card(
+                        color: const Color(0xFF0B1E36),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: Color(0xFF1E3E6E)),
+                        ),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                test['title'] ?? 'Mock Test',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: const Color(0xFF1E3E6E), borderRadius: BorderRadius.circular(4)),
-                                    child: Text(
-                                      test['examType'] ?? 'ACADEMIC',
-                                      style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.bold),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      test['title'] ?? 'Mock Test',
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    '${test['duration'] ?? 160} mins',
-                                    style: const TextStyle(color: Colors.white54, fontSize: 11),
-                                  ),
-                                ],
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(color: const Color(0xFF1E3E6E), borderRadius: BorderRadius.circular(4)),
+                                          child: Text(
+                                            test['examType'] ?? 'ACADEMIC',
+                                            style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          '${test['duration'] ?? 160} mins',
+                                          style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => _startTest(test['id']),
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: const Color(0xFF050E1A)),
+                                child: const Text('Start'),
                               ),
                             ],
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: () => _startTest(test['id']),
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD4AF37), foregroundColor: const Color(0xFF050E1A)),
-                          child: const Text('Start'),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWebRecommendationCard() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.computer_rounded,
+                color: Color(0xFFD4AF37),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Practice on a PC/Laptop',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+                ),
+                child: const Text(
+                  'Recommended',
+                  style: TextStyle(
+                    color: Color(0xFFD4AF37),
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'The real IELTS exam is computer-based. Practicing on a PC or laptop web browser provides a much better and more realistic simulation of the actual exam interface. You can log in using your same mobile account credentials!',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              height: 1.4,
             ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final Uri url = Uri.parse('https://bandup-ielts-prep.vercel.app/dashboard/mock-exam');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not open web link.')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: const Color(0xFF0F172A),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+              icon: const Icon(Icons.open_in_new_rounded, size: 14),
+              label: const Text(
+                'Open Website Version',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -647,229 +647,293 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* Main Tab Render Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 space-y-8">
-        
         {activeTab === 'home' && (
           <div className="space-y-8">
             {/* Header Greeting Banner */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-200">
+                <h2 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-gold tracking-tight">
                   {DateTimeGreeting(locale)} {profile.name}!
                 </h2>
-                <p className="text-xs text-slate-500">Let's reach your goal today!</p>
+                <p className="text-xs text-slate-400 mt-1">Ready to unlock your potential? Let's achieve your IELTS goal today.</p>
               </div>
-            </div>
-
-            {/* Current Level Widget */}
-            <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl flex items-center gap-6 max-w-2xl">
-              <div className="w-20 h-20 rounded-full border-4 border-[#D4AF37] flex flex-col justify-center items-center bg-navy/40">
-                <span className="text-xs font-bold text-white">{targetBand}</span>
-                <span className="text-[8px] text-slate-400">Band</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Current Level</span>
-                <h3 className="text-lg font-black text-white mt-1">
-                  {currentLevel === 'BEGINNER' ? _t('level_beg') : (currentLevel === 'ADVANCED' ? _t('level_adv') : 'Advance')}
-                </h3>
-                <p className="text-xs text-slate-400 mt-2">{_t('level_sub')}</p>
-              </div>
-            </div>
-
-            {/* Mock Exam Simulation Card */}
-            <div className="bg-slate-950/80 border border-gold/25 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 max-w-2xl">
-              <div className="flex items-start gap-4">
-                <div className="text-3xl bg-gold/10 p-3 rounded-xl border border-gold/20 text-gold shrink-0">
-                  🏆
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black text-white">IELTS Mock Exam Simulation</h3>
-                    <span className="bg-gold/10 border border-gold/30 text-gold text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider">
-                      Premium
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed max-w-md">
-                    Experience the real timed exam environment. Complete Listening, Reading, Writing, and Speaking modules with overall band grading and AI tutor feedback.
-                  </p>
-                </div>
-              </div>
-              <Link 
-                href="/dashboard/mock-exam"
-                className="w-full md:w-auto bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold px-6 py-3 rounded-xl text-xs text-center transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 shadow-lg shadow-[#D4AF37]/10"
-              >
-                Start Simulation
-              </Link>
-            </div>
-
-            {/* Metrics Dashboard Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl">
-              {/* Card 1: Completed Lessons */}
-              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-                <div className="text-2xl">📚</div>
-                <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Completed Lessons</p>
-                  <p className="text-base font-black text-white mt-1">
-                    {profile.completedLessonsCount ?? 0} Lessons
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 2: Current Estimate */}
-              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-                <div className="text-2xl text-gold">📈</div>
-                <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Current Estimate</p>
-                  <p className="text-base font-black text-gold mt-1">
-                    Band {profile.currentEstimateBand ?? 6.3}
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 3: Days Left / Expiry */}
-              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-                <div className="text-2xl">💳</div>
-                <div>
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                    {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? 'Days Left' : 'Subscription'}
-                  </p>
-                  {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? (
-                    <div className="mt-1">
-                      <p className="text-sm font-black text-white">{profile.subscriptionDaysLeft} Days</p>
-                      <p className="text-[9px] text-slate-500">Expires {profile.subscriptionExpiresAt}</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm font-black text-slate-400 mt-1">Free Plan</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Practice Grid */}
-            <div className="space-y-4">
-              <h3 className="text-white font-bold text-sm tracking-wide uppercase text-gold">{_t('practice_area')}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[
-                  { name: 'Speaking', path: '/dashboard/speaking', icon: '🎙️', desc: 'Speech evaluation' },
-                  { name: 'Writing', path: '/dashboard/writing', icon: '✍️', desc: 'AI correction' },
-                  { name: 'Reading', path: '/dashboard/reading', icon: '📖', desc: 'Academic articles' },
-                  { name: 'Listening', path: '/dashboard/listening', icon: '🎧', desc: 'Audio clips' },
-                ].map((m) => (
-                  <Link
-                    key={m.name}
-                    href={m.path}
-                    className="bg-primary/30 border border-primary-light/45 rounded-xl p-5 hover:border-gold/30 transition-all text-center flex flex-col items-center justify-center space-y-2 cursor-pointer"
-                  >
-                    <span className="text-3xl">{m.icon}</span>
-                    <span className="text-sm font-bold text-slate-200">{m.name}</span>
-                    <span className="text-[10px] text-slate-500">{m.desc}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* Continue Learning list */}
-            <div className="space-y-4">
-              <h3 className="text-white font-extrabold text-lg tracking-normal">{_t('continue_learning') || 'Continue Learning'}</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
-                {[
-                  {
-                    module: 'Listening',
-                    title: 'IELTS Book 10 Test 1',
-                    progressText: '0/44 tests completed',
-                    progressPercent: 0,
-                    icon: '🎧',
-                    path: '/dashboard/listening',
-                    themeColor: 'blue',
-                    bgIcon: 'bg-blue-500/10 text-blue-400',
-                    pillBg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                  },
-                  {
-                    module: 'Reading',
-                    title: 'History/Architecture',
-                    progressText: '0/132 passages completed',
-                    progressPercent: 0,
-                    icon: '📖',
-                    path: '/dashboard/reading',
-                    themeColor: 'purple',
-                    bgIcon: 'bg-purple-500/10 text-purple-400',
-                    pillBg: 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                  },
-                  {
-                    module: 'Writing',
-                    title: 'Test 1 Task 1',
-                    progressText: '0/88 tasks completed',
-                    progressPercent: 0,
-                    icon: '✍️',
-                    path: '/dashboard/writing',
-                    themeColor: 'amber',
-                    bgIcon: 'bg-amber-500/10 text-amber-400',
-                    pillBg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                  },
-                  {
-                    module: 'Speaking',
-                    title: 'IELTS Book 10 Test 1',
-                    progressText: '0/44 tests completed',
-                    progressPercent: 0,
-                    icon: '🎙️',
-                    path: '/dashboard/speaking',
-                    themeColor: 'emerald',
-                    bgIcon: 'bg-emerald-500/10 text-emerald-400',
-                    pillBg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                  }
-                ].map((item) => (
-                  <Link
-                    key={item.module}
-                    href={item.path}
-                    className="bg-primary/20 border border-primary-light/30 hover:border-gold/30 transition-all rounded-2xl p-4 flex justify-between items-center group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-4 w-full">
-                      {/* Icon container */}
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 ${item.bgIcon}`}>
-                        {item.icon}
-                      </div>
- 
-                      {/* Details */}
-                      <div className="space-y-1.5 flex-1 min-w-0 pr-4">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${item.pillBg}`}>
-                          {item.module}
+              {/* Quick Profile Summary Pills */}
+              <div className="flex gap-2.5">
+                <span className="bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                  🎯 Target: <span className="text-gold">Band {targetBand}</span>
+                </span>
+                <span className="bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-300 px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                  📝 Type: <span className="text-emerald">{testType === 'ACADEMIC' ? 'Academic' : 'General'}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Desktop Dashboard Grid (2-Column Split: Main Content on Left, Metrics & Stats on Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              
+              {/* Left Column (Main Focus area) */}
+              <div className="lg:col-span-2 space-y-8">
+                
+                {/* Premium Mock Exam Simulation Card */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-primary/40 border border-gold/30 rounded-3xl p-8 shadow-2xl shadow-gold/5 group">
+                  {/* Decorative glowing background shape */}
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-gold/10 rounded-full blur-3xl pointer-events-none group-hover:bg-gold/15 transition-all duration-500" />
+                  
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-gold/10 border border-gold/30 text-gold text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-widest">
+                          Premium Simulation
                         </span>
-                        <h4 className="text-sm font-bold text-white truncate group-hover:text-gold transition-colors">
-                          {item.title}
-                        </h4>
-                        
-                        {/* Progress Bar & Text */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center text-[9px] text-slate-500">
-                            <span>{item.progressText}</span>
-                            <span>{item.progressPercent}%</span>
+                      </div>
+                      <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                        <span>🏆</span> Timed IELTS Mock Exam
+                      </h3>
+                      <p className="text-xs text-slate-300 leading-relaxed max-w-lg">
+                        Test your readiness under real IELTS conditions. Experience a full 3-hour exam simulation including Listening, Reading, Writing, and Speaking with comprehensive AI band grading.
+                      </p>
+                    </div>
+                    
+                    <Link 
+                      href="/dashboard/mock-exam"
+                      className="w-full md:w-auto bg-gradient-to-r from-gold to-gold-dark text-[#050E1A] font-extrabold px-8 py-3.5 rounded-2xl text-xs text-center transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-lg shadow-gold/20"
+                    >
+                      Start Simulation
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Practice Grid */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-white font-bold text-sm tracking-widest uppercase text-gold">Practice Modules</h3>
+                    <span className="text-[10px] text-slate-500">Pick a module to practice</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { name: 'Speaking', path: '/dashboard/speaking', icon: '🎙️', desc: 'Speech Eval', color: 'hover:border-blue-500/40 hover:shadow-blue-500/5 hover:bg-blue-950/10' },
+                      { name: 'Writing', path: '/dashboard/writing', icon: '✍️', desc: 'AI Correction', color: 'hover:border-pink-500/40 hover:shadow-pink-500/5 hover:bg-pink-950/10' },
+                      { name: 'Reading', path: '/dashboard/reading', icon: '📖', desc: 'Passages', color: 'hover:border-purple-500/40 hover:shadow-purple-500/5 hover:bg-purple-950/10' },
+                      { name: 'Listening', path: '/dashboard/listening', icon: '🎧', desc: 'Audio Clips', color: 'hover:border-emerald-500/40 hover:shadow-emerald-500/5 hover:bg-emerald-950/10' },
+                    ].map((m) => (
+                      <Link
+                        key={m.name}
+                        href={m.path}
+                        className={`bg-primary/30 border border-primary-light/40 rounded-2xl p-6 transition-all duration-300 text-center flex flex-col items-center justify-center space-y-3 cursor-pointer group shadow-lg ${m.color}`}
+                      >
+                        <span className="text-4xl transform group-hover:scale-110 transition-transform duration-300">{m.icon}</span>
+                        <div className="space-y-0.5">
+                          <span className="block text-sm font-bold text-white group-hover:text-gold transition-colors">{m.name}</span>
+                          <span className="block text-[9px] text-slate-500">{m.desc}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Continue Learning list */}
+                <div className="space-y-4">
+                  <h3 className="text-white font-black text-lg tracking-tight">Continue Learning</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      {
+                        module: 'Listening',
+                        title: 'IELTS Book 10 Test 1',
+                        progressText: '0/44 tests completed',
+                        progressPercent: 0,
+                        icon: '🎧',
+                        path: '/dashboard/listening',
+                        themeColor: 'blue',
+                        bgIcon: 'bg-blue-500/10 text-blue-400',
+                        pillBg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                      },
+                      {
+                        module: 'Reading',
+                        title: 'History/Architecture',
+                        progressText: '0/132 passages completed',
+                        progressPercent: 0,
+                        icon: '📖',
+                        path: '/dashboard/reading',
+                        themeColor: 'purple',
+                        bgIcon: 'bg-purple-500/10 text-purple-400',
+                        pillBg: 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                      },
+                      {
+                        module: 'Writing',
+                        title: 'Test 1 Task 1',
+                        progressText: '0/88 tasks completed',
+                        progressPercent: 0,
+                        icon: '✍️',
+                        path: '/dashboard/writing',
+                        themeColor: 'amber',
+                        bgIcon: 'bg-amber-500/10 text-amber-400',
+                        pillBg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      },
+                      {
+                        module: 'Speaking',
+                        title: 'IELTS Book 10 Test 1',
+                        progressText: '0/44 tests completed',
+                        progressPercent: 0,
+                        icon: '🎙️',
+                        path: '/dashboard/speaking',
+                        themeColor: 'emerald',
+                        bgIcon: 'bg-emerald-500/10 text-emerald-400',
+                        pillBg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      }
+                    ].map((item) => (
+                      <Link
+                        key={item.module}
+                        href={item.path}
+                        className="bg-primary/20 border border-primary-light/30 hover:border-gold/30 transition-all rounded-2xl p-4 flex justify-between items-center group cursor-pointer shadow-md"
+                      >
+                        <div className="flex items-center gap-4 w-full">
+                          {/* Icon container */}
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 ${item.bgIcon}`}>
+                            {item.icon}
                           </div>
-                          <div className="w-full bg-navy/60 h-1.5 rounded-full overflow-hidden border border-primary-light/10">
-                            <div 
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                item.themeColor === 'blue' ? 'bg-blue-500' :
-                                item.themeColor === 'purple' ? 'bg-purple-500' :
-                                item.themeColor === 'amber' ? 'bg-amber-500' :
-                                'bg-emerald-500'
-                              }`}
-                              style={{ width: `${item.progressPercent}%` }}
-                            />
+      
+                          {/* Details */}
+                          <div className="space-y-1.5 flex-1 min-w-0 pr-4">
+                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${item.pillBg}`}>
+                              {item.module}
+                            </span>
+                            <h4 className="text-sm font-bold text-white truncate group-hover:text-gold transition-colors">
+                              {item.title}
+                            </h4>
+                            
+                            {/* Progress Bar & Text */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between items-center text-[9px] text-slate-500">
+                                <span>{item.progressText}</span>
+                                <span>{item.progressPercent}%</span>
+                              </div>
+                              <div className="w-full bg-navy/60 h-1.5 rounded-full overflow-hidden border border-primary-light/10">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    item.themeColor === 'blue' ? 'bg-blue-500' :
+                                    item.themeColor === 'purple' ? 'bg-purple-500' :
+                                    item.themeColor === 'amber' ? 'bg-amber-500' :
+                                    'bg-emerald-500'
+                                  }`}
+                                  style={{ width: `${item.progressPercent}%` }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
- 
-                    {/* Chevron right */}
-                    <div className="text-slate-500 group-hover:text-gold transition-colors shrink-0 pl-2">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </Link>
-                ))}
+      
+                        {/* Chevron right */}
+                        <div className="text-slate-500 group-hover:text-gold transition-colors shrink-0 pl-2">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
               </div>
+
+              {/* Right Column (Metrics & Level Info sidebar) */}
+              <div className="space-y-6 lg:col-span-1">
+                
+                {/* Redesigned Current Level Widget */}
+                <div className="bg-slate-900/60 backdrop-blur-md border border-primary-light/35 rounded-3xl p-6 shadow-xl flex flex-col items-center text-center relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-gold/50 via-gold to-gold/50" />
+                  
+                  {/* Glowing Meter Ring */}
+                  <div className="relative w-32 h-32 flex justify-center items-center my-4">
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                      <circle 
+                        cx="50" 
+                        cy="50" 
+                        r="40" 
+                        stroke="#1E3E6E" 
+                        strokeWidth="6" 
+                        fill="transparent" 
+                        className="opacity-20"
+                      />
+                      <circle 
+                        cx="50" 
+                        cy="50" 
+                        r="40" 
+                        stroke="#D4AF37" 
+                        strokeWidth="6" 
+                        fill="transparent" 
+                        strokeDasharray="251.2"
+                        strokeDashoffset={251.2 - (251.2 * 0.72)}
+                        strokeLinecap="round"
+                        className="drop-shadow-[0_0_8px_rgba(212,175,55,0.3)]"
+                      />
+                    </svg>
+                    <div className="absolute flex flex-col items-center">
+                      <span className="text-3xl font-black text-white">{targetBand}</span>
+                      <span className="text-[9px] text-slate-500 uppercase tracking-widest font-extrabold">Band Goal</span>
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-2">Evaluation Level</span>
+                  <h3 className="text-xl font-black text-white mt-1">
+                    {currentLevel === 'BEGINNER' ? _t('level_beg') : (currentLevel === 'ADVANCED' ? _t('level_adv') : 'Intermediate')}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-2 max-w-xs">{_t('level_sub')}</p>
+                  
+                  {/* Total monthly practices counter */}
+                  <div className="w-full mt-6 pt-4 border-t border-primary-light/30 flex justify-between items-center text-xs">
+                    <span className="text-slate-400">Total completed:</span>
+                    <span className="text-gold font-bold">{profile.monthlyPracticesCount ?? 0} practices</span>
+                  </div>
+                </div>
+
+                {/* Metrics Stack */}
+                <div className="space-y-4">
+                  {/* Card 1: Completed Lessons */}
+                  <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4 hover:border-slate-700 transition-colors">
+                    <div className="text-3xl bg-slate-900 p-3 rounded-xl">📚</div>
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Completed Lessons</p>
+                      <p className="text-lg font-black text-white mt-0.5">
+                        {profile.completedLessonsCount ?? 0} Lessons
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Current Estimate */}
+                  <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4 hover:border-slate-700 transition-colors">
+                    <div className="text-3xl bg-slate-900 p-3 rounded-xl text-gold">📈</div>
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Current Estimate</p>
+                      <p className="text-lg font-black text-gold mt-0.5">
+                        Band {profile.currentEstimateBand ?? 6.3}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Subscription Status */}
+                  <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-5 shadow-xl flex items-center gap-4 hover:border-slate-700 transition-colors">
+                    <div className="text-3xl bg-slate-900 p-3 rounded-xl">💳</div>
+                    <div>
+                      <p className="text-[9px] text-slate-500 uppercase font-bold tracking-widest">
+                        {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? 'Premium Access' : 'Subscription'}
+                      </p>
+                      {profile.subscriptionDaysLeft && profile.subscriptionDaysLeft > 0 ? (
+                        <div className="mt-0.5">
+                          <p className="text-base font-black text-white">{profile.subscriptionDaysLeft} Days Remaining</p>
+                        </div>
+                      ) : (
+                        <p className="text-base font-black text-slate-400 mt-0.5">Free Plan</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           </div>
         )}
