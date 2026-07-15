@@ -17,6 +17,7 @@ export default function ListeningPractice() {
   // Timer for Exam Mode (30 minutes = 1800 seconds)
   const [timeLeft, setTimeLeft] = useState(1800);
   const [timerActive, setTimerActive] = useState(false);
+  const [showTackleSteps, setShowTackleSteps] = useState(false);
 
   useEffect(() => {
     fetchAudios();
@@ -218,6 +219,40 @@ export default function ListeningPractice() {
                 {timerActive && (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-mono font-bold animate-pulse">
                     ⏱️ {formatTime(timeLeft)}
+                  </div>
+                )}
+              </div>
+
+              {/* Collapsible Steps Card */}
+              <div className="bg-navy/45 border border-primary-light/20 rounded-xl overflow-hidden shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setShowTackleSteps(!showTackleSteps)}
+                  className="w-full flex justify-between items-center px-4 py-3 text-xs font-bold text-gold hover:bg-primary-light/10 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">💡 How to Tackle this Listening Task (Fast & Accurately)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{showTackleSteps ? '▲ Hide Steps' : '▼ Show Steps'}</span>
+                </button>
+                {showTackleSteps && (
+                  <div className="p-4 border-t border-primary-light/15 text-[10px] text-slate-300 space-y-3 bg-navy/20 leading-relaxed">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">1. Read Ahead (30 Secs)</p>
+                        <p className="text-[9px]">Scan the questions and choices before the audio starts. Highlight key terms to anticipate names, dates, numbers, or specific terms.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">2. Listen & Note</p>
+                        <p className="text-[9px]">Focus on synonyms and paraphrasing. Speakers will often use different words than what you see in the questions.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">3. Check Spelling</p>
+                        <p className="text-[9px]">Watch out for word count rules (e.g., "NO MORE THAN TWO WORDS"). Ensure singular/plural nouns are matching correctly.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">4. Guess & Write</p>
+                        <p className="text-[9px]">Never leave blanks. There is no negative marking in the IELTS exam, so guess if you are unsure of the correct answer.</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

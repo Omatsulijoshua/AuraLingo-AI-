@@ -21,6 +21,7 @@ export default function SpeakingPractice() {
   // Timer for Exam Mode (2 minutes = 120 seconds for Cue Card talk)
   const [timeLeft, setTimeLeft] = useState(120);
   const [timerActive, setTimerActive] = useState(false);
+  const [showTackleSteps, setShowTackleSteps] = useState(false);
 
   useEffect(() => {
     fetchPrompts();
@@ -266,6 +267,40 @@ export default function SpeakingPractice() {
                 {timerActive && (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-mono font-bold animate-pulse">
                     ⏱️ {formatTime(timeLeft)}
+                  </div>
+                )}
+              </div>
+
+              {/* Collapsible Steps Card */}
+              <div className="bg-navy/45 border border-primary-light/20 rounded-xl overflow-hidden shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setShowTackleSteps(!showTackleSteps)}
+                  className="w-full flex justify-between items-center px-4 py-3 text-xs font-bold text-gold hover:bg-primary-light/10 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">💡 How to Tackle this Speaking Task (Fast & Accurately)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{showTackleSteps ? '▲ Hide Steps' : '▼ Show Steps'}</span>
+                </button>
+                {showTackleSteps && (
+                  <div className="p-4 border-t border-primary-light/15 text-[10px] text-slate-300 space-y-3 bg-navy/20 leading-relaxed">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">1. Prepare (1 Min)</p>
+                        <p className="text-[9px]">Write brief keywords/outlines during your 1-minute prep time. Never write full sentences; focus on triggering points instead.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">2. Speak Fluently</p>
+                        <p className="text-[9px]">Speak continuously until the examiner stops you. Use linking words ("In addition", "Consequently") to connect ideas naturally.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">3. Range of Tenses</p>
+                        <p className="text-[9px]">Use a rich range of tenses (past simple, present perfect, conditional) and varied vocabulary to describe events clearly.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">4. Pronunciation</p>
+                        <p className="text-[9px]">Speak at a steady, natural pace. Enounce clearly and pause naturally at full stops instead of using vocal fillers ("uhm", "like").</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

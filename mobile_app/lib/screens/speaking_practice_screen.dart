@@ -268,6 +268,52 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
                         _selectedPrompt['cueCardText'] ?? '',
                         style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.5, fontStyle: FontStyle.italic),
                       ),
+                      const SizedBox(height: 16),
+
+                      // Collapsible Tackle Steps Accordion
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF050E1A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF1E3E6E).withValues(alpha: 0.5)),
+                        ),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            iconColor: const Color(0xFFEAB308),
+                            collapsedIconColor: const Color(0xFFEAB308),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.lightbulb_outline, color: Color(0xFFEAB308), size: 16),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'How to Tackle this Speaking Task (Steps)',
+                                    style: TextStyle(color: Color(0xFFEAB308), fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildTackleStep('1. Prepare (1 Min)', 'Write brief outline keywords during your 1-minute prep time. Do not write full sentences; focus on main cues.'),
+                                    const SizedBox(height: 8),
+                                    _buildTackleStep('2. Speak Fluently', 'Keep speaking continuously until the examiner stops you. Use connectors ("In addition", "Consequently") naturally.'),
+                                    const SizedBox(height: 8),
+                                    _buildTackleStep('3. Range of Tenses', 'Use past, present, and conditional tenses. Rich grammar variation raises your score.'),
+                                    const SizedBox(height: 8),
+                                    _buildTackleStep('4. Pronunciation', 'Speak at a steady, natural pace. Enounce clearly and pause naturally instead of using fillers ("uhm", "like").'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 24),
 
                       if (_selectedPrompt['id'] == 'CUSTOM' && !_timerActive && _feedback == null && !_examSuccess) ...[
@@ -445,6 +491,23 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTackleStep(String title, String body) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(color: Color(0xFFEAB308), fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          body,
+          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9, height: 1.4),
+        ),
+      ],
     );
   }
 }

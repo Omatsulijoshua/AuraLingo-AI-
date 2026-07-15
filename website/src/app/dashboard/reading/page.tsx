@@ -17,6 +17,7 @@ export default function ReadingPractice() {
   // Timer for Exam Mode (30 minutes = 1800 seconds)
   const [timeLeft, setTimeLeft] = useState(1800);
   const [timerActive, setTimerActive] = useState(false);
+  const [showTackleSteps, setShowTackleSteps] = useState(false);
 
   useEffect(() => {
     fetchPassages();
@@ -218,6 +219,40 @@ export default function ReadingPractice() {
                 {timerActive && (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-mono font-bold animate-pulse">
                     ⏱️ {formatTime(timeLeft)}
+                  </div>
+                )}
+              </div>
+
+              {/* Collapsible Steps Card */}
+              <div className="bg-navy/45 border border-primary-light/20 rounded-xl overflow-hidden shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setShowTackleSteps(!showTackleSteps)}
+                  className="w-full flex justify-between items-center px-4 py-3 text-xs font-bold text-gold hover:bg-primary-light/10 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">💡 How to Tackle this Reading Task (Fast & Accurately)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{showTackleSteps ? '▲ Hide Steps' : '▼ Show Steps'}</span>
+                </button>
+                {showTackleSteps && (
+                  <div className="p-4 border-t border-primary-light/15 text-[10px] text-slate-300 space-y-3 bg-navy/20 leading-relaxed">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">1. Skim Passage (2 Mins)</p>
+                        <p className="text-[9px]">Quickly scan the title, main subheadings, and first/last sentences of each paragraph to grasp the general topic structure first.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">2. Analyze Questions</p>
+                        <p className="text-[9px]">Read the questions first. Highlight key terms (dates, capitalized names, numbers) to act as visual anchors in the text.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">3. Scan & Locate</p>
+                        <p className="text-[9px]">Scan back through the text to find the highlighted keywords. Read the surrounding sentences closely to pinpoint details.</p>
+                      </div>
+                      <div className="bg-primary/20 p-3 rounded-lg border border-primary-light/10">
+                        <p className="font-bold text-gold mb-1 uppercase tracking-wider">4. Spot Synonyms</p>
+                        <p className="text-[9px]">Be alert! The correct answers in the choices will almost always be paraphrased or use synonyms of terms found in the text.</p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

@@ -359,9 +359,9 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
+                                color: Colors.red.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                                border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
                               ),
                               child: Text(
                                 '⏱️ ${_formatTime(_timeLeft)}',
@@ -369,6 +369,52 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
                               ),
                             ),
                         ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Collapsible Tackle Steps Accordion
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF050E1A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF1E3E6E).withValues(alpha: 0.5)),
+                        ),
+                        child: Theme(
+                          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            iconColor: const Color(0xFFEAB308),
+                            collapsedIconColor: const Color(0xFFEAB308),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.lightbulb_outline, color: Color(0xFFEAB308), size: 16),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'How to Tackle this Listening Task (Steps)',
+                                    style: TextStyle(color: Color(0xFFEAB308), fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildTackleStep('1. Read Ahead (30 Secs)', 'Scan the questions and choices before the audio starts. Highlight key terms to anticipate names, dates, numbers, or specific terms.'),
+                                    const SizedBox(height: 8),
+                                    _buildTackleStep('2. Listen & Note', 'Focus on synonyms and paraphrasing. Speakers will often use different words than what you see in the questions.'),
+                                    const SizedBox(height: 8),
+                                    _buildTackleStep('3. Check Spelling', 'Watch out for word count rules (e.g., "NO MORE THAN TWO WORDS"). Ensure singular/plural nouns are matching correctly.'),
+                                    const SizedBox(height: 8),
+                                    _buildTackleStep('4. Guess & Write', 'Never leave blanks. There is no negative marking in the IELTS exam, so guess if you are unsure of the correct answer.'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 20),
 
@@ -696,6 +742,23 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTackleStep(String title, String body) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(color: Color(0xFFEAB308), fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          body,
+          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 9, height: 1.4),
+        ),
+      ],
     );
   }
 }
