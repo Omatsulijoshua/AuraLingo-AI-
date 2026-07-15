@@ -46,6 +46,67 @@ export class AdminController {
     return text.substring(start, end + 1).trim();
   }
 
+  private async generateFreeTts(text: string): Promise<Buffer> {
+    const chunks: string[] = [];
+    const words = text.split(/\s+/);
+    let currentChunk = '';
+
+    for (const word of words) {
+      if ((currentChunk + ' ' + word).length > 180) {
+        if (currentChunk) chunks.push(currentChunk.trim());
+        currentChunk = word;
+      } else {
+        currentChunk = currentChunk ? currentChunk + ' ' + word : word;
+      }
+    }
+    if (currentChunk) chunks.push(currentChunk.trim());
+
+    const buffers: Buffer[] = [];
+    for (const chunk of chunks) {
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${encodeURIComponent(
+        chunk
+      )}`;
+      
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/537.36'
+        }
+      });
+      
+      buffers.push(Buffer.from(response.data));
+    }
+
+    return Buffer.concat(buffers);
+  }
+
+  private async generateTtsAudio(text: string, openAiKey?: string): Promise<Buffer> {
+    if (openAiKey) {
+      try {
+        const response = await axios.post(
+          'https://api.openai.com/v1/audio/speech',
+          {
+            model: 'tts-1',
+            input: text,
+            voice: 'alloy',
+            response_format: 'mp3',
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${openAiKey}`,
+              'Content-Type': 'application/json',
+            },
+            responseType: 'arraybuffer',
+          }
+        );
+        return Buffer.from(response.data);
+      } catch (err: any) {
+        console.warn('[OpenAI_TTS_Failed] Falling back to Free Google TTS:', err.message);
+      }
+    }
+    return this.generateFreeTts(text);
+  }
+
   @Get('stats')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   async getStats(@Query('month') month?: string) {
@@ -353,27 +414,8 @@ Each object in the array must match this schema:
     });
     const openAiKey = openAiKeySetting ? this.aiService.decryptKey(openAiKeySetting.value) : '';
 
-    if (!openAiKey) {
-      throw new BadRequestException('OpenAI API Key is not configured under AI Settings.');
-    }
-
     try {
-      const ttsResponse = await axios.post(
-        'https://api.openai.com/v1/audio/speech',
-        {
-          model: 'tts-1',
-          input: audio.transcript,
-          voice: 'alloy',
-          response_format: 'mp3',
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${openAiKey}`,
-            'Content-Type': 'application/json',
-          },
-          responseType: 'arraybuffer',
-        }
-      );
+      const audioBuffer = await this.generateTtsAudio(audio.transcript, openAiKey);
       
       const uploadsDir = join(__dirname, '..', '..', 'uploads', 'listening');
       if (!fs.existsSync(uploadsDir)) {
@@ -381,7 +423,7 @@ Each object in the array must match this schema:
       }
       const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`;
       const filepath = join(uploadsDir, filename);
-      fs.writeFileSync(filepath, Buffer.from(ttsResponse.data));
+      fs.writeFileSync(filepath, audioBuffer);
       const audioUrl = `/uploads/listening/${filename}`;
 
       await this.prisma.listeningAudio.update({
@@ -391,7 +433,7 @@ Each object in the array must match this schema:
 
       return { success: true, audioUrl };
     } catch (err: any) {
-      throw new BadRequestException(`Failed to generate TTS from OpenAI: ${err.message}`);
+      throw new BadRequestException(`Failed to generate TTS audio: ${err.message}`);
     }
   }
 
@@ -464,44 +506,26 @@ Return a valid JSON object matching this schema. Do not include markdown code bl
         const jsonText = this.extractJson(aiResponse.text);
         const data = JSON.parse(jsonText);
 
-        // Try to generate TTS audio using OpenAI if configured
-        let audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Fallback
+        // Try to generate TTS audio using OpenAI, fallback to free Google TTS
+        let audioUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'; // Absolute fallback
         
         const openAiKeySetting = await this.prisma.appSettings.findFirst({
           where: { key: 'ai_openai_key' }
         });
         const openAiKey = openAiKeySetting ? this.aiService.decryptKey(openAiKeySetting.value) : '';
 
-        if (openAiKey) {
-          try {
-            const ttsResponse = await axios.post(
-              'https://api.openai.com/v1/audio/speech',
-              {
-                model: 'tts-1',
-                input: data.transcript,
-                voice: 'alloy',
-                response_format: 'mp3',
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${openAiKey}`,
-                  'Content-Type': 'application/json',
-                },
-                responseType: 'arraybuffer',
-              }
-            );
-            
-            const uploadsDir = join(__dirname, '..', '..', 'uploads', 'listening');
-            if (!fs.existsSync(uploadsDir)) {
-              fs.mkdirSync(uploadsDir, { recursive: true });
-            }
-            const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`;
-            const filepath = join(uploadsDir, filename);
-            fs.writeFileSync(filepath, Buffer.from(ttsResponse.data));
-            audioUrl = `/uploads/listening/${filename}`;
-          } catch (ttsErr: any) {
-            console.warn('[AI_TTS_GENERATION_FAILED] Falling back to default URL:', ttsErr.message);
+        try {
+          const audioBuffer = await this.generateTtsAudio(data.transcript, openAiKey);
+          const uploadsDir = join(__dirname, '..', '..', 'uploads', 'listening');
+          if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
           }
+          const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`;
+          const filepath = join(uploadsDir, filename);
+          fs.writeFileSync(filepath, audioBuffer);
+          audioUrl = `/uploads/listening/${filename}`;
+        } catch (ttsErr: any) {
+          console.warn('[TTS_GENERATION_FAILED] Falling back to default URL:', ttsErr.message);
         }
 
         const audio = await this.prisma.listeningAudio.create({
