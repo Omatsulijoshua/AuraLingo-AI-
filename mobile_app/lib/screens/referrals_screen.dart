@@ -475,4 +475,3 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
     );
   }
 }
-}

@@ -150,7 +150,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     const Center(
                       child: Text(
                         "We'd love to hear from you!",
-                        style: TextStyle(color: Color(0xFF0F172A), fontSize: 20, fontWeight: FontWeight.extrabold),
+                        style: const TextStyle(color: Color(0xFF0F172A), fontSize: 20, fontWeight: FontWeight.w800),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -307,7 +307,7 @@ class _SupportScreenState extends State<SupportScreen> {
                     // Ticket History header
                     const Text(
                       'Ticket History',
-                      style: TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.extrabold),
+                      style: const TextStyle(color: Color(0xFF0F172A), fontSize: 15, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 12),
                     _tickets.isEmpty

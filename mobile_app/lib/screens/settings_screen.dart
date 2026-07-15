@@ -11,6 +11,7 @@ import 'support_screen.dart';
 import 'referrals_screen.dart';
 import 'history_screen.dart';
 import 'login_screen.dart';
+import 'progress_report_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
