@@ -186,6 +186,41 @@ export class AuthService {
     const speakingCount = await this.prisma.speakingSubmission.count({ where: { userId } });
     const completedLessonsCount = totalMockTestsCount + writingCount + speakingCount;
 
+    // Monthly practices count from all activities
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const monthlyAnswersCount = await this.prisma.userAnswer.count({
+      where: {
+        userId,
+        createdAt: { gte: startOfMonth },
+      },
+    });
+
+    const monthlyMockCount = await this.prisma.userMockAttempt.count({
+      where: {
+        userId,
+        startedAt: { gte: startOfMonth },
+      },
+    });
+
+    const monthlyWritingCount = await this.prisma.writingSubmission.count({
+      where: {
+        userId,
+        createdAt: { gte: startOfMonth },
+      },
+    });
+
+    const monthlySpeakingCount = await this.prisma.speakingSubmission.count({
+      where: {
+        userId,
+        createdAt: { gte: startOfMonth },
+      },
+    });
+
+    const monthlyPracticesCount = monthlyAnswersCount + monthlyMockCount + monthlyWritingCount + monthlySpeakingCount;
+
     const activeSub = user.subscriptions.find(s => s.status === 'ACTIVE');
     let subscriptionDaysLeft = 0;
     let subscriptionExpiresAt: string | null = null;
@@ -238,6 +273,7 @@ export class AuthService {
       subscriptionDaysLeft,
       subscriptionExpiresAt,
       currentEstimateBand,
+      monthlyPracticesCount,
     };
   }
 

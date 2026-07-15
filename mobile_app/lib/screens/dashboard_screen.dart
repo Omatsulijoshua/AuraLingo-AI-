@@ -13,6 +13,7 @@ import 'plan_screen.dart';
 import 'tools_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
+import 'support_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -41,8 +42,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return const OnboardingScreen();
     }
 
+    final bool isLightTheme = _currentIndex == 0 || _currentIndex == 2;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF050E1A),
+      backgroundColor: isLightTheme ? const Color(0xFFF4F6FB) : const Color(0xFF050E1A),
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -50,9 +53,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF0B1E36),
-        selectedItemColor: const Color(0xFFD4AF37),
-        unselectedItemColor: Colors.white54,
+        backgroundColor: isLightTheme ? Colors.white : const Color(0xFF0B1E36),
+        selectedItemColor: isLightTheme ? const Color(0xFFC62828) : const Color(0xFFD4AF37),
+        unselectedItemColor: isLightTheme ? Colors.black38 : Colors.white54,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
         unselectedLabelStyle: const TextStyle(fontSize: 10),
         onTap: (index) {
@@ -134,352 +137,451 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen));
   }
 
+  String _getGreetingText() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning';
+    } else if (hour < 17) {
+      return 'Good Afternoon';
+    } else {
+      return 'Good Evening';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final String greeting = DateTime.now().hour < 12 ? _t('dashboard_greeting_morning') : _t('dashboard_greeting_night');
     final double targetBand = (user?['targetBand'] ?? 7.0) as double;
     final String level = user?['currentLevel'] ?? 'INTERMEDIATE';
     final String levelName = level == 'BEGINNER' ? _t('level_beg') : (level == 'ADVANCED' ? _t('level_adv') : 'Advance');
 
+    // Monthly practice counter from all activities
+    final int completedCount = user?['monthlyPracticesCount'] ?? 0;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF050E1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0B1E36),
-        elevation: 0,
-        title: Row(
-          children: [
-            const Icon(Icons.waving_hand, color: Color(0xFFD4AF37), size: 20),
-            const SizedBox(width: 8),
-            Text(
-              '$greeting, ${user?['name'] ?? 'User'}',
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Current Level Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0B1E36),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF1E3E6E)),
-              ),
-              child: Row(
+      backgroundColor: const Color(0xFFF4F6FB),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Greeting and Chat Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Circle gauge widget
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFD4AF37), width: 6),
-                    ),
-                    alignment: Alignment.center,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('$targetBand', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                        const Text('Band', style: TextStyle(color: Colors.white54, fontSize: 8)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Current Level', style: TextStyle(color: Colors.white54, fontSize: 10)),
-                        const SizedBox(height: 4),
-                        Text(
-                          levelName,
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            _getGreetingText(),
+                            style: const TextStyle(
+                              color: Color(0xFF0F172A),
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            '👋',
+                            style: TextStyle(fontSize: 22),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        "Let's reach your goal today!",
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 12,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _t('level_sub'),
-                          style: const TextStyle(color: Colors.white38, fontSize: 9),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      color: Color(0xFF475569),
+                      size: 24,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SupportScreen()),
+                      );
+                    },
+                  ),
                 ],
               ),
-            ),
+              const SizedBox(height: 20),
 
-            _buildMetricCards(user),
-
-            const SizedBox(height: 24),
-
-            // Practice Area Title
-            Text(_t('practice_area'), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-
-            // 4-Grid practices area widget
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              childAspectRatio: 1.5,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              children: [
-                _buildPracticeGridItem('Speaking', Icons.mic, const Color(0xFFD4AF37), () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
-                }),
-                _buildPracticeGridItem('Writing', Icons.edit, Colors.amberAccent, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
-                }),
-                _buildPracticeGridItem('Reading', Icons.book, Colors.blueAccent, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
-                }),
-                _buildPracticeGridItem('Listening', Icons.headset, Colors.greenAccent, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
-                }),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            // Daily practice task title widget
-            Text(_t('daily_practice'), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-
-            // Daily task content
-            user == null
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
-                : user['dailyTasks'] == null || (user['dailyTasks'] as List).isEmpty
-                    ? Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0B1E36),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF1E3E6E)),
+              // Current Level Card
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.black.withOpacity(0.04)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Circle gauge widget
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 76,
+                          height: 76,
+                          child: CircularProgressIndicator(
+                            value: 0.65, // Static matching estimation visually
+                            strokeWidth: 6,
+                            backgroundColor: Colors.black.withOpacity(0.05),
+                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFC62828)), // Red/pinkish
+                          ),
                         ),
-                        width: double.infinity,
-                        child: const Text(
-                          'No daily tasks available. Recalculate your study plan in settings!',
-                          style: TextStyle(color: Colors.white54, fontSize: 12),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : Column(
-                        children: (user['dailyTasks'] as List).map<Widget>((task) {
-                          IconData icon;
-                          Color iconColor;
-                          final String module = task['module'] ?? 'READING';
-                          if (module == 'READING') {
-                            icon = Icons.book;
-                            iconColor = Colors.blueAccent;
-                          } else if (module == 'WRITING') {
-                            icon = Icons.edit;
-                            iconColor = Colors.amberAccent;
-                          } else {
-                            icon = Icons.mic;
-                            iconColor = Colors.redAccent;
-                          }
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0B1E36),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFF1E3E6E)),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              targetBand.toStringAsFixed(0),
+                              style: const TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
-                            child: Row(
+                            const Text(
+                              'Band',
+                              style: TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Current Level',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            levelName,
+                            style: const TextStyle(
+                              color: Color(0xFF0F172A),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Start practicing to track your level!',
+                            style: TextStyle(
+                              color: Color(0xFFC62828),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: (completedCount / 308.0).clamp(0.0, 1.0),
+                              minHeight: 5,
+                              backgroundColor: Colors.black.withOpacity(0.05),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFC62828)),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '$completedCount/308 practices',
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, color: Colors.black26, size: 14),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Practice Area Title
+              const Text(
+                'Practice Area',
+                style: TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 4-Grid practices area widget
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                childAspectRatio: 1.3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                children: [
+                  _buildPracticeGridItem('Speaking', Icons.mic, const Color(0xFFD4AF37), () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
+                  }),
+                  _buildPracticeGridItem('Writing', Icons.edit, Colors.amberAccent, () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+                  }),
+                  _buildPracticeGridItem('Reading', Icons.book, Colors.blueAccent, () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
+                  }),
+                  _buildPracticeGridItem('Listening', Icons.headset, Colors.greenAccent, () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
+                  }),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Daily practice task title widget (if available)
+              if (user != null && user['dailyTasks'] != null && (user['dailyTasks'] as List).isNotEmpty) ...[
+                const Text(
+                  'Daily Tasks',
+                  style: TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Column(
+                  children: (user['dailyTasks'] as List).map<Widget>((task) {
+                    IconData icon;
+                    Color iconColor;
+                    final String module = task['module'] ?? 'READING';
+                    if (module == 'READING') {
+                      icon = Icons.book;
+                      iconColor = Colors.blueAccent;
+                    } else if (module == 'WRITING') {
+                      icon = Icons.edit;
+                      iconColor = Colors.amberAccent;
+                    } else {
+                      icon = Icons.mic;
+                      iconColor = Colors.redAccent;
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.black.withOpacity(0.04)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(icon, color: iconColor, size: 20),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(icon, color: iconColor, size: 20),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        task['title'] ?? '',
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      const Text('Daily Practice Task', style: TextStyle(color: Colors.white38, fontSize: 9)),
-                                    ],
+                                Text(
+                                  task['title'] ?? '',
+                                  style: const TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
-                                  onPressed: () => _launchTask(task),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'Daily Practice Task',
+                                  style: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 9,
+                                  ),
                                 ),
                               ],
                             ),
-                          );
-                        }).toList(),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward_ios, color: Colors.black26, size: 14),
+                            onPressed: () => _launchTask(task),
+                          ),
+                        ],
                       ),
-            const SizedBox(height: 24),
-            const Text(
-              'Continue Learning',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+              ],
+
+              // Continue Learning
+              const Text(
+                'Continue Learning',
+                style: TextStyle(
+                  color: Color(0xFF0F172A),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            _buildContinueCard(
-              module: 'Listening',
-              title: 'IELTS Book 10 Test 1',
-              progressText: '0/44 tests completed',
-              progressValue: 0.0,
-              icon: Icons.headset_rounded,
-              iconColor: Colors.blueAccent,
-              bgColor: Colors.blue.withOpacity(0.08),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
-              },
-            ),
-            _buildContinueCard(
-              module: 'Reading',
-              title: 'History/Architecture',
-              progressText: '0/132 passages completed',
-              progressValue: 0.0,
-              icon: Icons.menu_book_rounded,
-              iconColor: Colors.purpleAccent,
-              bgColor: Colors.purple.withOpacity(0.08),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
-              },
-            ),
-            _buildContinueCard(
-              module: 'Writing',
-              title: 'Test 1 Task 1',
-              progressText: '0/88 tasks completed',
-              progressValue: 0.0,
-              icon: Icons.edit_rounded,
-              iconColor: Colors.amberAccent,
-              bgColor: Colors.amber.withOpacity(0.08),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
-              },
-            ),
-            _buildContinueCard(
-              module: 'Speaking',
-              title: 'IELTS Book 10 Test 1',
-              progressText: '0/44 tests completed',
-              progressValue: 0.0,
-              icon: Icons.mic_rounded,
-              iconColor: Colors.greenAccent,
-              bgColor: Colors.green.withOpacity(0.08),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 12),
+              _buildContinueCard(
+                module: 'Listening',
+                title: 'IELTS Book 10 Test 1',
+                progressText: '0/44 tests completed',
+                progressValue: 0.0,
+                icon: Icons.headset_rounded,
+                iconColor: Colors.blueAccent,
+                bgColor: Colors.blue.withOpacity(0.08),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
+                },
+              ),
+              _buildContinueCard(
+                module: 'Reading',
+                title: 'History/Architecture',
+                progressText: '0/132 passages completed',
+                progressValue: 0.0,
+                icon: Icons.menu_book_rounded,
+                iconColor: Colors.purpleAccent,
+                bgColor: Colors.purple.withOpacity(0.08),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
+                },
+              ),
+              _buildContinueCard(
+                module: 'Writing',
+                title: 'Test 1 Task 1',
+                progressText: '0/88 tasks completed',
+                progressValue: 0.0,
+                icon: Icons.edit_rounded,
+                iconColor: Colors.amberAccent,
+                bgColor: Colors.amber.withOpacity(0.08),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+                },
+              ),
+              _buildContinueCard(
+                module: 'Speaking',
+                title: 'IELTS Book 10 Test 1',
+                progressText: '0/44 tests completed',
+                progressValue: 0.0,
+                icon: Icons.mic_rounded,
+                iconColor: Colors.greenAccent,
+                bgColor: Colors.green.withOpacity(0.08),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildPracticeGridItem(String title, IconData icon, Color color, VoidCallback onTap) {
+    Color iconColor;
+    Color badgeBg;
+    if (title == 'Speaking') {
+      iconColor = const Color(0xFF1D4ED8);
+      badgeBg = const Color(0xFFEFF6FF);
+    } else if (title == 'Writing') {
+      iconColor = const Color(0xFFD97706);
+      badgeBg = const Color(0xFFFEF3C7);
+    } else if (title == 'Reading') {
+      iconColor = const Color(0xFF7C3AED);
+      badgeBg = const Color(0xFFF5F3FF);
+    } else {
+      iconColor = const Color(0xFF059669);
+      badgeBg = const Color(0xFFECFDF5);
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFF0B1E36),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF1E3E6E)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 10),
-            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-            const SizedBox(height: 4),
-            const Text('Start Practice', style: TextStyle(color: Colors.white30, fontSize: 9)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black.withOpacity(0.04)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMetricCards(Map<String, dynamic>? user) {
-    final completedCount = user?['completedLessonsCount'] ?? 0;
-    final currentEstimate = user?['currentEstimateBand'] ?? 6.3;
-    final daysLeft = user?['subscriptionDaysLeft'] ?? 0;
-    final expiresAt = user?['subscriptionExpiresAt'];
-
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      height: 72,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          // Completed Lessons Card
-          _buildSingleMetricCard(
-            'Completed Lessons',
-            '$completedCount Lessons',
-            Icons.menu_book,
-            const Color(0xFFD4AF37),
-          ),
-          const SizedBox(width: 12),
-          // Current Estimate Card
-          _buildSingleMetricCard(
-            'Current Estimate',
-            'Band $currentEstimate',
-            Icons.trending_up,
-            const Color(0xFFD4AF37),
-          ),
-          const SizedBox(width: 12),
-          // Expiration Card
-          _buildSingleMetricCard(
-            daysLeft > 0 ? 'Days Left' : 'Subscription',
-            daysLeft > 0 ? '$daysLeft Days' : 'Free Plan',
-            Icons.workspace_premium,
-            const Color(0xFFD4AF37),
-            subLabel: daysLeft > 0 ? 'Expires $expiresAt' : null,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSingleMetricCard(String title, String val, IconData icon, Color color, {String? subLabel}) {
-    return Container(
-      width: 170,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0B1E36),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3E6E)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: badgeBg,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white54, fontSize: 9), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(val, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                if (subLabel != null) ...[
-                  const SizedBox(height: 2),
-                  Text(subLabel, style: const TextStyle(color: Colors.white30, fontSize: 7), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
+                const Text(
+                  'Start Practice',
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 10,
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -494,17 +596,40 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
     required Color bgColor,
     required VoidCallback onTap,
   }) {
+    Color badgeText;
+    Color badgeBg;
+    if (module == 'Speaking') {
+      badgeText = const Color(0xFF1D4ED8);
+      badgeBg = const Color(0xFFEFF6FF);
+    } else if (module == 'Writing') {
+      badgeText = const Color(0xFFD97706);
+      badgeBg = const Color(0xFFFEF3C7);
+    } else if (module == 'Reading') {
+      badgeText = const Color(0xFF7C3AED);
+      badgeBg = const Color(0xFFF5F3FF);
+    } else {
+      badgeText = const Color(0xFF059669);
+      badgeBg = const Color(0xFFECFDF5);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1E36),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3E6E)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -514,10 +639,10 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(12),
+                    color: badgeBg,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: iconColor, size: 24),
+                  child: Icon(icon, color: badgeText, size: 22),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -525,19 +650,17 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: iconColor.withOpacity(0.12),
+                          color: badgeBg,
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: iconColor.withOpacity(0.24)),
                         ),
                         child: Text(
                           module,
                           style: TextStyle(
-                            color: iconColor,
-                            fontSize: 9,
+                            color: badgeText,
+                            fontSize: 8,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -545,44 +668,15 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                       Text(
                         title,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF0F172A),
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            progressText,
-                            style: const TextStyle(color: Colors.white38, fontSize: 9),
-                          ),
-                          Text(
-                            '${(progressValue * 100).toInt()}%',
-                            style: const TextStyle(color: Colors.white38, fontSize: 9),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: LinearProgressIndicator(
-                          value: progressValue,
-                          backgroundColor: const Color(0xFF1E3E6E),
-                          valueColor: AlwaysStoppedAnimation<Color>(iconColor),
-                          minHeight: 4,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Colors.white24,
-                  size: 14,
-                ),
+                const Icon(Icons.arrow_forward_ios, color: Colors.black26, size: 14),
               ],
             ),
           ),
