@@ -241,6 +241,12 @@ export class ContentController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post('vocabulary/generate')
+  async generateVocabulary(@Body('topic') topic: string) {
+    return this.contentService.generateVocabulary(topic);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('schedule')
   async getPersonalizedSchedule(@Req() req: any) {
     return this.contentService.getPersonalizedSchedule(req.user.sub);

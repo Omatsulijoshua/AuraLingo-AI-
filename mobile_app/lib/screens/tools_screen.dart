@@ -3,6 +3,7 @@ import '../services/localization.dart';
 import 'essay_checker_screen.dart';
 import 'grammar_checker_screen.dart';
 import 'paraphrase_screen.dart';
+import 'vocabulary_builder_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -95,7 +96,18 @@ class _ToolsScreenState extends State<ToolsScreen> {
               },
             ),
             const SizedBox(height: 12),
-            _buildToolCard(_t('vocabulary'), _t('vocabulary_desc'), Icons.translate, Colors.purpleAccent),
+            _buildToolCard(
+              _t('vocabulary'),
+              _t('vocabulary_desc'),
+              Icons.translate,
+              Colors.purpleAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const VocabularyBuilderScreen()),
+                );
+              },
+            ),
 
             const SizedBox(height: 24),
 

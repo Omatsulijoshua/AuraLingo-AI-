@@ -955,5 +955,36 @@ Do not output any markdown formatting or any other text before/after the JSON.`;
     }
     return JSON.parse(cleanText.trim());
   }
+
+  async generateVocabulary(topic: string) {
+    const prompt = `You are a professional IELTS English vocabulary teacher. Generate a list of 5 key vocabulary words related to the topic: "${topic}".
+Each vocabulary card must include the word, part of speech, band level (e.g. "Band 5+", "Band 6+", "Band 7+", "Band 8+"), a clear IELTS-focused definition, an illustrative example sentence, and 2 synonyms.
+
+Respond ONLY with a JSON object in this exact format:
+{
+  "words": [
+    {
+      "word": "curriculum",
+      "partOfSpeech": "noun",
+      "band": "Band 7+",
+      "definition": "The subjects comprising a course of study in a school or college.",
+      "example": "A well-designed curriculum is essential for fostering critical thinking skills among students.",
+      "synonyms": ["syllabus", "course outline"]
+    }
+  ]
+}
+
+Ensure the words range across different band levels (specifically targeting high Band 7+ and 8+ words, with occasional Band 5+ or 6+ words). Do not output any markdown formatting or any other text before/after the JSON.`;
+
+    const aiResponse = await this.aiService.generateChatCompletion([{ role: 'user', content: prompt }]);
+    let cleanText = aiResponse.text.trim();
+    if (cleanText.startsWith('```json')) {
+      cleanText = cleanText.substring(7);
+    }
+    if (cleanText.endsWith('```')) {
+      cleanText = cleanText.substring(0, cleanText.length - 3);
+    }
+    return JSON.parse(cleanText.trim());
+  }
 }
 
