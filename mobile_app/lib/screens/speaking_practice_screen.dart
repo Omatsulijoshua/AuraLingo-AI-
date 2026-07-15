@@ -14,6 +14,24 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
   final ApiService _apiService = ApiService();
   final TextEditingController _transcriptController = TextEditingController();
 
+  // Screen routing states: 'HOME', 'TALK_WITH_AI', 'TEST_DETAIL', 'PRACTICE_WORKSPACE'
+  String _currentScreen = 'HOME';
+
+  // Talk with AI States
+  bool _isAiSpeaking = true;
+  int _freeMessagesLeft = 3;
+  Timer? _aiSpeakingTimer;
+  final List<Map<String, dynamic>> _chatMessages = [
+    {
+      'role': 'ai',
+      'content': "Hello! I'm your IELTS speaking practice partner. What would you like to work on today?"
+    }
+  ];
+
+  // Test Detail States
+  int _selectedPart = 1;
+
+  // Practice/Exam Workspace States
   List<dynamic> _prompts = [];
   dynamic _selectedPrompt;
   String _mode = 'PRACTICE'; // PRACTICE or EXAM
@@ -31,13 +49,63 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
   void initState() {
     super.initState();
     _fetchPrompts();
+    _startAiSpeechSimulation("Hello! I'm your IELTS speaking practice partner. What would you like to work on today?");
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _aiSpeakingTimer?.cancel();
     _transcriptController.dispose();
     super.dispose();
+  }
+
+  void _startAiSpeechSimulation(String initialText) {
+    setState(() {
+      _isAiSpeaking = true;
+    });
+    _aiSpeakingTimer?.cancel();
+    _aiSpeakingTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _isAiSpeaking = false;
+        });
+      }
+    });
+  }
+
+  void _sendUserMessage(String text) {
+    if (_freeMessagesLeft <= 0) return;
+    setState(() {
+      _chatMessages.add({'role': 'user', 'content': text});
+      _freeMessagesLeft--;
+      _isAiSpeaking = true;
+    });
+
+    _aiSpeakingTimer?.cancel();
+    _aiSpeakingTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _chatMessages.add({
+            'role': 'ai',
+            'content': "That's a very interesting point. In the IELTS Speaking test, expanding on this with concrete examples will help boost your coherence score. Let's try another cue card prompt."
+          });
+          _isAiSpeaking = false;
+        });
+      }
+    });
+  }
+
+  void _resetChat() {
+    setState(() {
+      _chatMessages.clear();
+      _chatMessages.add({
+        'role': 'ai',
+        'content': "Hello! I'm your IELTS speaking practice partner. What would you like to work on today?"
+      });
+      _isAiSpeaking = false;
+      _freeMessagesLeft = 3;
+    });
   }
 
   Future<void> _fetchPrompts() async {
@@ -142,11 +210,725 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
       );
     }
 
+    if (_currentScreen == 'TALK_WITH_AI') {
+      return _buildTalkWithAiScreen();
+    } else if (_currentScreen == 'TEST_DETAIL') {
+      return _buildTestDetailScreen();
+    } else if (_currentScreen == 'PRACTICE_WORKSPACE') {
+      return _buildPracticeWorkspaceScreen();
+    }
+
+    return _buildHomeScreen();
+  }
+
+  // --- SCREEN 1: SPEAKING HOME PAGE (Image 1) ---
+  Widget _buildHomeScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF050E1A),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leadingWidth: 100,
+        leading: TextButton.icon(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFC62828), size: 16),
+          label: const Text('Back', style: TextStyle(color: Color(0xFFC62828), fontSize: 14, fontWeight: FontWeight.bold)),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Speaking Practice',
+              style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Real IELTS Speaking Tests',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 24),
+
+            // AI Powered Talk with AI Card
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _currentScreen = 'TALK_WITH_AI';
+                  _isAiSpeaking = true;
+                });
+                _startAiSpeechSimulation("Hello! I'm your IELTS speaking practice partner. What would you like to work on today?");
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFC62828), Color(0xFF880E4F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFC62828).withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.auto_awesome, color: Colors.white, size: 10),
+                              SizedBox(width: 4),
+                              Text(
+                                'AI POWERED',
+                                style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.waves, color: Colors.white, size: 20),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Talk with AI',
+                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Practice free conversation with human-like AI voice',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(color: Colors.white24),
+                    const SizedBox(height: 8),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.mic, color: Colors.white70, size: 14),
+                            SizedBox(width: 4),
+                            Text('Voice Chat', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.volume_up, color: Colors.white70, size: 14),
+                            SizedBox(width: 4),
+                            Text('AI Voice', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.psychology, color: Colors.white70, size: 14),
+                            SizedBox(width: 4),
+                            Text('Smart AI', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            const Text(
+              'Available Tests',
+              style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+
+            // Book 10 Test 1 Unlocked
+            _buildTestListItem(
+              title: 'IELTS Book 10 Test 1',
+              subtitle: '3 Parts  |  0/3 Completed',
+              isLocked: false,
+              iconData: Icons.mic,
+              onTap: () {
+                setState(() {
+                  _currentScreen = 'TEST_DETAIL';
+                  _selectedPart = 1;
+                });
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Locked tests
+            _buildTestListItem(
+              title: 'IELTS Book 10 Test 2',
+              subtitle: 'Premium Content',
+              isLocked: true,
+              iconData: Icons.lock,
+              onTap: () {},
+            ),
+            const SizedBox(height: 12),
+            _buildTestListItem(
+              title: 'IELTS Book 10 Test 3',
+              subtitle: 'Premium Content',
+              isLocked: true,
+              iconData: Icons.lock,
+              onTap: () {},
+            ),
+            const SizedBox(height: 12),
+            _buildTestListItem(
+              title: 'IELTS Book 10 Test 4',
+              subtitle: 'Premium Content',
+              isLocked: true,
+              iconData: Icons.lock,
+              onTap: () {},
+            ),
+            const SizedBox(height: 30),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTestListItem({
+    required String title,
+    required String subtitle,
+    required bool isLocked,
+    required IconData iconData,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B1E36),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF1E3E6E).withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isLocked ? const Color(0xFF1E3E6E).withValues(alpha: 0.3) : const Color(0xFFC62828).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                iconData,
+                color: isLocked ? const Color(0xFF94A3B8) : const Color(0xFFC62828),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isLocked ? const Color(0xFF94A3B8) : Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isLocked ? Icons.lock_outline : Icons.chevron_right,
+              color: const Color(0xFF1E3E6E),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- SCREEN 2 & 3: TALK WITH AI (Image 2 & 3) ---
+  Widget _buildTalkWithAiScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF050E1A),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white, size: 24),
+          onPressed: () {
+            _aiSpeakingTimer?.cancel();
+            setState(() {
+              _currentScreen = 'HOME';
+            });
+          },
+        ),
+        title: const Text(
+          'Talk with AI',
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // Messages list
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: _chatMessages.length,
+              itemBuilder: (context, index) {
+                final msg = _chatMessages[index];
+                final isAi = msg['role'] == 'ai';
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: isAi ? MainAxisAlignment.start : MainAxisAlignment.end,
+                    children: [
+                      if (isAi) ...[
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFC62828),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.psychology, color: Colors.white, size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isAi ? Colors.white : const Color(0xFF0B1E36),
+                            borderRadius: BorderRadius.circular(16),
+                            border: isAi ? null : Border.all(color: const Color(0xFF1E3E6E)),
+                          ),
+                          child: Text(
+                            msg['content'],
+                            style: TextStyle(
+                              color: isAi ? Colors.black87 : Colors.white,
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (!isAi) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF1E3E6E),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white, size: 18),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Speaking Status Indicators & Control Buttons
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
+            decoration: const BoxDecoration(
+              color: Color(0xFF0B1E36),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Status Text
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _isAiSpeaking ? const Color(0xFFC62828) : const Color(0xFF94A3B8),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _isAiSpeaking ? 'AI is speaking...' : 'Tap microphone to speak',
+                      style: TextStyle(
+                        color: _isAiSpeaking ? Colors.white : const Color(0xFF94A3B8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Controls Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Stop button on left (Only visible when AI is speaking)
+                    if (_isAiSpeaking) ...[
+                      InkWell(
+                        onTap: () {
+                          _aiSpeakingTimer?.cancel();
+                          setState(() {
+                            _isAiSpeaking = false;
+                          });
+                        },
+                        customBorder: const CircleBorder(),
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFE65100),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.stop, color: Colors.white, size: 20),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                    ] else ...[
+                      const SizedBox(width: 74), // Placeholder spacing to center the mic
+                    ],
+
+                    // Microphone button in center
+                    InkWell(
+                      onTap: _isAiSpeaking
+                          ? null
+                          : () {
+                              _sendUserMessage("I want to practice Part 2 Cue Card topics about describing a childhood memory.");
+                            },
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: _isAiSpeaking ? const Color(0xFF1E3E6E) : const Color(0xFFC62828),
+                          shape: BoxShape.circle,
+                          boxShadow: _isAiSpeaking
+                              ? null
+                              : [
+                                  BoxShadow(
+                                    color: const Color(0xFFC62828).withValues(alpha: 0.4),
+                                    blurRadius: 16,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                        ),
+                        child: const Icon(Icons.mic, color: Colors.white, size: 28),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+
+                    // Reset button on right
+                    InkWell(
+                      onTap: _resetChat,
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: const Icon(Icons.replay, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Free limit counter
+                Text(
+                  '$_freeMessagesLeft free messages remaining',
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- SCREEN 4 & 5: TEST DETAIL PAGE (Image 4 & 5) ---
+  Widget _buildTestDetailScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF050E1A),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leadingWidth: 100,
+        leading: TextButton.icon(
+          onPressed: () => setState(() => _currentScreen = 'HOME'),
+          icon: const Icon(Icons.arrow_back_ios, color: Color(0xFFC62828), size: 16),
+          label: const Text('Back', style: TextStyle(color: Color(0xFFC62828), fontSize: 14, fontWeight: FontWeight.bold)),
+        ),
+        title: const Text(
+          'IELTS Book 10 Test 1',
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // Segmented Tabs control row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1E36),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: _buildPartTabButton(1, 'Part 1', 'Interview')),
+                  Expanded(child: _buildPartTabButton(2, 'Part 2', 'Cue Card')),
+                  Expanded(child: _buildPartTabButton(3, 'Part 3', 'Discussion')),
+                ],
+              ),
+            ),
+          ),
+
+          // Detail Content Cards
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Topic Headers based on selection
+                  Text(
+                    _selectedPart == 1
+                        ? 'Part 1: Questions 1-4'
+                        : _selectedPart == 2
+                            ? 'Part 2: Question 5'
+                            : 'Part 3: Questions 6-8',
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _selectedPart == 1
+                        ? '4-5 minutes'
+                        : _selectedPart == 2
+                            ? '3-4 minutes'
+                            : '4-5 minutes',
+                    style: const TextStyle(color: Color(0xFFC62828), fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Text(
+                    _selectedPart == 1
+                        ? 'The examiner asks general questions about familiar topics like home, family, work, studies, and interests.'
+                        : _selectedPart == 2
+                            ? 'You receive a task card with a topic. You have 1 minute to prepare, then speak for 1-2 minutes.'
+                            : 'The examiner asks broader, more abstract questions based on the topic discussed in Part 2.',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                  ),
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    'Pro Tips',
+                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Dynamic list of tips with lightbulb icons
+                  ..._buildPartTipsList(),
+                  const SizedBox(height: 24),
+
+                  // Test Security Info banner Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC62828).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFC62828).withValues(alpha: 0.2)),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.security, color: Color(0xFFC62828), size: 20),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Questions are hidden until you start the speaking session to simulate real test conditions.',
+                            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
+          ),
+
+          // Sticky Start Speaking Button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _currentScreen = 'PRACTICE_WORKSPACE';
+                    _timerActive = false;
+                    _feedback = null;
+                    _examSuccess = false;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFC62828),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.mic, size: 20),
+                label: const Text(
+                  'Start Speaking',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPartTabButton(int partNum, String title, String subtitle) {
+    final isSelected = _selectedPart == partNum;
+    return InkWell(
+      onTap: () => setState(() => _selectedPart = partNum),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFC62828) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: isSelected ? Colors.white70 : const Color(0xFF94A3B8),
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildPartTipsList() {
+    List<String> tips = [];
+    if (_selectedPart == 1) {
+      tips = [
+        'Speak naturally and confidently.',
+        'Expand on your answers but keep them relevant.',
+        'Don\'t worry if the examiner interrupts you to move on.'
+      ];
+    } else if (_selectedPart == 2) {
+      tips = [
+        'Use your 1 minute preparation time effectively to make notes.',
+        'Try to use the bullet points on the card to structure your talk.',
+        'Keep speaking until the examiner stops you.'
+      ];
+    } else {
+      tips = [
+        'Structure your answers using the P-E-E-L method (Point, Explanation, Example, Link).',
+        'Express opinions clearly and give reasons.',
+        'Discuss different perspectives of the issue.'
+      ];
+    }
+
+    return tips.map((tip) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8.0),
+        child: Row(
+          children: [
+            const Icon(Icons.lightbulb, color: Color(0xFFEAB308), size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                tip,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  // --- SCREEN 6: ORIGINAL INTEGRATED WORKSPACE SCREEN ---
+  Widget _buildPracticeWorkspaceScreen() {
     return Scaffold(
       backgroundColor: const Color(0xFF050E1A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B1E36),
-        title: const Text('Speaking Practice', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            _timer?.cancel();
+            setState(() {
+              _currentScreen = 'TEST_DETAIL';
+            });
+          },
+        ),
+        title: const Text('Speaking Workspace', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -511,3 +1293,4 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
     );
   }
 }
+
