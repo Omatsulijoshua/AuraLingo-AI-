@@ -69,7 +69,14 @@ export class MockTestService {
   }
 
   // --- START ATTEMPT ---
-  async startMockTest(userId: string, mockTestId: string, customDuration?: number) {
+  async startMockTest(
+    userId: string,
+    mockTestId: string,
+    customDuration?: number,
+    mode?: string,
+    difficulty?: string,
+    aiAssist?: boolean,
+  ) {
     const mockTest = await this.prisma.mockTest.findUnique({
       where: { id: mockTestId },
       include: { sections: { orderBy: { order: 'asc' } } },
@@ -83,6 +90,14 @@ export class MockTestService {
       throw new BadRequestException('This mock test has no sections configured');
     }
 
+    // Custom Mode Encoding: e.g. PRACTICE_DIFF:BEGINNER_AI:TRUE
+    let modeString = mode || 'EXAM';
+    if (modeString === 'PRACTICE') {
+      const diff = difficulty || 'INTERMEDIATE';
+      const assist = aiAssist === true ? 'TRUE' : 'FALSE';
+      modeString = `PRACTICE_DIFF:${diff}_AI:${assist}`;
+    }
+
     const attempt = await this.prisma.userMockAttempt.create({
       data: {
         userId,
@@ -90,6 +105,7 @@ export class MockTestService {
         startedAt: new Date(),
         status: 'IN_PROGRESS',
         customDuration: customDuration || null,
+        mode: modeString,
       },
     });
 
@@ -109,6 +125,99 @@ export class MockTestService {
         },
       },
     });
+  }
+
+  // --- GET ATTEMPT DETAILS WITH CORRECTIONS ---
+  async getMockAttemptDetails(userId: string, attemptId: string) {
+    const attempt = await this.prisma.userMockAttempt.findFirst({
+      where: { id: attemptId, userId },
+      include: {
+        mockTest: {
+          include: {
+            sections: {
+              include: {
+                readingPassage: true,
+                listeningAudio: true,
+              },
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+        answers: {
+          include: {
+            question: {
+              include: {
+                options: true,
+                answers: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      throw new NotFoundException('Mock test attempt not found');
+    }
+
+    return attempt;
+  }
+
+  // --- REAL-TIME AI ASSIST ---
+  async getAiAssist(userId: string, attemptId: string, sectionId: string, query: string) {
+    const attempt = await this.prisma.userMockAttempt.findUnique({
+      where: { id: attemptId },
+      include: { mockTest: { include: { sections: true } } },
+    });
+
+    if (!attempt || attempt.userId !== userId) {
+      throw new NotFoundException('Attempt not found');
+    }
+
+    const section = attempt.mockTest.sections.find((s) => s.id === sectionId);
+    if (!section) {
+      throw new BadRequestException('Section not found in this mock test');
+    }
+
+    let tip = '';
+    let suggestion = '';
+    const sectionTitle = section.title;
+
+    if (query === 'brainstorm') {
+      if (sectionTitle.toLowerCase().includes('listening')) {
+        tip = "Listen for key synonyms and paraphrase. In library conversations, numbers and names are frequently spelled out.";
+        suggestion = "Brainstorming keywords: 'Library Card', 'Borrow limit', 'Late fee', 'Reference section'. Expect options to use synonyms like 'due date' instead of 'return date'.";
+      } else if (sectionTitle.toLowerCase().includes('reading')) {
+        tip = "Identify key terms in the passage. Architecture evolution texts usually compare time periods (e.g., '19th century' vs 'modern era').";
+        suggestion = "Brainstorming keywords: 'Structural integrity', 'Eco-friendly', 'Material innovation'. Scan the text specifically for nouns and dates to match the questions.";
+      } else {
+        tip = "Try structured paragraphing: Intro, Body paragraph 1 with main arguments, Body paragraph 2 with contrast, and Conclusion.";
+        suggestion = "Brainstorming keywords: 'Pragmatic skills', 'Academic learning', 'Vocational training'. Outline your response before typing.";
+      }
+    } else if (query === 'tackle') {
+      if (sectionTitle.toLowerCase().includes('listening')) {
+        tip = "Read the instructions carefully. If it says 'NO MORE THAN TWO WORDS', writing three is marked incorrect regardless of content.";
+        suggestion = "Tackling strategy: 1. Underline key nouns in questions. 2. Predict the missing part of speech (noun, verb, number). 3. Listen actively for transition words like 'However' or 'On the other hand'.";
+      } else {
+        tip = "Do not read word-for-word. Scan for headings, topic sentences, and unique terms.";
+        suggestion = "Tackling strategy: 1. Read the questions first. 2. Use skimming to locate the relevant paragraph. 3. Read the surrounding sentences intensively to check for qualifiers (e.g., 'only', 'all', 'rarely').";
+      }
+    } else if (query === 'weakness') {
+      tip = "Analyze your previous mistakes. If you struggle with spelling, double check your text input for typos before submitting.";
+      suggestion = "Improvement guidelines: Focus on matching grammar structures. If a blank requires an adjective, ensure your word is in adjective form. Build your academic vocabulary daily.";
+    } else if (query === 'time') {
+      tip = "Time management is crucial for a high band score.";
+      suggestion = "Pacing advice: Spend no more than 20 minutes per passage or section. If you get stuck on a question, guess, move on, and flag it to return to later.";
+    } else {
+      tip = `Response to "${query}"`;
+      suggestion = `To tackle this question, pay attention to context clues in the instructions. For ${sectionTitle}, focus on grammatical accuracy and sentence coherence. Keep practicing to build confidence!`;
+    }
+
+    return {
+      tip,
+      suggestion,
+      timestamp: new Date(),
+    };
   }
 
   // --- SUBMIT SECTION ---
@@ -140,40 +249,100 @@ export class MockTestService {
     }
 
     // Save student answers for the section
-    await this.prisma.$transaction(async (tx) => {
-      for (const ans of dto.answers) {
-        const question = await tx.practiceQuestion.findUnique({
-          where: { id: ans.questionId },
-          include: { options: true, answers: true },
-        });
+    const isSingleTextResponse = dto.answers.some(a => a.questionId === 'section_responses');
 
-        if (question) {
-          let isCorrect = false;
-          if (question.questionType === 'MULTIPLE_CHOICE') {
-            const correctOpt = question.options.find((o) => o.isCorrect);
-            const correctLetter = correctOpt ? correctOpt.optionLetter || correctOpt.optionText : '';
-            isCorrect = ans.answerText.trim().toUpperCase() === correctLetter.toUpperCase();
-          } else {
-            const correctAns = question.answers[0];
-            if (correctAns) {
-              const choices = [
-                correctAns.correctText.toLowerCase().trim(),
-                ...(correctAns.acceptableTexts || []).map((t) => t.toLowerCase().trim()),
-              ];
-              isCorrect = choices.includes(ans.answerText.toLowerCase().trim());
-            }
+    await this.prisma.$transaction(async (tx) => {
+      const sectionObj = await tx.mockTestSection.findUnique({
+        where: { id: dto.sectionId }
+      });
+      if (!sectionObj) return;
+
+      const questions = await this.getSectionQuestions(sectionObj);
+
+      if (isSingleTextResponse) {
+        const textAns = dto.answers.find(a => a.questionId === 'section_responses')?.answerText || '';
+        const lines = textAns.split('\n');
+
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          const qIndex = i + 1;
+          const matchLine = lines.find(line => {
+            const trimmed = line.trim();
+            return trimmed.startsWith(`${qIndex}.`) || 
+                   trimmed.startsWith(`${qIndex})`) || 
+                   trimmed.startsWith(`${qIndex} `) || 
+                   trimmed.toLowerCase().startsWith(`q${qIndex}:`);
+          });
+
+          let studentAnswer = '';
+          if (matchLine) {
+            studentAnswer = matchLine.replace(/^.*?(\d+[\.\)\s]|q\d+:)\s*/i, '').trim();
+          } else if (lines[i]) {
+            studentAnswer = lines[i].trim();
           }
 
-          // Create UserAnswer linked to UserMockAttempt
-          await tx.userAnswer.create({
-            data: {
-              attemptId,
-              userId,
-              questionId: ans.questionId,
-              answerText: ans.answerText,
-              isCorrect,
-            },
+          if (studentAnswer) {
+            let isCorrect = false;
+            if (q.questionType === 'MULTIPLE_CHOICE') {
+              const correctOpt = q.options.find((o) => o.isCorrect);
+              const correctLetter = correctOpt ? correctOpt.optionLetter || correctOpt.optionText : '';
+              isCorrect = studentAnswer.trim().toUpperCase() === correctLetter.toUpperCase();
+            } else {
+              const correctAns = await tx.answer.findFirst({ where: { questionId: q.id } });
+              if (correctAns) {
+                const choices = [
+                  correctAns.correctText.toLowerCase().trim(),
+                  ...(correctAns.acceptableTexts || []).map((t) => t.toLowerCase().trim()),
+                ];
+                isCorrect = choices.includes(studentAnswer.toLowerCase().trim());
+              }
+            }
+
+            await tx.userAnswer.create({
+              data: {
+                attemptId,
+                userId,
+                questionId: q.id,
+                answerText: studentAnswer,
+                isCorrect,
+              },
+            });
+          }
+        }
+      } else {
+        for (const ans of dto.answers) {
+          const question = await tx.practiceQuestion.findUnique({
+            where: { id: ans.questionId },
+            include: { options: true, answers: true },
           });
+
+          if (question) {
+            let isCorrect = false;
+            if (question.questionType === 'MULTIPLE_CHOICE') {
+              const correctOpt = question.options.find((o) => o.isCorrect);
+              const correctLetter = correctOpt ? correctOpt.optionLetter || correctOpt.optionText : '';
+              isCorrect = ans.answerText.trim().toUpperCase() === correctLetter.toUpperCase();
+            } else {
+              const correctAns = question.answers[0];
+              if (correctAns) {
+                const choices = [
+                  correctAns.correctText.toLowerCase().trim(),
+                  ...(correctAns.acceptableTexts || []).map((t) => t.toLowerCase().trim()),
+                ];
+                isCorrect = choices.includes(ans.answerText.toLowerCase().trim());
+              }
+            }
+
+            await tx.userAnswer.create({
+              data: {
+                attemptId,
+                userId,
+                questionId: ans.questionId,
+                answerText: ans.answerText,
+                isCorrect,
+              },
+            });
+          }
         }
       }
     });

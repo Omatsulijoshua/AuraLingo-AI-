@@ -35,8 +35,31 @@ export class MockTestController {
     @Req() req: any,
     @Param('id') id: string,
     @Body('customDuration') customDuration?: number,
+    @Body('mode') mode?: string,
+    @Body('difficulty') difficulty?: string,
+    @Body('aiAssist') aiAssist?: boolean,
   ) {
-    return this.mockTestService.startMockTest(req.user.sub, id, customDuration);
+    return this.mockTestService.startMockTest(req.user.sub, id, customDuration, mode, difficulty, aiAssist);
+  }
+
+  @Roles(UserRole.STUDENT)
+  @Get('attempts/:id')
+  async getMockAttemptDetails(
+    @Req() req: any,
+    @Param('id') attemptId: string,
+  ) {
+    return this.mockTestService.getMockAttemptDetails(req.user.sub, attemptId);
+  }
+
+  @Roles(UserRole.STUDENT)
+  @Post('attempts/:id/ai-assist')
+  async getAiAssist(
+    @Req() req: any,
+    @Param('id') attemptId: string,
+    @Body('sectionId') sectionId: string,
+    @Body('query') query: string,
+  ) {
+    return this.mockTestService.getAiAssist(req.user.sub, attemptId, sectionId, query);
   }
 
   @Roles(UserRole.STUDENT)

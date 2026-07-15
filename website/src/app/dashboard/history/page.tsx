@@ -88,19 +88,26 @@ export default function HistoryDashboard() {
             ) : (
               <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
                 {logs.mockExams.map((exam: any) => (
-                  <div key={exam.id} className="p-4 bg-navy/40 border border-primary-light/15 rounded-xl flex justify-between items-center text-xs">
+                  <Link 
+                    key={exam.id} 
+                    href={`/dashboard/mock-exam?attemptId=${exam.id}`}
+                    className="p-4 bg-navy/40 border border-primary-light/15 hover:border-gold/30 rounded-xl flex justify-between items-center text-xs transition-colors cursor-pointer block group"
+                  >
                     <div>
-                      <p className="font-bold text-white">{exam.mockTest.title}</p>
+                      <p className="font-bold text-white group-hover:text-gold transition-colors">{exam.mockTest.title}</p>
                       <p className="text-[10px] text-slate-500 mt-1">{new Date(exam.startedAt).toLocaleDateString()} • {exam.status}</p>
                     </div>
                     {exam.overallBandEstimate ? (
-                      <span className="bg-gold/15 text-gold border border-gold/20 px-2.5 py-1 rounded font-bold">
-                        Band {exam.overallBandEstimate}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-gold/15 text-gold border border-gold/20 px-2.5 py-1 rounded font-bold">
+                          Band {exam.overallBandEstimate}
+                        </span>
+                        <span className="text-slate-500">→</span>
+                      </div>
                     ) : (
                       <span className="text-slate-500">In Progress</span>
                     )}
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

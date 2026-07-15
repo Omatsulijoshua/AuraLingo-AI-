@@ -144,14 +144,14 @@ Keep practicing to generate detailed AI progress insights!`,
 
     return {
       examMode: {
-        mockExams: mockAttempts.filter((a) => a.mode === 'EXAM'),
+        mockExams: mockAttempts.filter((a) => a.mode === 'EXAM' || !a.mode.startsWith('PRACTICE')),
         practiceAnswers: answers.filter((a) => a.mode === 'EXAM'),
         writing: writingSubmissions.filter((s) => s.mode === 'EXAM'),
         speaking: speakingSubmissions.filter((s) => s.mode === 'EXAM'),
       },
       practiceMode: {
-        mockExams: mockAttempts.filter((a) => a.mode === 'PRACTICE'),
-        practiceAnswers: answers.filter((a) => a.mode === 'PRACTICE'),
+        mockExams: mockAttempts.filter((a) => a.mode.startsWith('PRACTICE')),
+        practiceAnswers: answers.filter((a) => a.mode === 'PRACTICE' || a.mode.startsWith('PRACTICE')),
         writing: writingSubmissions.filter((s) => s.mode === 'PRACTICE'),
         speaking: speakingSubmissions.filter((s) => s.mode === 'PRACTICE'),
       },
