@@ -743,7 +743,7 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
                         ? 'Part 1: Questions 1-4'
                         : _selectedPart == 2
                             ? 'Part 2: Question 5'
-                            : 'Part 3: Questions 6-8',
+                            : 'Part 3: Questions 6-11',
                     style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
@@ -762,7 +762,7 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
                         ? 'The examiner asks general questions about familiar topics like home, family, work, studies, and interests.'
                         : _selectedPart == 2
                             ? 'You receive a task card with a topic. You have 1 minute to prepare, then speak for 1-2 minutes.'
-                            : 'The examiner asks broader, more abstract questions based on the topic discussed in Part 2.',
+                            : 'The examiner asks deeper questions related to Part 2 topic. These require more abstract thinking and opinions.',
                     style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
                   ),
                   const SizedBox(height: 24),
@@ -888,9 +888,9 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
       ];
     } else {
       tips = [
-        'Structure your answers using the P-E-E-L method (Point, Explanation, Example, Link).',
-        'Express opinions clearly and give reasons.',
-        'Discuss different perspectives of the issue.'
+        'Express and justify your opinions clearly.',
+        'Discuss topics generally rather than focusing on personal experiences.',
+        'Ask for clarification if you don\'t understand a question.'
       ];
     }
 
