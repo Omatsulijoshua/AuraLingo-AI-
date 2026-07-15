@@ -588,6 +588,12 @@ export default function StudentDashboard() {
             >
               {_t('menu_tools')}
             </button>
+            <Link
+              href="/dashboard/mock-exam"
+              className="transition-colors text-slate-300 hover:text-white"
+            >
+              Mock Exam
+            </Link>
             <button
               onClick={() => setActiveTab('history')}
               className={`transition-colors ${activeTab === 'history' ? 'text-gold' : 'text-slate-300 hover:text-white'}`}
@@ -669,6 +675,32 @@ export default function StudentDashboard() {
                 </h3>
                 <p className="text-xs text-slate-400 mt-2">{_t('level_sub')}</p>
               </div>
+            </div>
+
+            {/* Mock Exam Simulation Card */}
+            <div className="bg-slate-950/80 border border-gold/25 rounded-2xl p-6 shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 max-w-2xl">
+              <div className="flex items-start gap-4">
+                <div className="text-3xl bg-gold/10 p-3 rounded-xl border border-gold/20 text-gold shrink-0">
+                  🏆
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-white">IELTS Mock Exam Simulation</h3>
+                    <span className="bg-gold/10 border border-gold/30 text-gold text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-full tracking-wider">
+                      Premium
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed max-w-md">
+                    Experience the real timed exam environment. Complete Listening, Reading, Writing, and Speaking modules with overall band grading and AI tutor feedback.
+                  </p>
+                </div>
+              </div>
+              <Link 
+                href="/dashboard/mock-exam"
+                className="w-full md:w-auto bg-[#D4AF37] hover:bg-[#C5A028] text-[#050E1A] font-bold px-6 py-3 rounded-xl text-xs text-center transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shrink-0 shadow-lg shadow-[#D4AF37]/10"
+              >
+                Start Simulation
+              </Link>
             </div>
 
             {/* Metrics Dashboard Row */}
