@@ -2,7 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { PrismaService } from './prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { decrypt, encrypt } from './utils/crypto';
+import { decrypt } from './utils/crypto';
 import axios from 'axios';
 
 @Controller()
@@ -352,31 +352,5 @@ export class AppController {
     await testProvider('openrouter', 'google/gemini-2.5-flash:free', 'https://openrouter.ai/api/v1', 'ai_openrouter_key', getVal('ai_openrouter_model'));
 
     return results;
-  }
-
-  @Get('set-gemini-temp')
-  async setGeminiTemp() {
-    const encryptionKey = this.configService.get<string>('ENCRYPTION_KEY') || '12345678901234567890123456789012';
-    const encryptedValue = encrypt('AQ.Ab8RN6KZtPBDElHVpjK0ZrVt54_N73MHGfhVVTeRXKIkS0_r-A', encryptionKey);
-    
-    await this.prisma.appSettings.upsert({
-      where: { key: 'ai_gemini_key' },
-      update: { value: encryptedValue },
-      create: { key: 'ai_gemini_key', value: encryptedValue, description: 'Google Gemini API key (encrypted)', isEncrypted: true }
-    });
-
-    await this.prisma.appSettings.upsert({
-      where: { key: 'active_ai_provider' },
-      update: { value: 'gemini' },
-      create: { key: 'active_ai_provider', value: 'gemini', description: 'Active AI Provider' }
-    });
-
-    await this.prisma.appSettings.upsert({
-      where: { key: 'ai_gemini_model' },
-      update: { value: 'gemini-2.5-flash' },
-      create: { key: 'ai_gemini_model', value: 'gemini-2.5-flash', description: 'Gemini Model' }
-    });
-
-    return { success: true, message: 'Gemini API Key, active provider, and model set successfully!' };
   }
 }
