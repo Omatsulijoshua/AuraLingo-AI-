@@ -1113,6 +1113,24 @@ function QuestionTable({ list, selectedIds, onSelect, onSelectAll, onDelete }: Q
                     >
                       Show Transcript
                     </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const confirmRegen = window.confirm('Are you sure you want to regenerate the audio using the OpenAI API Key in AI Settings? This will overwrite the current track.');
+                          if (!confirmRegen) return;
+                          await api.request(`/admin/listening-audio/${q.listeningAudio.id}/regenerate`, {
+                            method: 'POST'
+                          });
+                          alert('Audio regenerated successfully! Refresh the page to listen to the new track.');
+                        } catch (err: any) {
+                          alert(err.message || 'Failed to regenerate audio. Make sure your OpenAI API Key is valid.');
+                        }
+                      }}
+                      className="bg-emerald/15 text-emerald border border-emerald/20 hover:bg-emerald hover:text-primary px-2 py-1 rounded text-[9px] font-bold transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      Regenerate Audio
+                    </button>
                   </div>
                 ) : (
                   <span className="text-slate-500 italic">None</span>

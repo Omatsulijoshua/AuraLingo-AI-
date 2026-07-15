@@ -337,6 +337,64 @@ Each object in the array must match this schema:
     };
   }
 
+  @Post('listening-audio/:id/regenerate')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  async regenerateListeningAudio(@Param('id') id: string) {
+    const audio = await this.prisma.listeningAudio.findUnique({
+      where: { id },
+    });
+
+    if (!audio) {
+      throw new NotFoundException('Listening audio not found');
+    }
+
+    const openAiKeySetting = await this.prisma.appSettings.findFirst({
+      where: { key: 'ai_openai_key' }
+    });
+    const openAiKey = openAiKeySetting ? this.aiService.decryptKey(openAiKeySetting.value) : '';
+
+    if (!openAiKey) {
+      throw new BadRequestException('OpenAI API Key is not configured under AI Settings.');
+    }
+
+    try {
+      const ttsResponse = await axios.post(
+        'https://api.openai.com/v1/audio/speech',
+        {
+          model: 'tts-1',
+          input: audio.transcript,
+          voice: 'alloy',
+          response_format: 'mp3',
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${openAiKey}`,
+            'Content-Type': 'application/json',
+          },
+          responseType: 'arraybuffer',
+        }
+      );
+      
+      const uploadsDir = join(__dirname, '..', '..', 'uploads', 'listening');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.mp3`;
+      const filepath = join(uploadsDir, filename);
+      fs.writeFileSync(filepath, Buffer.from(ttsResponse.data));
+      const audioUrl = `/uploads/listening/${filename}`;
+
+      await this.prisma.listeningAudio.update({
+        where: { id },
+        data: { audioUrl },
+      });
+
+      return { success: true, audioUrl };
+    } catch (err: any) {
+      throw new BadRequestException(`Failed to generate TTS from OpenAI: ${err.message}`);
+    }
+  }
+
   @Delete('questions/:id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   async deleteQuestion(@Param('id') id: string) {
