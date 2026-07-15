@@ -325,7 +325,7 @@ export default function MockExamsPage() {
             >
               🤖 AI Assistance Report
             </button>
-          ))}
+          )}
         </div>
 
         {/* Correction Details Board */}
