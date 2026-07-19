@@ -1124,7 +1124,11 @@ export default function StudentDashboard() {
                       const dateObj = new Date(day.date);
                       const dayNumber = dateObj.getDate();
                       const dayShort = day.dayLabel.substring(0, 3);
-                      const isToday = dayIdx === 0;
+                      
+                      const nowObj = new Date();
+                      const isToday = dateObj.getFullYear() === nowObj.getFullYear() &&
+                                      dateObj.getMonth() === nowObj.getMonth() &&
+                                      dateObj.getDate() === nowObj.getDate();
 
                       return (
                         <div key={day.date} className="flex gap-4 items-stretch">

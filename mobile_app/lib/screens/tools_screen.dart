@@ -315,30 +315,47 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFC62828).withValues(alpha: 0.1),
+                            width: 44,
+                            height: 44,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFC62828),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.calculate_outlined, color: Color(0xFFC62828), size: 24),
+                            child: const Center(
+                              child: Text(
+                                '#',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 16),
-                          Expanded(
+                          const Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _t('band_calculator'),
-                                  style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 14),
+                                  'Overall Band Calculator',
+                                  style: TextStyle(
+                                    color: Color(0xFF0F172A),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
+                                SizedBox(height: 2),
                                 Text(
-                                  _t('band_calculator_desc'),
-                                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                                  'Calculate your overall IELTS band from 4 skill scores',
+                                  style: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 10,
+                                  ),
                                 ),
                               ],
                             ),

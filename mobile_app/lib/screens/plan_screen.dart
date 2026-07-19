@@ -392,7 +392,14 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                               final dayNumber = dateStr.split('-').last;
 
                               final tasks = day['tasks'] as List? ?? [];
-                              final bool isToday = dayIdx == 0;
+                              bool isToday = false;
+                              try {
+                                final parsedDate = DateTime.parse(dateStr);
+                                final now = DateTime.now();
+                                isToday = parsedDate.year == now.year &&
+                                          parsedDate.month == now.month &&
+                                          parsedDate.day == now.day;
+                              } catch (_) {}
 
                               return IntrinsicHeight(
                                 child: Row(
