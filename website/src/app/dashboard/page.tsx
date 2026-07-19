@@ -29,11 +29,11 @@ export default function StudentDashboard() {
   const [loadingSchedule, setLoadingSchedule] = useState(false);
 
   // Band Calculator state
-  const [listeningScore, setListeningScore] = useState(6.0);
-  const [readingScore, setReadingScore] = useState(6.0);
-  const [writingScore, setWritingScore] = useState(6.0);
-  const [speakingScore, setSpeakingScore] = useState(6.0);
-  const [calculatedBand, setCalculatedBand] = useState(6.0);
+  const [listeningScore, setListeningScore] = useState(6.5);
+  const [readingScore, setReadingScore] = useState(6.5);
+  const [writingScore, setWritingScore] = useState(6.5);
+  const [speakingScore, setSpeakingScore] = useState(6.5);
+  const [calculatedBand, setCalculatedBand] = useState(6.5);
 
   // Manual payment modal states
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -1196,38 +1196,102 @@ export default function StudentDashboard() {
               ))}
             </div>
 
-            {/* Dynamic Band Score Calculator Utility widget */}
-            <div className="bg-primary/20 border border-primary-light/30 rounded-2xl p-8 max-w-xl">
-              <h3 className="text-sm font-bold text-gold uppercase tracking-wide mb-6">{_t('band_calculator')}</h3>
-              
-              <div className="bg-navy/60 border border-[#D4AF37]/30 p-6 rounded-xl text-center mb-6 space-y-1">
-                <p className="text-[10px] text-slate-500">Calculated Overall Band Score</p>
-                <p className="text-4xl font-black text-white">{calculatedBand}</p>
-              </div>
+            {/* Redesigned Band Score Calculator Utility widget */}
+            {(() => {
+              const getBandDescriptor = (band: number) => {
+                if (band >= 9.0) return 'Expert User';
+                if (band >= 8.0) return 'Very Good User';
+                if (band >= 7.0) return 'Good User';
+                if (band >= 6.0) return 'Competent User';
+                if (band >= 5.0) return 'Modest User';
+                if (band >= 4.0) return 'Limited User';
+                if (band >= 3.0) return 'Extremely Limited User';
+                if (band >= 2.0) return 'Intermittent User';
+                if (band >= 1.0) return 'Non User';
+                return 'Did not attempt';
+              };
 
-              <div className="space-y-4">
-                {[
-                  { name: 'Listening', score: listeningScore, setScore: setListeningScore },
-                  { name: 'Reading', score: readingScore, setScore: setReadingScore },
-                  { name: 'Writing', score: writingScore, setScore: setWritingScore },
-                  { name: 'Speaking', score: speakingScore, setScore: setSpeakingScore },
-                ].map((s) => (
-                  <div key={s.name} className="flex justify-between items-center text-xs">
-                    <span className="w-24 text-slate-300 font-bold">{s.name}</span>
-                    <input
-                      type="range"
-                      min="4.0"
-                      max="9.0"
-                      step="0.5"
-                      value={s.score}
-                      onChange={(e) => s.setScore(parseFloat(e.target.value))}
-                      className="flex-1 mx-4 accent-gold"
-                    />
-                    <span className="w-8 font-mono font-bold text-gold">{s.score.toFixed(1)}</span>
+              const circumference = 2 * Math.PI * 70; // 439.82
+              const maxSweep = circumference * 0.75; // 329.87
+              const strokeLength = maxSweep * (calculatedBand / 9.0);
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-primary/20 border border-primary-light/30 rounded-2xl p-8 max-w-4xl">
+                  {/* Left Column: Gauge */}
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="relative w-48 h-48 flex items-center justify-center">
+                      <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 160 160">
+                        {/* Background Arc */}
+                        <circle
+                          cx="80"
+                          cy="80"
+                          r="70"
+                          fill="transparent"
+                          stroke="#152A4A"
+                          strokeWidth="10"
+                          strokeDasharray={`${maxSweep} ${circumference}`}
+                          strokeLinecap="round"
+                        />
+                        {/* Active Arc */}
+                        <circle
+                          cx="80"
+                          cy="80"
+                          r="70"
+                          fill="transparent"
+                          stroke="#FF9800"
+                          strokeWidth="10"
+                          strokeDasharray={`${strokeLength} ${circumference}`}
+                          strokeLinecap="round"
+                          className="transition-all duration-300"
+                        />
+                      </svg>
+                      {/* Centered Text */}
+                      <div className="absolute flex flex-col items-center justify-center text-center">
+                        <span className="text-4xl md:text-5xl font-black text-white leading-none">{calculatedBand.toFixed(1)}</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Overall Band</span>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <span className="text-sm font-bold text-slate-300">{getBandDescriptor(calculatedBand)}</span>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  {/* Right Column: Sliders */}
+                  <div className="space-y-4">
+                    {[
+                      { name: 'Listening', score: listeningScore, setScore: setListeningScore, color: '#2563EB', icon: '🎧' },
+                      { name: 'Reading', score: readingScore, setScore: setReadingScore, color: '#9333EA', icon: '📖' },
+                      { name: 'Writing', score: writingScore, setScore: setWritingScore, color: '#D97706', icon: '📝' },
+                      { name: 'Speaking', score: speakingScore, setScore: setSpeakingScore, color: '#059669', icon: '🎙️' },
+                    ].map((s) => (
+                      <div key={s.name} className="bg-navy/40 border border-primary-light/10 p-4 rounded-xl space-y-3">
+                        <div className="flex justify-between items-center text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{s.icon}</span>
+                            <span className="text-slate-200 font-bold">{s.name}</span>
+                          </div>
+                          <span className="font-mono font-bold text-sm" style={{ color: s.color }}>{s.score.toFixed(1)}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] text-slate-600 font-bold">0</span>
+                          <input
+                            type="range"
+                            min="0.0"
+                            max="9.0"
+                            step="0.5"
+                            value={s.score}
+                            onChange={(e) => s.setScore(parseFloat(e.target.value))}
+                            className="flex-1 accent-gold h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                            style={{ accentColor: s.color }}
+                          />
+                          <span className="text-[10px] text-slate-600 font-bold">9</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 

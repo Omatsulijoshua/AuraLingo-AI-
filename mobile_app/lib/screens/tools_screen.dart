@@ -7,6 +7,7 @@ import 'vocabulary_builder_screen.dart';
 import 'speaking_practice_screen.dart';
 import 'writing_practice_screen.dart';
 import 'mock_exams_screen.dart';
+import 'band_calculator_screen.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -16,28 +17,6 @@ class ToolsScreen extends StatefulWidget {
 }
 
 class _ToolsScreenState extends State<ToolsScreen> {
-  // Band Calculator input variables
-  double _listeningScore = 6.0;
-  double _readingScore = 6.0;
-  double _writingScore = 6.0;
-  double _speakingScore = 6.0;
-  double _overallBand = 6.0;
-
-  void _calculateOverall() {
-    final double avg = (_listeningScore + _readingScore + _writingScore + _speakingScore) / 4.0;
-    // IELTS Rounding Rules: round to nearest half band
-    final double fraction = avg - avg.toInt();
-    double rounded = avg.toInt().toDouble();
-    if (fraction >= 0.75) {
-      rounded += 1.0;
-    } else if (fraction >= 0.25) {
-      rounded += 0.5;
-    }
-    setState(() {
-      _overallBand = rounded;
-    });
-  }
-
   String _t(String key) => LocalizationService.translate(key);
 
   @override
@@ -313,7 +292,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
               const SizedBox(height: 12),
 
               Container(
-                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -326,72 +304,54 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.calculate_outlined, color: Color(0xFFC62828), size: 24),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _t('band_calculator'),
-                                style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _t('band_calculator_desc'),
-                                style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Overall result display
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F6FB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFC62828).withValues(alpha: 0.2)),
-                      ),
-                      child: Column(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const BandCalculatorScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
                         children: [
-                          const Text('Calculated Overall Band', style: TextStyle(color: Color(0xFF64748B), fontSize: 10)),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$_overallBand',
-                            style: const TextStyle(color: Color(0xFFC62828), fontSize: 32, fontWeight: FontWeight.w900),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFC62828).withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.calculate_outlined, color: Color(0xFFC62828), size: 24),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _t('band_calculator'),
+                                  style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _t('band_calculator_desc'),
+                                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Color(0xFF64748B),
+                            size: 14,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Score sliders
-                    _buildScoreSelector('Listening', _listeningScore, (val) {
-                      setState(() => _listeningScore = val);
-                      _calculateOverall();
-                    }),
-                    _buildScoreSelector('Reading', _readingScore, (val) {
-                      setState(() => _readingScore = val);
-                      _calculateOverall();
-                    }),
-                    _buildScoreSelector('Writing', _writingScore, (val) {
-                      setState(() => _writingScore = val);
-                      _calculateOverall();
-                    }),
-                    _buildScoreSelector('Speaking', _speakingScore, (val) {
-                      setState(() => _speakingScore = val);
-                      _calculateOverall();
-                    }),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 30),
@@ -485,36 +445,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildScoreSelector(String label, double val, ValueChanged<double> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(label, style: const TextStyle(color: Color(0xFF475569), fontSize: 12, fontWeight: FontWeight.w600)),
-          ),
-          Expanded(
-            child: Slider(
-              value: val,
-              min: 4.0,
-              max: 9.0,
-              divisions: 10,
-              label: val.toString(),
-              activeColor: const Color(0xFFC62828),
-              inactiveColor: const Color(0xFFCBD5E1),
-              onChanged: onChanged,
-            ),
-          ),
-          SizedBox(
-            width: 30,
-            child: Text(val.toString(), style: const TextStyle(color: Color(0xFFC62828), fontWeight: FontWeight.bold, fontSize: 12)),
-          ),
-        ],
       ),
     );
   }
