@@ -1049,15 +1049,67 @@ export default function StudentDashboard() {
                 </div>
 
                 {/* Pace Card */}
-                <div className="bg-primary/25 border border-primary-light/35 rounded-2xl p-5 shadow-xl flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-lg shrink-0">
-                    ↑
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-white">Ahead of Schedule</h4>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Great pace — keep it up!</p>
-                  </div>
-                </div>
+                {(() => {
+                  let completed = 0;
+                  let total = 0;
+                  schedule.forEach((d: any) => d.tasks.forEach((t: any) => {
+                    total++;
+                    if (t.completed) completed++;
+                  }));
+                  const totalTasks = total > 0 ? total : 23;
+                  const weekPercent = Math.round((completed / totalTasks) * 100);
+
+                  const dayOfWeek = new Date().getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+                  // Normalize Sunday to 7, Mon-Sat to 1-6
+                  const dayNum = dayOfWeek === 0 ? 7 : dayOfWeek;
+                  const targetPercent = (dayNum / 7.0) * 100;
+
+                  let paceTitle = 'Ahead of Schedule';
+                  let paceSubtitle = 'Great pace — keep it up!';
+                  let paceIcon = '↑';
+                  let paceBgColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+
+                  if (completed === 0) {
+                    if (dayNum >= 3) { // Wednesday or later
+                      paceTitle = 'Behind Schedule';
+                      paceSubtitle = "You haven't started your tasks for this week yet.";
+                      paceIcon = '⚠';
+                      paceBgColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                    } else {
+                      paceTitle = 'On Track';
+                      paceSubtitle = 'Start your first task for this week!';
+                      paceIcon = '▶';
+                      paceBgColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+                    }
+                  } else if (weekPercent >= targetPercent + 15) {
+                    paceTitle = 'Ahead of Schedule';
+                    paceSubtitle = 'Great pace — keep it up!';
+                    paceIcon = '↑';
+                    paceBgColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                  } else if (weekPercent < targetPercent - 15) {
+                    paceTitle = 'Behind Schedule';
+                    paceSubtitle = 'Catch up on your pending tasks to stay on track.';
+                    paceIcon = '⚠';
+                    paceBgColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                  } else {
+                    paceTitle = 'On Track';
+                    paceSubtitle = 'Good progress — keep it up!';
+                    paceIcon = '✓';
+                    paceBgColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                  }
+
+                  return (
+                    <div className="bg-primary/25 border border-primary-light/35 rounded-2xl p-5 shadow-xl flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 border ${paceBgColor}`}>
+                        {paceIcon}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">{paceTitle}</h4>
+                        <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{paceSubtitle}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Right widgets: Schedule timeline */}
@@ -1216,78 +1268,103 @@ export default function StudentDashboard() {
               const strokeLength = maxSweep * (calculatedBand / 9.0);
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-primary/20 border border-primary-light/30 rounded-2xl p-8 max-w-4xl">
-                  {/* Left Column: Gauge */}
-                  <div className="flex flex-col items-center justify-center space-y-4">
-                    <div className="relative w-48 h-48 flex items-center justify-center">
-                      <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 160 160">
-                        {/* Background Arc */}
-                        <circle
-                          cx="80"
-                          cy="80"
-                          r="70"
-                          fill="transparent"
-                          stroke="#152A4A"
-                          strokeWidth="10"
-                          strokeDasharray={`${maxSweep} ${circumference}`}
-                          strokeLinecap="round"
-                        />
-                        {/* Active Arc */}
-                        <circle
-                          cx="80"
-                          cy="80"
-                          r="70"
-                          fill="transparent"
-                          stroke="#FF9800"
-                          strokeWidth="10"
-                          strokeDasharray={`${strokeLength} ${circumference}`}
-                          strokeLinecap="round"
-                          className="transition-all duration-300"
-                        />
-                      </svg>
-                      {/* Centered Text */}
-                      <div className="absolute flex flex-col items-center justify-center text-center">
-                        <span className="text-4xl md:text-5xl font-black text-white leading-none">{calculatedBand.toFixed(1)}</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Overall Band</span>
+                <div className="bg-primary/20 border border-primary-light/30 rounded-2xl p-8 max-w-4xl space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    {/* Left Column: Gauge */}
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="relative w-48 h-48 flex items-center justify-center">
+                        <svg className="w-full h-full transform rotate-[135deg]" viewBox="0 0 160 160">
+                          {/* Background Arc */}
+                          <circle
+                            cx="80"
+                            cy="80"
+                            r="70"
+                            fill="transparent"
+                            stroke="#152A4A"
+                            strokeWidth="10"
+                            strokeDasharray={`${maxSweep} ${circumference}`}
+                            strokeLinecap="round"
+                          />
+                          {/* Active Arc */}
+                          <circle
+                            cx="80"
+                            cy="80"
+                            r="70"
+                            fill="transparent"
+                            stroke="#FF9800"
+                            strokeWidth="10"
+                            strokeDasharray={`${strokeLength} ${circumference}`}
+                            strokeLinecap="round"
+                            className="transition-all duration-300"
+                          />
+                        </svg>
+                        {/* Centered Text */}
+                        <div className="absolute flex flex-col items-center justify-center text-center">
+                          <span className="text-4xl md:text-5xl font-black text-white leading-none">{calculatedBand.toFixed(1)}</span>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">Overall Band</span>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <span className="text-sm font-bold text-slate-300">{getBandDescriptor(calculatedBand)}</span>
                       </div>
                     </div>
-                    <div className="text-center">
-                      <span className="text-sm font-bold text-slate-300">{getBandDescriptor(calculatedBand)}</span>
+
+                    {/* Right Column: Sliders */}
+                    <div className="space-y-4">
+                      {[
+                        { name: 'Listening', score: listeningScore, setScore: setListeningScore, color: '#2563EB', icon: '🎧' },
+                        { name: 'Reading', score: readingScore, setScore: setReadingScore, color: '#9333EA', icon: '📖' },
+                        { name: 'Writing', score: writingScore, setScore: setWritingScore, color: '#D97706', icon: '📝' },
+                        { name: 'Speaking', score: speakingScore, setScore: setSpeakingScore, color: '#059669', icon: '🎙️' },
+                      ].map((s) => (
+                        <div key={s.name} className="bg-navy/40 border border-primary-light/10 p-4 rounded-xl space-y-3">
+                          <div className="flex justify-between items-center text-xs">
+                            <div className="flex items-center gap-2">
+                              <span className="text-base">{s.icon}</span>
+                              <span className="text-slate-200 font-bold">{s.name}</span>
+                            </div>
+                            <span className="font-mono font-bold text-sm" style={{ color: s.color }}>{s.score.toFixed(1)}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] text-slate-600 font-bold">0</span>
+                            <input
+                              type="range"
+                              min="0.0"
+                              max="9.0"
+                              step="0.5"
+                              value={s.score}
+                              onChange={(e) => s.setScore(parseFloat(e.target.value))}
+                              className="flex-1 accent-gold h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
+                              style={{ accentColor: s.color }}
+                            />
+                            <span className="text-[10px] text-slate-600 font-bold">9</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Right Column: Sliders */}
-                  <div className="space-y-4">
-                    {[
-                      { name: 'Listening', score: listeningScore, setScore: setListeningScore, color: '#2563EB', icon: '🎧' },
-                      { name: 'Reading', score: readingScore, setScore: setReadingScore, color: '#9333EA', icon: '📖' },
-                      { name: 'Writing', score: writingScore, setScore: setWritingScore, color: '#D97706', icon: '📝' },
-                      { name: 'Speaking', score: speakingScore, setScore: setSpeakingScore, color: '#059669', icon: '🎙️' },
-                    ].map((s) => (
-                      <div key={s.name} className="bg-navy/40 border border-primary-light/10 p-4 rounded-xl space-y-3">
-                        <div className="flex justify-between items-center text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{s.icon}</span>
-                            <span className="text-slate-200 font-bold">{s.name}</span>
-                          </div>
-                          <span className="font-mono font-bold text-sm" style={{ color: s.color }}>{s.score.toFixed(1)}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[10px] text-slate-600 font-bold">0</span>
-                          <input
-                            type="range"
-                            min="0.0"
-                            max="9.0"
-                            step="0.5"
-                            value={s.score}
-                            onChange={(e) => s.setScore(parseFloat(e.target.value))}
-                            className="flex-1 accent-gold h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer"
-                            style={{ accentColor: s.color }}
-                          />
-                          <span className="text-[10px] text-slate-600 font-bold">9</span>
-                        </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-primary-light/20">
+                    {/* Info Card */}
+                    <div className="bg-blue-500/5 border border-blue-500/20 p-5 rounded-2xl flex gap-3">
+                      <span className="text-blue-400 text-lg shrink-0 mt-0.5">ℹ️</span>
+                      <div className="space-y-1">
+                        <h5 className="text-xs font-bold text-blue-300">How IELTS calculates overall band</h5>
+                        <p className="text-[10px] text-blue-400/90 leading-relaxed">
+                          The overall band score is the average of all four skill scores, rounded to the nearest whole or half band. For example, if your scores are L:7.0, R:6.5, W:6.0, S:7.0, the average is 6.625, which rounds to 6.5.
+                        </p>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Formula Card */}
+                    <div className="bg-navy/40 border border-primary-light/10 p-5 rounded-2xl flex flex-col justify-center items-center text-center space-y-2">
+                      <p className="text-xs font-bold text-slate-300 font-mono">
+                        ({listeningScore.toFixed(1)} + {readingScore.toFixed(1)} + {writingScore.toFixed(1)} + {speakingScore.toFixed(1)}) ÷ 4 = {((listeningScore + readingScore + writingScore + speakingScore) / 4).toFixed(2)}
+                      </p>
+                      <p className="text-gold font-bold text-lg">
+                        → {calculatedBand.toFixed(1)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               );

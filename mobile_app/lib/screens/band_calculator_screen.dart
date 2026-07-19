@@ -172,6 +172,88 @@ class _BandCalculatorScreenState extends State<BandCalculatorScreen> {
                 _calculateOverall();
               },
             ),
+            const SizedBox(height: 20),
+
+            // How IELTS calculates overall band explanation card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFDBEAFE)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_rounded, color: Color(0xFF1D4ED8), size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'How IELTS calculates overall band',
+                          style: TextStyle(
+                            color: Color(0xFF1E3A8A),
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'The overall band score is the average of all four skill scores, rounded to the nearest whole or half band. For example, if your scores are L:7.0, R:6.5, W:6.0, S:7.0, the average is 6.625, which rounds to 6.5.',
+                          style: TextStyle(
+                            color: Color(0xFF1E40AF),
+                            fontSize: 11,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Dynamic calculation details formula card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.01),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    '(${_listeningScore.toStringAsFixed(1)} + ${_readingScore.toStringAsFixed(1)} + ${_writingScore.toStringAsFixed(1)} + ${_speakingScore.toStringAsFixed(1)}) ÷ 4 = ${((_listeningScore + _readingScore + _writingScore + _speakingScore) / 4.0).toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      color: Color(0xFF334155),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '→ ${_overallBand.toStringAsFixed(1)}',
+                    style: const TextStyle(
+                      color: Color(0xFFFF9800),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
           ],
         ),

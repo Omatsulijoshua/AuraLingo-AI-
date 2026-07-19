@@ -275,55 +275,95 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 3. Ahead of Schedule Pace Card
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0B1E36),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFF1E3E6E)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.greenAccent.withOpacity(0.08),
-                              shape: BoxShape.circle,
+                    // 3. Dynamic Progress Pace Card
+                    (() {
+                      final int dayOfWeek = DateTime.now().weekday; // 1 = Monday, 7 = Sunday
+                      final double targetPercent = (dayOfWeek / 7.0) * 100;
+                      final double actualPercent = weekPercent.toDouble();
+
+                      String paceTitle = 'Ahead of Schedule';
+                      String paceSubtitle = 'Great pace — keep it up!';
+                      Color paceColor = Colors.greenAccent;
+                      IconData paceIcon = Icons.arrow_upward_rounded;
+
+                      if (weekCompleted == 0) {
+                        if (dayOfWeek >= 3) {
+                          paceTitle = 'Behind Schedule';
+                          paceSubtitle = 'You haven\'t started your tasks for this week yet.';
+                          paceColor = Colors.orangeAccent;
+                          paceIcon = Icons.warning_rounded;
+                        } else {
+                          paceTitle = 'On Track';
+                          paceSubtitle = 'Start your first task for this week!';
+                          paceColor = Colors.blueAccent;
+                          paceIcon = Icons.play_arrow_rounded;
+                        }
+                      } else if (actualPercent >= targetPercent + 15) {
+                        paceTitle = 'Ahead of Schedule';
+                        paceSubtitle = 'Great pace — keep it up!';
+                        paceColor = Colors.greenAccent;
+                        paceIcon = Icons.arrow_upward_rounded;
+                      } else if (actualPercent < targetPercent - 15) {
+                        paceTitle = 'Behind Schedule';
+                        paceSubtitle = 'Catch up on your pending tasks to stay on track.';
+                        paceColor = Colors.redAccent;
+                        paceIcon = Icons.warning_rounded;
+                      } else {
+                        paceTitle = 'On Track';
+                        paceSubtitle = 'Good progress — keep it up!';
+                        paceColor = Colors.greenAccent;
+                        paceIcon = Icons.check_circle_outline_rounded;
+                      }
+
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0B1E36),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF1E3E6E)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: paceColor.withOpacity(0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                paceIcon,
+                                color: paceColor,
+                                size: 20,
+                              ),
                             ),
-                            child: const Icon(
-                              Icons.arrow_upward_rounded,
-                              color: Colors.greenAccent,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Ahead of Schedule',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    paceTitle,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Great pace — keep it up!',
-                                  style: TextStyle(
-                                    color: Colors.white38,
-                                    fontSize: 10,
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    paceSubtitle,
+                                    style: const TextStyle(
+                                      color: Colors.white38,
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          ],
+                        ),
+                      );
+                    })(),
                     const SizedBox(height: 28),
 
                     // 4. Schedule Section Title
