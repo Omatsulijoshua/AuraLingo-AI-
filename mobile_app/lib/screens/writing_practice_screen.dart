@@ -21,6 +21,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   String _viewState = 'BOOKS'; // BOOKS, BOOK_DETAIL, PRACTICE
   int _selectedBook = 10;
   String _selectedTaskType = 'TASK_1'; // TASK_1 or TASK_2
+  int _currentPart = 1;
+  String _part1Text = '';
+  String _part2Text = '';
 
   List<dynamic> _prompts = [];
   dynamic _selectedPrompt;
@@ -322,9 +325,16 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1E36),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3E6E)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -332,11 +342,11 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFF1E3E6E))),
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
             ),
             child: const Text(
               'Visual Data',
-              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.bold),
             ),
           ),
           ClipRRect(
@@ -364,9 +374,16 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1E36).withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3E6E)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -376,22 +393,22 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
             children: [
               const Text(
                 'Question',
-                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.bold),
               ),
               Row(
                 children: [
-                  const Icon(Icons.description_outlined, color: Color(0xFF94A3B8), size: 13),
+                  const Icon(Icons.description_outlined, color: Color(0xFF64748B), size: 13),
                   const SizedBox(width: 4),
                   Text(
                     isTask1 ? '150+ words' : '250+ words',
-                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                   ),
                   const SizedBox(width: 12),
-                  const Icon(Icons.access_time, color: Color(0xFF94A3B8), size: 13),
+                  const Icon(Icons.access_time, color: Color(0xFF64748B), size: 13),
                   const SizedBox(width: 4),
                   Text(
                     isTask1 ? '20 min' : '40 min',
-                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
                   ),
                 ],
               ),
@@ -401,10 +418,10 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
           Text(
             prompt['promptText'],
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              height: 1.5,
-              fontWeight: FontWeight.w500,
+              color: Color(0xFF334155),
+              fontSize: 13,
+              height: 1.55,
+              fontWeight: FontWeight.normal,
             ),
           ),
         ],
@@ -438,16 +455,23 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       margin: const EdgeInsets.only(top: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1E36).withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E3E6E)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
             'Writing Tips',
-            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           ...tips.map((tip) => Padding(
@@ -459,7 +483,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                 Expanded(
                   child: Text(
                     tip,
-                    style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.4),
+                    style: const TextStyle(color: Color(0xFF475569), fontSize: 12, height: 1.45),
                   ),
                 ),
               ],
@@ -478,7 +502,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       children: [
         const Text(
           'Your Answer',
-          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.bold),
         ),
         Text(
           '$_wordCount / $targetWordCount words',
@@ -496,15 +520,51 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       return;
     }
 
-    if (_mode == 'EXAMINER') {
-      if (_examinerFeedback == null) {
-        _submitDraft1();
-      } else {
-        _submitDraft2();
-      }
+    if (_currentPart == 1) {
+      _part1Text = _textController.text;
+      setState(() {
+        _currentPart = 2;
+        final matching = _prompts.where((p) => p['taskType'] == 'TASK_2').toList();
+        _selectedPrompt = matching.isNotEmpty ? matching[0] : null;
+        _textController.text = _part2Text;
+        _feedback = null;
+      });
+      _startTimerForPart(2);
     } else {
-      _submitEssay();
+      _part2Text = _textController.text;
+      if (_mode == 'EXAMINER') {
+        if (_examinerFeedback == null) {
+          _submitDraft1();
+        } else {
+          _submitDraft2();
+        }
+      } else {
+        _submitEssay();
+      }
     }
+  }
+
+  void _startTimerForPart(int part) {
+    _timer?.cancel();
+    setState(() {
+      _timeLeft = part == 1 ? 1200 : 2400;
+      _timerActive = true;
+      _feedback = null;
+      _examSuccess = false;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeLeft > 0) {
+        if (mounted) {
+          setState(() => _timeLeft--);
+        }
+      } else {
+        _timer?.cancel();
+        if (mounted) {
+          setState(() => _timerActive = false);
+          _submitOrFinish();
+        }
+      }
+    });
   }
 
   void _startPracticeForTest(int bookNum, String taskType, int testNum) {
@@ -513,30 +573,23 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       return;
     }
 
-    final matching = _prompts.where((p) => p['taskType'] == taskType).toList();
-    if (matching.isNotEmpty) {
-      setState(() {
-        _selectedPrompt = matching[0];
-        _viewState = 'PRACTICE';
-        _textController.clear();
-        _feedback = null;
-        _examSuccess = false;
-        _examinerFeedback = null;
-        _comparisonResult = null;
-        _selectedSentence = null;
-      });
-    } else {
-      setState(() {
-        _selectedPrompt = _prompts.isNotEmpty ? _prompts[0] : null;
-        _viewState = 'PRACTICE';
-        _textController.clear();
-        _feedback = null;
-        _examSuccess = false;
-        _examinerFeedback = null;
-        _comparisonResult = null;
-        _selectedSentence = null;
-      });
-    }
+    setState(() {
+      _currentPart = taskType == 'TASK_1' ? 1 : 2;
+      _part1Text = '';
+      _part2Text = '';
+      _textController.clear();
+      _viewState = 'PRACTICE';
+      _feedback = null;
+      _examSuccess = false;
+      _examinerFeedback = null;
+      _comparisonResult = null;
+      _selectedSentence = null;
+
+      final matching = _prompts.where((p) => p['taskType'] == (taskType == 'TASK_1' ? 'TASK_1' : 'TASK_2')).toList();
+      _selectedPrompt = matching.isNotEmpty ? matching[0] : null;
+    });
+
+    _startTimerForPart(_currentPart);
   }
 
   Widget _buildBooksView() {
@@ -546,12 +599,12 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         const SizedBox(height: 8),
         const Text(
           'Practice IELTS Academic Writing Tasks',
-          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+          style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
         ),
         const SizedBox(height: 24),
         const Text(
           'Available Books',
-          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF1E293B), fontSize: 15, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         ListView.separated(
@@ -575,11 +628,18 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0B1E36),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isUnlocked ? const Color(0xFF1E3E6E) : const Color(0xFF1E3E6E).withOpacity(0.3),
+                    color: const Color(0xFFE2E8F0),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -587,13 +647,13 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: isUnlocked ? const Color(0xFFFEE2E2) : const Color(0xFF1E293B),
+                        color: isUnlocked ? const Color(0xFFFFE4E6) : const Color(0xFFF1F5F9),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Icon(
                           isUnlocked ? Icons.menu_book_rounded : Icons.lock_outline_rounded,
-                          color: isUnlocked ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                          color: isUnlocked ? const Color(0xFFEF4444) : const Color(0xFF64748B),
                           size: 20,
                         ),
                       ),
@@ -606,7 +666,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                           Text(
                             'IELTS Book $bookNum',
                             style: TextStyle(
-                              color: isUnlocked ? Colors.white : const Color(0xFF94A3B8),
+                              color: isUnlocked ? const Color(0xFF1E293B) : const Color(0xFF64748B),
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -654,32 +714,39 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E293B).withOpacity(0.3),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1E3E6E).withOpacity(0.5)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(
-                    color: Color(0xFFFDE047),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFEF08A),
                     shape: BoxShape.circle,
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Text('✍️', style: TextStyle(fontSize: 18)),
                   ),
                 ),
-                SizedBox(width: 16),
-                Expanded(
+                const SizedBox(width: 16),
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Write on my own Topic',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF1E293B),
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
@@ -688,14 +755,14 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       Text(
                         'Practice with custom prompt & AI scoring',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Color(0xFF64748B),
                           fontSize: 11,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.chevron_right_rounded,
                   color: Color(0xFF64748B),
                   size: 20,
@@ -714,13 +781,13 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       children: [
         const Text(
           'Select a task to practice',
-          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+          style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
         ),
         const SizedBox(height: 20),
         Container(
           height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFF0B1E36),
+            color: const Color(0xFFE2E8F0),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -730,7 +797,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                   onTap: () => setState(() => _selectedTaskType = 'TASK_1'),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: _selectedTaskType == 'TASK_1' ? const Color(0xFFC62828) : Colors.transparent,
+                      color: _selectedTaskType == 'TASK_1' ? const Color(0xFFEF4444) : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
@@ -738,7 +805,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       'Task 1\nGraph/Chart',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _selectedTaskType == 'TASK_1' ? Colors.white : const Color(0xFF94A3B8),
+                        color: _selectedTaskType == 'TASK_1' ? Colors.white : const Color(0xFF64748B),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         height: 1.2,
@@ -752,7 +819,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                   onTap: () => setState(() => _selectedTaskType = 'TASK_2'),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: _selectedTaskType == 'TASK_2' ? const Color(0xFFC62828) : Colors.transparent,
+                      color: _selectedTaskType == 'TASK_2' ? const Color(0xFFEF4444) : Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     alignment: Alignment.center,
@@ -760,7 +827,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       'Task 2\nEssay',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _selectedTaskType == 'TASK_2' ? Colors.white : const Color(0xFF94A3B8),
+                        color: _selectedTaskType == 'TASK_2' ? Colors.white : const Color(0xFF64748B),
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         height: 1.2,
@@ -775,14 +842,14 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         const SizedBox(height: 24),
         Text(
           _selectedTaskType == 'TASK_1' ? 'Task 1: Describe Visual Data' : 'Task 2: Essay Writing',
-          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Color(0xFF1E293B), fontSize: 15, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 6),
         Text(
           _selectedTaskType == 'TASK_1'
               ? 'Describe graphs, charts, tables, or diagrams. Write at least 150 words in about 20 minutes.'
               : 'Write an essay responding to a point of view or argument. Write at least 250 words in about 40 minutes.',
-          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.4),
+          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, height: 1.4),
         ),
         const SizedBox(height: 20),
         ListView.separated(
@@ -800,11 +867,18 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0B1E36),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isUnlocked ? const Color(0xFF1E3E6E) : const Color(0xFF1E3E6E).withOpacity(0.3),
+                    color: const Color(0xFFE2E8F0),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -812,7 +886,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: isUnlocked ? const Color(0xFFFEE2E2) : const Color(0xFF1E293B),
+                        color: isUnlocked ? const Color(0xFFFFE4E6) : const Color(0xFFF1F5F9),
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -820,7 +894,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                           isUnlocked
                               ? (_selectedTaskType == 'TASK_1' ? Icons.pie_chart : Icons.chat_bubble_rounded)
                               : Icons.lock_outline_rounded,
-                          color: isUnlocked ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                          color: isUnlocked ? const Color(0xFFEF4444) : const Color(0xFF64748B),
                           size: 18,
                         ),
                       ),
@@ -833,7 +907,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                           Text(
                             'Test $testNum',
                             style: TextStyle(
-                              color: isUnlocked ? Colors.white : const Color(0xFF94A3B8),
+                              color: isUnlocked ? const Color(0xFF1E293B) : const Color(0xFF64748B),
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -872,80 +946,121 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isPractice = _viewState == 'PRACTICE';
     return Scaffold(
-      backgroundColor: const Color(0xFF050E1A), // Deep Navy
+      backgroundColor: const Color(0xFFF4F6FB), // Light Grey background
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0B1E36),
-        title: _viewState == 'PRACTICE' && _selectedPrompt != null
+        backgroundColor: Colors.white,
+        elevation: 1,
+        shadowColor: Colors.black.withOpacity(0.1),
+        centerTitle: true,
+        leadingWidth: isPractice ? 180 : 90,
+        leading: isPractice
             ? Row(
                 children: [
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () {
+                      if (_timerActive) {
+                        _showExitConfirmation();
+                      } else {
+                        setState(() => _viewState = 'BOOK_DETAIL');
+                      }
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFEF4444), size: 14),
+                        SizedBox(width: 4),
+                        Text(
+                          'Back',
+                          style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _selectedPrompt['taskType'] == 'TASK_1' ? 'Part 1' : 'Part 2',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        _currentPart == 1 ? 'Part 1' : 'Part 2',
+                        style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       Text(
-                        _selectedPrompt['id'] == 'academic-w1' ? 'Pie Chart' : (_selectedPrompt['id'] == 'academic-w2' ? 'Opinion Essay' : 'Writing Practice'),
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                        _selectedPrompt?['id'] == 'academic-w1' ? 'Pie Chart' : 'Opinion Essay',
+                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 9),
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  if (_timerActive)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE2E2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.access_time_filled, color: Color(0xFFEF4444), size: 12),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatTime(_timeLeft),
-                            style: const TextStyle(
-                              color: Color(0xFFEF4444),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                ],
+              )
+            : TextButton.icon(
+                onPressed: () {
+                  if (_viewState == 'BOOK_DETAIL') {
+                    setState(() => _viewState = 'BOOKS');
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFFEF4444), size: 14),
+                label: const Text(
+                  'Back',
+                  style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+        title: isPractice && _timerActive
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE4E6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFECDD3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.access_time_filled, color: Color(0xFFE11D48), size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      _formatTime(_timeLeft),
+                      style: const TextStyle(
+                        color: Color(0xFFE11D48),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
                     ),
-                  const Spacer(),
-                ],
+                  ],
+                ),
               )
             : Text(
                 _viewState == 'BOOKS' ? 'Writing Lab' : 'IELTS Book $_selectedBook',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
               ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-          onPressed: () {
-            if (_viewState == 'PRACTICE') {
-              if (_timerActive) {
-                _showExitConfirmation();
-              } else {
-                setState(() => _viewState = 'BOOK_DETAIL');
-              }
-            } else if (_viewState == 'BOOK_DETAIL') {
-              setState(() => _viewState = 'BOOKS');
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-        actions: _viewState == 'PRACTICE' && _selectedPrompt != null
+        actions: isPractice && _selectedPrompt != null
             ? [
-                TextButton(
-                  onPressed: _submitting ? null : _submitOrFinish,
-                  child: Text(
-                    _selectedPrompt['taskType'] == 'TASK_1' ? 'Next' : 'Finish Test',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF475569),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    onPressed: _submitting ? null : _submitOrFinish,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _currentPart == 1 ? '→ Next' : '→ Finish Test',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ]
@@ -968,9 +1083,10 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       Expanded(
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _mode == 'PRACTICE' ? const Color(0xFFD4AF37) : const Color(0xFF0B1E36),
-                            foregroundColor: _mode == 'PRACTICE' ? const Color(0xFF050E1A) : Colors.white,
+                            backgroundColor: _mode == 'PRACTICE' ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+                            foregroundColor: _mode == 'PRACTICE' ? Colors.white : const Color(0xFF64748B),
                             padding: const EdgeInsets.symmetric(vertical: 8),
+                            elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: _timerActive ? null : () => setState(() => _mode = 'PRACTICE'),
@@ -981,9 +1097,10 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       Expanded(
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _mode == 'EXAMINER' ? const Color(0xFFF59E0B) : const Color(0xFF0B1E36),
-                            foregroundColor: _mode == 'EXAMINER' ? const Color(0xFF050E1A) : Colors.white,
+                            backgroundColor: _mode == 'EXAMINER' ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+                            foregroundColor: _mode == 'EXAMINER' ? Colors.white : const Color(0xFF64748B),
                             padding: const EdgeInsets.symmetric(vertical: 8),
+                            elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: _timerActive ? null : () => setState(() {
@@ -999,9 +1116,10 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                       Expanded(
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _mode == 'EXAM' ? const Color(0xFFD4AF37) : const Color(0xFF0B1E36),
-                            foregroundColor: _mode == 'EXAM' ? const Color(0xFF050E1A) : Colors.white,
+                            backgroundColor: _mode == 'EXAM' ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+                            foregroundColor: _mode == 'EXAM' ? Colors.white : const Color(0xFF64748B),
                             padding: const EdgeInsets.symmetric(vertical: 8),
+                            elevation: 0,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: _timerActive ? null : () => setState(() => _mode = 'EXAM'),
@@ -1162,17 +1280,24 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                         maxLines: 12,
                         autocorrect: true,
                         enableSuggestions: true,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.5),
+                        style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13, height: 1.5),
+                        cursorColor: const Color(0xFFEF4444),
                         decoration: InputDecoration(
-                          hintText: _mode == 'EXAMINER'
-                              ? 'Write Draft 1 response here under examiner conditions...'
-                              : 'Type your essay response here...',
-                          hintStyle: const TextStyle(color: Color(0xFF475569)),
+                          hintText: 'Start writing your response here...',
+                          hintStyle: const TextStyle(color: Color(0xFF94A3B8)),
                           filled: true,
-                          fillColor: const Color(0xFF0B1E36),
+                          fillColor: Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: const BorderSide(color: Color(0xFF1E3E6E)),
+                            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
                           ),
                         ),
                       ),

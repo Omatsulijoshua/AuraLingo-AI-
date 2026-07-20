@@ -20,6 +20,9 @@ export default function WritingPractice() {
   const [viewState, setViewState] = useState<'BOOKS' | 'BOOK_DETAIL' | 'PRACTICE'>('BOOKS');
   const [selectedBook, setSelectedBook] = useState<number>(10);
   const [selectedTaskType, setSelectedTaskType] = useState<'TASK_1' | 'TASK_2'>('TASK_1');
+  const [currentPart, setCurrentPart] = useState<number>(1);
+  const [part1Text, setPart1Text] = useState('');
+  const [part2Text, setPart2Text] = useState('');
 
   // AI Examiner Mode states
   const [examinerFeedback, setExaminerFeedback] = useState<any>(null);
@@ -43,26 +46,28 @@ export default function WritingPractice() {
       return;
     }
 
-    const matching = prompts.filter((p) => p.taskType === taskType);
+    const currentPartVal = taskType === 'TASK_1' ? 1 : 2;
+    setCurrentPart(currentPartVal);
+    setPart1Text('');
+    setPart2Text('');
+    setUserText('');
+    setViewState('PRACTICE');
+    setFeedback(null);
+    setExamSuccess(false);
+    setExaminerFeedback(null);
+    setComparisonResult(null);
+    setSelectedSentence(null);
+
+    const matchType = currentPartVal === 1 ? 'TASK_1' : 'TASK_2';
+    const matching = prompts.filter((p) => p.taskType === matchType);
     if (matching.length > 0) {
       setSelectedPrompt(matching[0]);
-      setViewState('PRACTICE');
-      setUserText('');
-      setFeedback(null);
-      setExamSuccess(false);
-      setExaminerFeedback(null);
-      setComparisonResult(null);
-      setSelectedSentence(null);
     } else {
       setSelectedPrompt(prompts.length > 0 ? prompts[0] : null);
-      setViewState('PRACTICE');
-      setUserText('');
-      setFeedback(null);
-      setExamSuccess(false);
-      setExaminerFeedback(null);
-      setComparisonResult(null);
-      setSelectedSentence(null);
     }
+
+    setTimeLeft(currentPartVal === 1 ? 1200 : 2400);
+    setTimerActive(true);
   };
 
   useEffect(() => {
@@ -184,32 +189,49 @@ export default function WritingPractice() {
 
   const handleSubmit = async () => {
     if (!userText.trim()) return;
-    setSubmitting(true);
-    setTimerActive(false);
 
-    try {
-      const result = await api.request<any>('/content/writing/submit', {
-        method: 'POST',
-        body: JSON.stringify({
-          promptId: selectedPrompt.id,
-          userText,
-          mode,
-          customQuestionText: selectedPrompt.id === 'CUSTOM' ? customQuestionText : undefined,
-          customTaskType: selectedPrompt.id === 'CUSTOM' ? customTaskType : undefined,
-          customExamType: selectedPrompt.id === 'CUSTOM' ? customExamType : undefined,
-        }),
-      });
+    if (currentPart === 1) {
+      setPart1Text(userText);
+      setCurrentPart(2);
+      setUserText(part2Text);
+      setFeedback(null);
 
-      if (mode === 'EXAM') {
-        setExamSuccess(true);
-      } else {
-        setFeedback(result.feedbackJson);
+      const matching = prompts.filter((p) => p.taskType === 'TASK_2');
+      if (matching.length > 0) {
+        setSelectedPrompt(matching[0]);
       }
-    } catch (err) {
-      console.error(err);
-      alert('Failed to submit writing response.');
-    } finally {
-      setSubmitting(false);
+
+      setTimeLeft(2400);
+      setTimerActive(true);
+    } else {
+      setPart2Text(userText);
+      setSubmitting(true);
+      setTimerActive(false);
+
+      try {
+        const result = await api.request<any>('/content/writing/submit', {
+          method: 'POST',
+          body: JSON.stringify({
+            promptId: selectedPrompt.id,
+            userText,
+            mode,
+            customQuestionText: selectedPrompt.id === 'CUSTOM' ? customQuestionText : undefined,
+            customTaskType: selectedPrompt.id === 'CUSTOM' ? customTaskType : undefined,
+            customExamType: selectedPrompt.id === 'CUSTOM' ? customExamType : undefined,
+          }),
+        });
+
+        if (mode === 'EXAM') {
+          setExamSuccess(true);
+        } else {
+          setFeedback(result.feedbackJson);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Failed to submit writing response.');
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -419,13 +441,23 @@ export default function WritingPractice() {
           <Link href="/dashboard" className="text-xl font-bold tracking-wider flex items-center gap-1.5">
             <span className="text-gold">BandUp</span> IELTS
           </Link>
+          {viewState === 'PRACTICE' && selectedPrompt && (
+            <div className="hidden md:flex flex-col border-l border-primary-light/25 pl-4">
+              <span className="text-xs font-bold text-white">Part {currentPart}</span>
+              <span className="text-[9px] text-slate-400">{selectedPrompt.id === 'academic-w1' ? 'Pie Chart' : 'Opinion Essay'}</span>
+            </div>
+          )}
         </div>
         
         {viewState !== 'BOOKS' ? (
           <button
             onClick={() => {
-              if (viewState === 'PRACTICE') setViewState('BOOK_DETAIL');
-              else if (viewState === 'BOOK_DETAIL') setViewState('BOOKS');
+              if (viewState === 'PRACTICE') {
+                setViewState('BOOK_DETAIL');
+                setTimerActive(false);
+              } else if (viewState === 'BOOK_DETAIL') {
+                setViewState('BOOKS');
+              }
             }}
             className="text-xs font-bold text-slate-300 hover:text-gold transition-colors cursor-pointer"
           >
@@ -704,7 +736,7 @@ export default function WritingPractice() {
                         disabled={submitting}
                         className="bg-emerald hover:bg-emerald-dark text-primary font-bold px-6 py-2 rounded-lg text-xs cursor-pointer transition-colors"
                       >
-                        {submitting ? 'Submitting...' : 'Submit Essay'}
+                        {submitting ? 'Submitting...' : currentPart === 1 ? '→ Next' : '→ Finish Test'}
                       </button>
                     )}
                   </div>
