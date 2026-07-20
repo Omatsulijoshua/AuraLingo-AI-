@@ -82,6 +82,37 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     } catch (e) {
       debugPrint('Error fetching prompts: $e');
     } finally {
+      if (_prompts.isEmpty) {
+        final customOption = {
+          'id': 'CUSTOM',
+          'title': '✍️ Write on my own Topic',
+          'promptText': 'Type your custom question topic in the input box below to start practicing.',
+          'taskType': 'TASK_2',
+          'difficulty': 'CUSTOM',
+          'examType': 'ACADEMIC'
+        };
+        final fallbackW1 = {
+          'id': 'academic-w1',
+          'title': 'Australian Household Energy Use',
+          'promptText': 'The first chart above shows how energy is used in an average Australian household. The second chart shows the greenhouse gas emissions which result from this energy use. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.',
+          'imageUrl': '/assets/australian_household_energy_use.png',
+          'taskType': 'TASK_1',
+          'difficulty': 'INTERMEDIATE',
+          'examType': 'ACADEMIC'
+        };
+        final fallbackW2 = {
+          'id': 'academic-w2',
+          'title': 'Children Discipline & Punishment',
+          'promptText': 'It is important for children to learn the difference between right and wrong at an early age. Punishment is necessary to help them learn this distinction. To what extent do you agree or disagree with this opinion? What sort of punishment should parents and teachers be allowed to use to teach good behaviour to children?',
+          'taskType': 'TASK_2',
+          'difficulty': 'ADVANCED',
+          'examType': 'ACADEMIC'
+        };
+        setState(() {
+          _prompts = [fallbackW1, fallbackW2, customOption];
+          _selectedPrompt = fallbackW1;
+        });
+      }
       setState(() => _loading = false);
     }
   }
@@ -254,6 +285,226 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         ],
       ),
     );
+  }
+
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0B1E36),
+        title: const Text('Confirm Exit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to exit the test? Your writing progress will be lost.', style: TextStyle(color: Color(0xFFCBD5E1))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close dialog
+              setState(() {
+                _timerActive = false;
+                _timer?.cancel();
+                _viewState = 'BOOK_DETAIL';
+              });
+            },
+            child: const Text('Exit', style: TextStyle(color: Color(0xFFEF4444))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVisualDataCard(dynamic prompt) {
+    if (prompt['imageUrl'] == null && prompt['id'] != 'academic-w1') {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1E36),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E3E6E)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFF1E3E6E))),
+            ),
+            child: const Text(
+              'Visual Data',
+              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(16),
+            ),
+            child: Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(16),
+              child: Image.asset(
+                'assets/australian_household_energy_use.png',
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuestionCard(dynamic prompt) {
+    final isTask1 = prompt['taskType'] == 'TASK_1';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1E36).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E3E6E)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Question',
+                style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.description_outlined, color: Color(0xFF94A3B8), size: 13),
+                  const SizedBox(width: 4),
+                  Text(
+                    isTask1 ? '150+ words' : '250+ words',
+                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                  ),
+                  const SizedBox(width: 12),
+                  const Icon(Icons.access_time, color: Color(0xFF94A3B8), size: 13),
+                  const SizedBox(width: 4),
+                  Text(
+                    isTask1 ? '20 min' : '40 min',
+                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            prompt['promptText'],
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              height: 1.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWritingTipsCard(dynamic prompt) {
+    List<String> tips = [];
+    if (prompt['id'] == 'academic-w1') {
+      tips = [
+        'Connect energy use with emissions',
+        'Compare the proportions in both charts',
+        'Highlight key disparities'
+      ];
+    } else if (prompt['id'] == 'academic-w2') {
+      tips = [
+        'Address both parts of the question',
+        'Give clear reasons for your opinion',
+        'Include relevant examples'
+      ];
+    } else {
+      tips = [
+        'Outline your main ideas before writing',
+        'Maintain a formal academic tone',
+        'Check grammar and spelling'
+      ];
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0B1E36).withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF1E3E6E)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Writing Tips',
+            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          ...tips.map((tip) => Padding(
+            padding: const EdgeInsets.only(bottom: 8.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('💡 ', style: TextStyle(fontSize: 12)),
+                Expanded(
+                  child: Text(
+                    tip,
+                    style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildYourAnswerHeader(dynamic prompt) {
+    final isTask1 = prompt['taskType'] == 'TASK_1';
+    final targetWordCount = isTask1 ? 150 : 250;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          'Your Answer',
+          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          '$_wordCount / $targetWordCount words',
+          style: const TextStyle(color: Color(0xFFF97316), fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  void _submitOrFinish() {
+    if (_textController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please write your response first.')),
+      );
+      return;
+    }
+
+    if (_mode == 'EXAMINER') {
+      if (_examinerFeedback == null) {
+        _submitDraft1();
+      } else {
+        _submitDraft2();
+      }
+    } else {
+      _submitEssay();
+    }
   }
 
   void _startPracticeForTest(int bookNum, String taskType, int testNum) {
@@ -629,17 +880,62 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       backgroundColor: const Color(0xFF050E1A), // Deep Navy
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B1E36),
-        title: Text(
-          _viewState == 'BOOKS' ? 'Writing Lab' :
-          _viewState == 'BOOK_DETAIL' ? 'IELTS Book $_selectedBook' :
-          (_selectedPrompt != null ? _selectedPrompt['title'] : 'Writing Correction'),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
-        ),
+        title: _viewState == 'PRACTICE' && _selectedPrompt != null
+            ? Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedPrompt['taskType'] == 'TASK_1' ? 'Part 1' : 'Part 2',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      Text(
+                        _selectedPrompt['id'] == 'academic-w1' ? 'Pie Chart' : (_selectedPrompt['id'] == 'academic-w2' ? 'Opinion Essay' : 'Writing Practice'),
+                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  if (_timerActive)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEE2E2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.access_time_filled, color: Color(0xFFEF4444), size: 12),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatTime(_timeLeft),
+                            style: const TextStyle(
+                              color: Color(0xFFEF4444),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const Spacer(),
+                ],
+              )
+            : Text(
+                _viewState == 'BOOKS' ? 'Writing Lab' : 'IELTS Book $_selectedBook',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
           onPressed: () {
             if (_viewState == 'PRACTICE') {
-              setState(() => _viewState = 'BOOK_DETAIL');
+              if (_timerActive) {
+                _showExitConfirmation();
+              } else {
+                setState(() => _viewState = 'BOOK_DETAIL');
+              }
             } else if (_viewState == 'BOOK_DETAIL') {
               setState(() => _viewState = 'BOOKS');
             } else {
@@ -647,6 +943,17 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
             }
           },
         ),
+        actions: _viewState == 'PRACTICE' && _selectedPrompt != null
+            ? [
+                TextButton(
+                  onPressed: _submitting ? null : _submitOrFinish,
+                  child: Text(
+                    _selectedPrompt['taskType'] == 'TASK_1' ? 'Next' : 'Finish Test',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                ),
+              ]
+            : null,
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
@@ -748,66 +1055,11 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                   ],
 
                   if (_selectedPrompt != null) ...[
-                    // Prompt Box
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0B1E36).withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF1E3E6E)),
-                      ),
-                      child: Text(
-                        _selectedPrompt['promptText'],
-                        style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.5, fontStyle: FontStyle.italic),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    // Visual Data (if has image)
+                    _buildVisualDataCard(_selectedPrompt),
 
-                    // Collapsible Tackle Steps Accordion
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0B1E36).withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF1E3E6E).withValues(alpha: 0.5)),
-                      ),
-                      child: Theme(
-                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                        child: ExpansionTile(
-                          iconColor: const Color(0xFFEAB308),
-                          collapsedIconColor: const Color(0xFFEAB308),
-                          title: const Row(
-                            children: [
-                              Icon(Icons.lightbulb_outline, color: Color(0xFFEAB308), size: 16),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'How to Tackle this Writing Task (Steps)',
-                                  style: TextStyle(color: Color(0xFFEAB308), fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  _buildTackleStep('1. Analyze (2 Mins)', 'Deconstruct the prompt. Identify the core topic, target essay type (Opinion, Discussion, Solution), and highlight key keywords.'),
-                                  const SizedBox(height: 8),
-                                  _buildTackleStep('2. Plan (3 Mins)', 'Write a brief outline. Map out your Intro (thesis statement), Body 1 (first point + example), Body 2 (second point + example), and Conclusion.'),
-                                  const SizedBox(height: 8),
-                                  _buildTackleStep('3. Write (32 Mins)', 'Maintain an academic tone. Aim for 150+ words (Task 1) or 250+ words (Task 2). Use linking words and cohesive connectors naturally.'),
-                                  const SizedBox(height: 8),
-                                  _buildTackleStep('4. Check (3 Mins)', 'Proofread immediately. Scan for spelling mistakes, subject-verb agreement errors, and correct punctuation.'),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    // Question Card
+                    _buildQuestionCard(_selectedPrompt),
 
                     if (_selectedPrompt['id'] == 'CUSTOM' && !_timerActive && _feedback == null && !_examSuccess) ...[
                       Container(
@@ -892,9 +1144,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
+                            color: Colors.red.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                            border: Border.all(color: Colors.red.withOpacity(0.2)),
                           ),
                           child: Text(
                             '⏱️ Timer: ${_formatTime(_timeLeft)}',
@@ -906,6 +1158,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                     ],
 
                     if (_mode != 'EXAMINER' || _examinerFeedback == null) ...[
+                      // Your Answer Header
+                      _buildYourAnswerHeader(_selectedPrompt),
+                      const SizedBox(height: 8),
                       TextField(
                         controller: _textController,
                         maxLines: 12,
@@ -953,6 +1208,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                             ),
                         ],
                       ),
+                      _buildWritingTipsCard(_selectedPrompt),
                     ],
                   ],
 

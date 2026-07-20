@@ -219,6 +219,28 @@ export default function WritingPractice() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  const getWritingTips = (promptId: string) => {
+    if (promptId === 'academic-w1') {
+      return [
+        'Connect energy use with emissions',
+        'Compare the proportions in both charts',
+        'Highlight key disparities'
+      ];
+    } else if (promptId === 'academic-w2') {
+      return [
+        'Address both parts of the question',
+        'Give clear reasons for your opinion',
+        'Include relevant examples'
+      ];
+    } else {
+      return [
+        'Outline your main ideas before writing',
+        'Maintain a formal academic tone',
+        'Check grammar and spelling'
+      ];
+    }
+  };
+
   const renderBooksView = () => {
     return (
       <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
@@ -518,18 +540,47 @@ export default function WritingPractice() {
         {/* Right Side: Workspace */}
         <div className="md:col-span-2 space-y-6">
           {selectedPrompt && (
-            <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4">
-              <div className="flex justify-between items-center border-b border-primary-light/20 pb-3">
-                <h2 className="text-white font-bold text-lg">{selectedPrompt.title}</h2>
-                {timerActive && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-mono font-bold animate-pulse">
-                    ⏱️ {formatTime(timeLeft)}
+            <>
+              {/* Visual Data (if has image) */}
+              {(selectedPrompt.imageUrl || selectedPrompt.id === 'academic-w1') && (
+                <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-3">
+                  <div className="border-b border-primary-light/20 pb-2">
+                    <h3 className="text-white font-bold text-sm">Visual Data</h3>
                   </div>
-                )}
+                  <div className="bg-white p-4 rounded-xl flex items-center justify-center border border-primary-light/20">
+                    <img
+                      src="/assets/australian_household_energy_use.png"
+                      alt="Australian Household Energy Use"
+                      className="max-h-72 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Question card */}
+              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-3">
+                <div className="flex justify-between items-center border-b border-primary-light/20 pb-2">
+                  <h3 className="text-white font-bold text-sm">Question</h3>
+                  <div className="flex gap-4 text-[10px] text-slate-400">
+                    <span>📄 {selectedPrompt.taskType === 'TASK_1' ? '150+ words' : '250+ words'}</span>
+                    <span>⏱️ {selectedPrompt.taskType === 'TASK_1' ? '20 min' : '40 min'}</span>
+                  </div>
+                </div>
+                <p className="text-white text-xs font-semibold leading-relaxed bg-navy/40 p-4 rounded-xl border border-primary-light/10">
+                  {selectedPrompt.promptText}
+                </p>
               </div>
-              <p className="text-slate-300 text-xs leading-relaxed bg-navy/40 p-4 rounded-xl border border-primary-light/10 italic">
-                {selectedPrompt.promptText}
-              </p>
+
+              {/* Response Workspace */}
+              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex justify-between items-center border-b border-primary-light/20 pb-3">
+                  <h2 className="text-gold font-black text-sm">Your Response</h2>
+                  {timerActive && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1.5 rounded-lg text-xs font-mono font-bold animate-pulse">
+                      ⏱️ {formatTime(timeLeft)}
+                    </div>
+                  )}
+                </div>
 
               {/* Collapsible Steps Card */}
               <div className="bg-navy/45 border border-primary-light/20 rounded-xl overflow-hidden shadow-inner">
@@ -664,6 +715,22 @@ export default function WritingPractice() {
                 </div>
               )}
             </div>
+
+            {/* Writing Tips Card */}
+              <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-3">
+                <div className="border-b border-primary-light/20 pb-2">
+                  <h3 className="text-white font-bold text-sm">Writing Tips</h3>
+                </div>
+                <div className="space-y-2 pt-2">
+                  {getWritingTips(selectedPrompt.id).map((tip: string, idx: number) => (
+                    <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-300">
+                      <span>💡</span>
+                      <p className="leading-relaxed">{tip}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
           {/* Practice Mode AI Feedback */}
