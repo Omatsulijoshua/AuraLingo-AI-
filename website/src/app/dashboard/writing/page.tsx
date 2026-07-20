@@ -17,6 +17,10 @@ export default function WritingPractice() {
   const [customTaskType, setCustomTaskType] = useState('TASK_2');
   const [customExamType, setCustomExamType] = useState('ACADEMIC');
 
+  const [viewState, setViewState] = useState<'BOOKS' | 'BOOK_DETAIL' | 'PRACTICE'>('BOOKS');
+  const [selectedBook, setSelectedBook] = useState<number>(10);
+  const [selectedTaskType, setSelectedTaskType] = useState<'TASK_1' | 'TASK_2'>('TASK_1');
+
   // AI Examiner Mode states
   const [examinerFeedback, setExaminerFeedback] = useState<any>(null);
   const [selectedSentence, setSelectedSentence] = useState<any>(null);
@@ -28,6 +32,38 @@ export default function WritingPractice() {
   const [timeLeft, setTimeLeft] = useState(2400);
   const [timerActive, setTimerActive] = useState(false);
   const [showTackleSteps, setShowTackleSteps] = useState(false);
+
+  const showPremiumAlert = () => {
+    alert('Premium Content: Please upgrade your subscription to access all IELTS Books and Practice Tests.');
+  };
+
+  const startPracticeForTest = (bookNum: number, taskType: 'TASK_1' | 'TASK_2', testNum: number) => {
+    if (bookNum !== 10 || testNum !== 1) {
+      showPremiumAlert();
+      return;
+    }
+
+    const matching = prompts.filter((p) => p.taskType === taskType);
+    if (matching.length > 0) {
+      setSelectedPrompt(matching[0]);
+      setViewState('PRACTICE');
+      setUserText('');
+      setFeedback(null);
+      setExamSuccess(false);
+      setExaminerFeedback(null);
+      setComparisonResult(null);
+      setSelectedSentence(null);
+    } else {
+      setSelectedPrompt(prompts.length > 0 ? prompts[0] : null);
+      setViewState('PRACTICE');
+      setUserText('');
+      setFeedback(null);
+      setExamSuccess(false);
+      setExaminerFeedback(null);
+      setComparisonResult(null);
+      setSelectedSentence(null);
+    }
+  };
 
   useEffect(() => {
     fetchPrompts();
@@ -183,6 +219,171 @@ export default function WritingPractice() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  const renderBooksView = () => {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 space-y-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-black text-white">Writing Lab</h1>
+          <p className="text-xs text-slate-400 mt-1">Practice IELTS Academic Writing Tasks</p>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4">Available Books</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 11 }).map((_, idx) => {
+              const bookNum = 10 + idx;
+              const isUnlocked = bookNum === 10;
+
+              return (
+                <div
+                  key={bookNum}
+                  onClick={() => {
+                    if (isUnlocked) {
+                      setSelectedBook(bookNum);
+                      setViewState('BOOK_DETAIL');
+                      setSelectedTaskType('TASK_1');
+                    } else {
+                      showPremiumAlert();
+                    }
+                  }}
+                  className={`bg-primary/20 border rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all ${
+                    isUnlocked
+                      ? 'border-primary-light/30 hover:border-gold hover:bg-primary/30'
+                      : 'border-primary-light/10 opacity-70 hover:bg-primary/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg ${
+                      isUnlocked ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      {isUnlocked ? '📖' : '🔒'}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">IELTS Book {bookNum}</h4>
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        {isUnlocked ? '4 Tests • 0/8 Tasks' : 'Premium Content'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-slate-500 text-sm">→</span>
+                </div>
+              );
+            })}
+
+            {/* Custom topic card */}
+            <div
+              onClick={() => {
+                const customPrompt = prompts.find((p) => p.id === 'CUSTOM');
+                if (customPrompt) {
+                  setSelectedPrompt(customPrompt);
+                  setViewState('PRACTICE');
+                  setUserText('');
+                  setFeedback(null);
+                  setExamSuccess(false);
+                  setExaminerFeedback(null);
+                  setComparisonResult(null);
+                  setSelectedSentence(null);
+                }
+              }}
+              className="bg-primary/20 border border-primary-light/30 rounded-2xl p-5 flex items-center justify-between cursor-pointer hover:border-gold hover:bg-primary/30 transition-all"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 flex items-center justify-center text-lg">
+                  ✍️
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">Write on my own Topic</h4>
+                  <p className="text-[10px] text-slate-500 mt-1">Practice with custom prompt & AI scoring</p>
+                </div>
+              </div>
+              <span className="text-slate-500 text-sm">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBookDetailView = () => {
+    return (
+      <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-black text-white">IELTS Book {selectedBook}</h1>
+          <p className="text-xs text-slate-400 mt-1">Select a task to practice</p>
+        </div>
+
+        {/* Task tabs */}
+        <div className="flex bg-primary/20 p-1.5 rounded-xl border border-primary-light/20 w-fit">
+          <button
+            onClick={() => setSelectedTaskType('TASK_1')}
+            className={`px-6 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              selectedTaskType === 'TASK_1' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Task 1: Graph/Chart
+          </button>
+          <button
+            onClick={() => setSelectedTaskType('TASK_2')}
+            className={`px-6 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              selectedTaskType === 'TASK_2' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Task 2: Essay
+          </button>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-slate-200">
+            {selectedTaskType === 'TASK_1' ? 'Task 1: Describe Visual Data' : 'Task 2: Essay Writing'}
+          </h3>
+          <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+            {selectedTaskType === 'TASK_1'
+              ? 'Describe graphs, charts, tables, or diagrams. Write at least 150 words in about 20 minutes.'
+              : 'Write an essay responding to a point of view or argument. Write at least 250 words in about 40 minutes.'}
+          </p>
+        </div>
+
+        {/* Tests List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          {Array.from({ length: 4 }).map((_, idx) => {
+            const testNum = idx + 1;
+            const isUnlocked = testNum === 1;
+
+            return (
+              <div
+                key={testNum}
+                onClick={() => startPracticeForTest(selectedBook, selectedTaskType, testNum)}
+                className={`bg-primary/20 border rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all ${
+                  isUnlocked
+                    ? 'border-primary-light/30 hover:border-gold hover:bg-primary/30'
+                    : 'border-primary-light/10 opacity-70 hover:bg-primary/20'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center text-lg ${
+                    isUnlocked ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-slate-800 text-slate-500'
+                  }`}>
+                    {isUnlocked ? (selectedTaskType === 'TASK_1' ? '📊' : '💬') : '🔒'}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Test {testNum}</h4>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      {isUnlocked
+                        ? (selectedTaskType === 'TASK_1' ? '150+ words • 20 min' : '250+ words • 40 min')
+                        : 'Premium Content'}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-slate-500 text-sm">→</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const wordCount = userText.trim() === '' ? 0 : userText.trim().split(/\s+/).length;
 
   if (loading) {
@@ -196,15 +397,35 @@ export default function WritingPractice() {
   return (
     <div className="min-h-screen bg-navy text-white flex flex-col">
       <header className="h-16 border-b border-primary-light/30 bg-primary/45 backdrop-blur-md flex items-center justify-between px-8 md:px-16">
-        <Link href="/dashboard" className="text-xl font-bold tracking-wider flex items-center gap-1.5">
-          <span className="text-gold">BandUp</span> IELTS
-        </Link>
-        <Link href="/dashboard" className="text-xs font-bold text-slate-300 hover:text-gold transition-colors">
-          Exit Practice
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard" className="text-xl font-bold tracking-wider flex items-center gap-1.5">
+            <span className="text-gold">BandUp</span> IELTS
+          </Link>
+        </div>
+        
+        {viewState !== 'BOOKS' ? (
+          <button
+            onClick={() => {
+              if (viewState === 'PRACTICE') setViewState('BOOK_DETAIL');
+              else if (viewState === 'BOOK_DETAIL') setViewState('BOOKS');
+            }}
+            className="text-xs font-bold text-slate-300 hover:text-gold transition-colors cursor-pointer"
+          >
+            ← Back
+          </button>
+        ) : (
+          <Link href="/dashboard" className="text-xs font-bold text-slate-300 hover:text-gold transition-colors">
+            Exit Practice
+          </Link>
+        )}
       </header>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+      {viewState === 'BOOKS' ? (
+        renderBooksView()
+      ) : viewState === 'BOOK_DETAIL' ? (
+        renderBookDetailView()
+      ) : (
+        <main className="flex-1 max-w-5xl w-full mx-auto p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
         
         {/* Left Side: Select Prompts & Mode */}
         <div className="bg-primary/25 border border-primary-light/30 rounded-2xl p-6 shadow-xl space-y-6 self-start">
@@ -261,35 +482,37 @@ export default function WritingPractice() {
             </p>
           </div>
 
-          <div>
-            <h3 className="text-white font-bold text-sm mb-3">2. Choose Writing Prompt</h3>
-            <div className="space-y-3">
-              {prompts.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    if (!timerActive) {
-                      setSelectedPrompt(p);
-                      setUserText('');
-                      setFeedback(null);
-                    }
-                  }}
-                  disabled={timerActive}
-                  className={`w-full text-left p-3 rounded-xl border text-xs leading-relaxed transition-all cursor-pointer ${
-                    selectedPrompt?.id === p.id
-                      ? 'bg-primary border-gold text-white font-semibold'
-                      : 'bg-navy/35 border-primary-light/40 text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[9px] uppercase tracking-wider font-extrabold text-gold">{p.taskType}</span>
-                    <span className="text-[9px] text-slate-500">{p.difficulty}</span>
-                  </div>
-                  {p.title}
-                </button>
-              ))}
+          {selectedPrompt?.id === 'CUSTOM' && (
+            <div>
+              <h3 className="text-white font-bold text-sm mb-3">2. Choose Writing Prompt</h3>
+              <div className="space-y-3">
+                {prompts.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      if (!timerActive) {
+                        setSelectedPrompt(p);
+                        setUserText('');
+                        setFeedback(null);
+                      }
+                    }}
+                    disabled={timerActive}
+                    className={`w-full text-left p-3 rounded-xl border text-xs leading-relaxed transition-all cursor-pointer ${
+                      selectedPrompt?.id === p.id
+                        ? 'bg-primary border-gold text-white font-semibold'
+                        : 'bg-navy/35 border-primary-light/40 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[9px] uppercase tracking-wider font-extrabold text-gold">{p.taskType}</span>
+                      <span className="text-[9px] text-slate-500">{p.difficulty}</span>
+                    </div>
+                    {p.title}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right Side: Workspace */}
@@ -693,6 +916,7 @@ export default function WritingPractice() {
           )}
         </div>
       </main>
+    )}
     </div>
   );
 }

@@ -18,6 +18,10 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   String _customTaskType = 'TASK_2';
   String _customExamType = 'ACADEMIC';
 
+  String _viewState = 'BOOKS'; // BOOKS, BOOK_DETAIL, PRACTICE
+  int _selectedBook = 10;
+  String _selectedTaskType = 'TASK_1'; // TASK_1 or TASK_2
+
   List<dynamic> _prompts = [];
   dynamic _selectedPrompt;
   String _mode = 'PRACTICE'; // PRACTICE, EXAM, or EXAMINER
@@ -235,6 +239,386 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     return '$m:${s < 10 ? '0' : ''}$s';
   }
 
+  void _showPremiumDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0B1E36),
+        title: const Text('Premium Content', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: const Text('Please upgrade your subscription to access all IELTS Books and Practice Tests.', style: TextStyle(color: Color(0xFFCBD5E1))),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK', style: TextStyle(color: Color(0xFFD4AF37))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startPracticeForTest(int bookNum, String taskType, int testNum) {
+    if (bookNum != 10 || testNum != 1) {
+      _showPremiumDialog();
+      return;
+    }
+
+    final matching = _prompts.where((p) => p['taskType'] == taskType).toList();
+    if (matching.isNotEmpty) {
+      setState(() {
+        _selectedPrompt = matching[0];
+        _viewState = 'PRACTICE';
+        _textController.clear();
+        _feedback = null;
+        _examSuccess = false;
+        _examinerFeedback = null;
+        _comparisonResult = null;
+        _selectedSentence = null;
+      });
+    } else {
+      setState(() {
+        _selectedPrompt = _prompts.isNotEmpty ? _prompts[0] : null;
+        _viewState = 'PRACTICE';
+        _textController.clear();
+        _feedback = null;
+        _examSuccess = false;
+        _examinerFeedback = null;
+        _comparisonResult = null;
+        _selectedSentence = null;
+      });
+    }
+  }
+
+  Widget _buildBooksView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 8),
+        const Text(
+          'Practice IELTS Academic Writing Tasks',
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Available Books',
+          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 11,
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final bookNum = 10 + index;
+            final isUnlocked = bookNum == 10;
+
+            return InkWell(
+              onTap: () {
+                if (isUnlocked) {
+                  setState(() {
+                    _selectedBook = bookNum;
+                    _viewState = 'BOOK_DETAIL';
+                    _selectedTaskType = 'TASK_1';
+                  });
+                } else {
+                  _showPremiumDialog();
+                }
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B1E36),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isUnlocked ? const Color(0xFF1E3E6E) : const Color(0xFF1E3E6E).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isUnlocked ? const Color(0xFFFEE2E2) : const Color(0xFF1E293B),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          isUnlocked ? Icons.menu_book_rounded : Icons.lock_outline_rounded,
+                          color: isUnlocked ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'IELTS Book $bookNum',
+                            style: TextStyle(
+                              color: isUnlocked ? Colors.white : const Color(0xFF94A3B8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isUnlocked ? '4 Tests  •  0/8 Tasks' : 'Premium Content',
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF64748B),
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        InkWell(
+          onTap: () {
+            final customPrompt = _prompts.firstWhere((p) => p['id'] == 'CUSTOM', orElse: () => null);
+            if (customPrompt != null) {
+              setState(() {
+                _selectedPrompt = customPrompt;
+                _viewState = 'PRACTICE';
+                _textController.clear();
+                _feedback = null;
+                _examSuccess = false;
+                _examinerFeedback = null;
+                _comparisonResult = null;
+                _selectedSentence = null;
+              });
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B).withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF1E3E6E).withOpacity(0.5)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFDE047),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text('✍️', style: TextStyle(fontSize: 18)),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Write on my own Topic',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Practice with custom prompt & AI scoring',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF64748B),
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBookDetailView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'Select a task to practice',
+          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B1E36),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedTaskType = 'TASK_1'),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _selectedTaskType == 'TASK_1' ? const Color(0xFFC62828) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Task 1\nGraph/Chart',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _selectedTaskType == 'TASK_1' ? Colors.white : const Color(0xFF94A3B8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedTaskType = 'TASK_2'),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _selectedTaskType == 'TASK_2' ? const Color(0xFFC62828) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Task 2\nEssay',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _selectedTaskType == 'TASK_2' ? Colors.white : const Color(0xFF94A3B8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          _selectedTaskType == 'TASK_1' ? 'Task 1: Describe Visual Data' : 'Task 2: Essay Writing',
+          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _selectedTaskType == 'TASK_1'
+              ? 'Describe graphs, charts, tables, or diagrams. Write at least 150 words in about 20 minutes.'
+              : 'Write an essay responding to a point of view or argument. Write at least 250 words in about 40 minutes.',
+          style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.4),
+        ),
+        const SizedBox(height: 20),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: 4,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final testNum = index + 1;
+            final isUnlocked = testNum == 1;
+
+            return InkWell(
+              onTap: () => _startPracticeForTest(_selectedBook, _selectedTaskType, testNum),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0B1E36),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isUnlocked ? const Color(0xFF1E3E6E) : const Color(0xFF1E3E6E).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isUnlocked ? const Color(0xFFFEE2E2) : const Color(0xFF1E293B),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          isUnlocked
+                              ? (_selectedTaskType == 'TASK_1' ? Icons.pie_chart : Icons.chat_bubble_rounded)
+                              : Icons.lock_outline_rounded,
+                          color: isUnlocked ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Test $testNum',
+                            style: TextStyle(
+                              color: isUnlocked ? Colors.white : const Color(0xFF94A3B8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isUnlocked
+                                ? (_selectedTaskType == 'TASK_1' ? '150+ words • 20 min' : '250+ words • 40 min')
+                                : 'Premium Content',
+                            style: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF64748B),
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   int get _wordCount => _textController.text.trim().isEmpty
       ? 0
       : _textController.text.trim().split(RegExp(r'\s+')).length;
@@ -245,19 +629,36 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       backgroundColor: const Color(0xFF050E1A), // Deep Navy
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B1E36),
-        title: const Text('Writing Correction', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          _viewState == 'BOOKS' ? 'Writing Lab' :
+          _viewState == 'BOOK_DETAIL' ? 'IELTS Book $_selectedBook' :
+          (_selectedPrompt != null ? _selectedPrompt['title'] : 'Writing Correction'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+          onPressed: () {
+            if (_viewState == 'PRACTICE') {
+              setState(() => _viewState = 'BOOK_DETAIL');
+            } else if (_viewState == 'BOOK_DETAIL') {
+              setState(() => _viewState = 'BOOKS');
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+              child: _viewState == 'BOOKS'
+                  ? _buildBooksView()
+                  : _viewState == 'BOOK_DETAIL'
+                      ? _buildBookDetailView()
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                   // Mode Selection
                   Row(
                     children: [
@@ -308,41 +709,43 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Prompts Dropdown
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0B1E36),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF1E3E6E)),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<dynamic>(
-                        dropdownColor: const Color(0xFF0B1E36),
-                        value: _selectedPrompt,
-                        items: _prompts.map((p) {
-                          return DropdownMenuItem<dynamic>(
-                            value: p,
-                            child: Text(
-                              p['title'],
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: _timerActive
-                            ? null
-                            : (val) {
-                                setState(() {
-                                  _selectedPrompt = val;
-                                  _textController.clear();
-                                  _feedback = null;
-                                  _examSuccess = false;
-                                });
-                              },
+                  if (_selectedPrompt != null && _selectedPrompt['id'] == 'CUSTOM') ...[
+                    // Prompts Dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0B1E36),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF1E3E6E)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<dynamic>(
+                          dropdownColor: const Color(0xFF0B1E36),
+                          value: _selectedPrompt,
+                          items: _prompts.map((p) {
+                            return DropdownMenuItem<dynamic>(
+                              value: p,
+                              child: Text(
+                                p['title'],
+                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: _timerActive
+                              ? null
+                              : (val) {
+                                  setState(() {
+                                    _selectedPrompt = val;
+                                    _textController.clear();
+                                    _feedback = null;
+                                    _examSuccess = false;
+                                  });
+                                },
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
+                  ],
 
                   if (_selectedPrompt != null) ...[
                     // Prompt Box
