@@ -17,8 +17,9 @@ export default function WritingPractice() {
   const [customTaskType, setCustomTaskType] = useState('TASK_2');
   const [customExamType, setCustomExamType] = useState('ACADEMIC');
 
-  const [viewState, setViewState] = useState<'BOOKS' | 'BOOK_DETAIL' | 'PRACTICE'>('BOOKS');
+  const [viewState, setViewState] = useState<'BOOKS' | 'BOOK_DETAIL' | 'TASK_DETAILS' | 'PRACTICE'>('BOOKS');
   const [selectedBook, setSelectedBook] = useState<number>(10);
+  const [selectedTestNum, setSelectedTestNum] = useState<number>(1);
   const [selectedTaskType, setSelectedTaskType] = useState<'TASK_1' | 'TASK_2'>('TASK_1');
   const [currentPart, setCurrentPart] = useState<number>(1);
   const [part1Text, setPart1Text] = useState('');
@@ -393,7 +394,14 @@ export default function WritingPractice() {
             return (
               <div
                 key={testNum}
-                onClick={() => startPracticeForTest(selectedBook, selectedTaskType, testNum)}
+                onClick={() => {
+                  if (testNum !== 1) {
+                    showPremiumAlert();
+                    return;
+                  }
+                  setSelectedTestNum(testNum);
+                  setViewState('TASK_DETAILS');
+                }}
                 className={`bg-primary/20 border rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all ${
                   isUnlocked
                     ? 'border-primary-light/30 hover:border-gold hover:bg-primary/30'
@@ -420,6 +428,92 @@ export default function WritingPractice() {
             );
           })}
         </div>
+      </div>
+    );
+  };
+
+  const renderTaskDetailsView = () => {
+    const isTask1 = selectedTaskType === 'TASK_1';
+    const taskName = isTask1 ? 'Task 1' : 'Task 2';
+    const taskFormat = isTask1 ? 'Pie Chart' : 'Opinion Essay';
+    const timeStr = isTask1 ? '20 minutes' : '40 minutes';
+    const wordsStr = isTask1 ? 'at least 150 words' : 'at least 250 words';
+
+    const tips = isTask1
+      ? [
+          'Connect energy use with emissions',
+          'Compare the proportions in both charts',
+          'Highlight key disparities'
+        ]
+      : [
+          'Address both parts of the question',
+          'Give clear reasons for your opinion',
+          'Include relevant examples'
+        ];
+
+    return (
+      <div className="max-w-md mx-auto py-8 px-4 space-y-6 flex flex-col justify-between min-h-[calc(100vh-4rem)]">
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black text-white">Test {selectedTestNum}</h1>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="flex items-center gap-1 text-xs font-bold text-red-500">
+                🎯 {taskName}
+              </span>
+              <span className="text-slate-500 text-xs">•</span>
+              <span className="flex items-center gap-1 text-xs text-slate-400">
+                📊 {taskFormat}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Instructions</h3>
+            <div className="bg-primary/20 border border-primary-light/25 rounded-2xl p-5 space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="text-red-500 text-base">⏱️</span>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  You should spend about <strong className="text-white font-bold">{timeStr}</strong> on this task.
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-red-500 text-base">📝</span>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Write <strong className="text-white font-bold">{wordsStr}</strong>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider">Pro Tips</h3>
+            <div className="bg-primary/20 border border-primary-light/25 rounded-2xl p-5 space-y-3">
+              {tips.map((tip, idx) => (
+                <div key={idx} className="flex items-start gap-3 text-xs text-slate-300">
+                  <span>💡</span>
+                  <p className="leading-relaxed">{tip}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-rose-950/20 border border-rose-500/20 rounded-2xl p-5 flex items-start gap-3">
+            <span className="text-rose-500 text-lg">🛡️</span>
+            <div>
+              <h4 className="text-xs font-bold text-slate-200">Test Security</h4>
+              <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                The prompt is hidden until you start the test to simulate real exam conditions.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => startPracticeForTest(selectedBook, selectedTaskType, selectedTestNum)}
+          className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl text-sm transition-all cursor-pointer shadow-lg shadow-red-600/20 flex items-center justify-center gap-2"
+        >
+          🖋️ Start Test
+        </button>
       </div>
     );
   };
@@ -455,6 +549,8 @@ export default function WritingPractice() {
               if (viewState === 'PRACTICE') {
                 setViewState('BOOK_DETAIL');
                 setTimerActive(false);
+              } else if (viewState === 'TASK_DETAILS') {
+                setViewState('BOOK_DETAIL');
               } else if (viewState === 'BOOK_DETAIL') {
                 setViewState('BOOKS');
               }
@@ -474,6 +570,8 @@ export default function WritingPractice() {
         renderBooksView()
       ) : viewState === 'BOOK_DETAIL' ? (
         renderBookDetailView()
+      ) : viewState === 'TASK_DETAILS' ? (
+        renderTaskDetailsView()
       ) : (
         <main className="flex-1 max-w-5xl w-full mx-auto p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
         

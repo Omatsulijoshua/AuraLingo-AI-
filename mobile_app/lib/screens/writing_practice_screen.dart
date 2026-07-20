@@ -20,6 +20,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
   String _viewState = 'BOOKS'; // BOOKS, BOOK_DETAIL, PRACTICE
   int _selectedBook = 10;
+  int _selectedTestNum = 1;
   String _selectedTaskType = 'TASK_1'; // TASK_1 or TASK_2
   int _currentPart = 1;
   String _part1Text = '';
@@ -862,7 +863,16 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
             final isUnlocked = testNum == 1;
 
             return InkWell(
-              onTap: () => _startPracticeForTest(_selectedBook, _selectedTaskType, testNum),
+              onTap: () {
+                if (testNum != 1) {
+                  _showPremiumDialog();
+                  return;
+                }
+                setState(() {
+                  _selectedTestNum = testNum;
+                  _viewState = 'TASK_DETAILS';
+                });
+              },
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.all(16),
@@ -940,6 +950,263 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     );
   }
 
+  Widget _buildTaskDetailsView() {
+    final isTask1 = _selectedTaskType == 'TASK_1';
+    final taskName = isTask1 ? 'Task 1' : 'Task 2';
+    final taskFormat = isTask1 ? 'Pie Chart' : 'Opinion Essay';
+    final timeStr = isTask1 ? '20 minutes' : '40 minutes';
+    final wordsStr = isTask1 ? 'at least 150 words' : 'at least 250 words';
+    
+    final tips = isTask1
+        ? [
+            'Connect energy use with emissions',
+            'Compare the proportions in both charts',
+            'Highlight key disparities'
+          ]
+        : [
+            'Address both parts of the question',
+            'Give clear reasons for your opinion',
+            'Include relevant examples'
+          ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Test $_selectedTestNum',
+          style: const TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.track_changes, color: Color(0xFFEF4444), size: 16),
+            const SizedBox(width: 6),
+            Text(
+              taskName,
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('•', style: TextStyle(color: Color(0xFF94A3B8))),
+            const SizedBox(width: 8),
+            Icon(
+              isTask1 ? Icons.pie_chart : Icons.chat_bubble_rounded,
+              color: const Color(0xFF64748B),
+              size: 16,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              taskFormat,
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 28),
+        const Text(
+          'Instructions',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.access_time, color: Color(0xFFEF4444), size: 18),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(color: Color(0xFF475569), fontSize: 13, height: 1.4),
+                        children: [
+                          const TextSpan(text: 'You should spend about '),
+                          TextSpan(
+                            text: timeStr,
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          ),
+                          const TextSpan(text: ' on this task.'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(Icons.align_horizontal_left_rounded, color: Color(0xFFEF4444), size: 18),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(color: Color(0xFF475569), fontSize: 13, height: 1.4),
+                        children: [
+                          const TextSpan(text: 'Write '),
+                          TextSpan(
+                            text: wordsStr,
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                          ),
+                          const TextSpan(text: '.'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Pro Tips',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: tips
+                .map((tip) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('💡 ', style: TextStyle(fontSize: 13)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              tip,
+                              style: const TextStyle(
+                                color: Color(0xFF475569),
+                                fontSize: 13,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ))
+                .toList(),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF1F2),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFECDD3)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.shield_outlined, color: Color(0xFFE11D48), size: 24),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Test Security',
+                      style: TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'The prompt is hidden until you start the test to simulate real exam conditions.',
+                      style: TextStyle(
+                        color: Color(0xFF475569),
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 36),
+        SizedBox(
+          height: 52,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(26),
+              ),
+            ),
+            onPressed: () => _startPracticeForTest(_selectedBook, _selectedTaskType, _selectedTestNum),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.edit, size: 16),
+                SizedBox(width: 8),
+                Text(
+                  'Start Test',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
   int get _wordCount => _textController.text.trim().isEmpty
       ? 0
       : _textController.text.trim().split(RegExp(r'\s+')).length;
@@ -997,7 +1264,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
               )
             : TextButton.icon(
                 onPressed: () {
-                  if (_viewState == 'BOOK_DETAIL') {
+                  if (_viewState == 'TASK_DETAILS') {
+                    setState(() => _viewState = 'BOOK_DETAIL');
+                  } else if (_viewState == 'BOOK_DETAIL') {
                     setState(() => _viewState = 'BOOKS');
                   } else {
                     Navigator.pop(context);
@@ -1034,7 +1303,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                 ),
               )
             : Text(
-                _viewState == 'BOOKS' ? 'Writing Lab' : 'IELTS Book $_selectedBook',
+                _viewState == 'BOOKS'
+                    ? 'Writing Lab'
+                    : (_viewState == 'TASK_DETAILS' ? 'Task Details' : 'IELTS Book $_selectedBook'),
                 style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
               ),
         actions: isPractice && _selectedPrompt != null
@@ -1074,9 +1345,11 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                   ? _buildBooksView()
                   : _viewState == 'BOOK_DETAIL'
                       ? _buildBookDetailView()
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
+                      : _viewState == 'TASK_DETAILS'
+                          ? _buildTaskDetailsView()
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                   // Mode Selection
                   Row(
                     children: [
