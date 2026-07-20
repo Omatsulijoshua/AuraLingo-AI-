@@ -38,7 +38,7 @@ export default function WritingPractice() {
   };
 
   const startPracticeForTest = (bookNum: number, taskType: 'TASK_1' | 'TASK_2', testNum: number) => {
-    if (bookNum !== 10 || testNum !== 1) {
+    if (testNum !== 1) {
       showPremiumAlert();
       return;
     }
@@ -260,13 +260,9 @@ export default function WritingPractice() {
                 <div
                   key={bookNum}
                   onClick={() => {
-                    if (isUnlocked) {
-                      setSelectedBook(bookNum);
-                      setViewState('BOOK_DETAIL');
-                      setSelectedTaskType('TASK_1');
-                    } else {
-                      showPremiumAlert();
-                    }
+                    setSelectedBook(bookNum);
+                    setViewState('BOOK_DETAIL');
+                    setSelectedTaskType('TASK_1');
                   }}
                   className={`bg-primary/20 border rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all ${
                     isUnlocked

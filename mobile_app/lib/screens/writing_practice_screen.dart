@@ -508,7 +508,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   }
 
   void _startPracticeForTest(int bookNum, String taskType, int testNum) {
-    if (bookNum != 10 || testNum != 1) {
+    if (testNum != 1) {
       _showPremiumDialog();
       return;
     }
@@ -565,15 +565,11 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
             return InkWell(
               onTap: () {
-                if (isUnlocked) {
-                  setState(() {
-                    _selectedBook = bookNum;
-                    _viewState = 'BOOK_DETAIL';
-                    _selectedTaskType = 'TASK_1';
-                  });
-                } else {
-                  _showPremiumDialog();
-                }
+                setState(() {
+                  _selectedBook = bookNum;
+                  _viewState = 'BOOK_DETAIL';
+                  _selectedTaskType = 'TASK_1';
+                });
               },
               borderRadius: BorderRadius.circular(16),
               child: Container(
