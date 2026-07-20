@@ -36,6 +36,7 @@ export default function WritingPractice() {
   const [timeLeft, setTimeLeft] = useState(2400);
   const [timerActive, setTimerActive] = useState(false);
   const [showTackleSteps, setShowTackleSteps] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const showPremiumAlert = () => {
     alert('Premium Content: Please upgrade your subscription to access all IELTS Books and Practice Tests.');
@@ -547,8 +548,7 @@ export default function WritingPractice() {
           <button
             onClick={() => {
               if (viewState === 'PRACTICE') {
-                setViewState('BOOK_DETAIL');
-                setTimerActive(false);
+                setShowExitModal(true);
               } else if (viewState === 'TASK_DETAILS') {
                 setViewState('BOOK_DETAIL');
               } else if (viewState === 'BOOK_DETAIL') {
@@ -1110,6 +1110,40 @@ export default function WritingPractice() {
         </div>
       </main>
     )}
+      {/* End Test Confirmation Modal */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[24px] p-6 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto">
+              <span className="text-amber-500 text-3xl">⚠️</span>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-slate-900">End Test?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to end this test?<br />Your progress will be lost.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setShowExitModal(false);
+                  setViewState('BOOK_DETAIL');
+                  setTimerActive(false);
+                }}
+                className="flex-1 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-600 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                End Test
+              </button>
+              <button
+                onClick={() => setShowExitModal(false)}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

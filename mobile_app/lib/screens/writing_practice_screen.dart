@@ -294,27 +294,111 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   void _showExitConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF0B1E36),
-        title: const Text('Confirm Exit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('Are you sure you want to exit the test? Your writing progress will be lost.', style: TextStyle(color: Color(0xFFCBD5E1))),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF3E0), // light orange
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFFF9800), // solid orange
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'End Test?',
+                style: TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Are you sure you want to end this test?\nYour progress will be lost.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFE4E6), // light pink/red
+                          foregroundColor: const Color(0xFFE11D48), // red text
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                          setState(() {
+                            _timerActive = false;
+                            _timer?.cancel();
+                            _viewState = 'BOOK_DETAIL';
+                          });
+                        },
+                        child: const Text(
+                          'End Test',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFC62828), // solid red
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Continue',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Close dialog
-              setState(() {
-                _timerActive = false;
-                _timer?.cancel();
-                _viewState = 'BOOK_DETAIL';
-              });
-            },
-            child: const Text('Exit', style: TextStyle(color: Color(0xFFEF4444))),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -597,7 +681,16 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
+        const Text(
+          'Writing Lab',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 6),
         const Text(
           'Practice IELTS Academic Writing Tasks',
           style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
@@ -605,7 +698,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         const SizedBox(height: 24),
         const Text(
           'Available Books',
-          style: TextStyle(color: Color(0xFF1E293B), fontSize: 15, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         ListView.separated(
@@ -780,6 +873,16 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SizedBox(height: 12),
+        Text(
+          'IELTS Book $_selectedBook',
+          style: const TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 6),
         const Text(
           'Select a task to practice',
           style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
@@ -1217,9 +1320,9 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB), // Light Grey background
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        shadowColor: Colors.black.withOpacity(0.1),
+        backgroundColor: isPractice ? Colors.white : const Color(0xFFF4F6FB),
+        elevation: isPractice ? 1 : 0,
+        shadowColor: isPractice ? Colors.black.withOpacity(0.1) : Colors.transparent,
         centerTitle: true,
         leadingWidth: isPractice ? 180 : 90,
         leading: isPractice
@@ -1302,12 +1405,12 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
                   ],
                 ),
               )
-            : Text(
-                _viewState == 'BOOKS'
-                    ? 'Writing Lab'
-                    : (_viewState == 'TASK_DETAILS' ? 'Task Details' : 'IELTS Book $_selectedBook'),
-                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+            : (_viewState == 'TASK_DETAILS'
+                ? const Text(
+                    'Task Details',
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                  )
+                : null),
         actions: isPractice && _selectedPrompt != null
             ? [
                 Padding(
