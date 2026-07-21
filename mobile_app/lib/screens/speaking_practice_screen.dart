@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/premium_paywall.dart';
 
 class SpeakingPracticeScreen extends StatefulWidget {
   const SpeakingPracticeScreen({super.key});
@@ -384,6 +385,8 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
                             _currentScreen = 'TEST_DETAIL';
                             _selectedPart = 1;
                           });
+                        } else {
+                          showPremiumPaywall(context);
                         }
                       },
                     ),

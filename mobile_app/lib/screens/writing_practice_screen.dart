@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/premium_paywall.dart';
 
 class WritingPracticeScreen extends StatefulWidget {
   const WritingPracticeScreen({super.key});
@@ -275,20 +276,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
   }
 
   void _showPremiumDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF0B1E36),
-        title: const Text('Premium Content', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('Please upgrade your subscription to access all IELTS Books and Practice Tests.', style: TextStyle(color: Color(0xFFCBD5E1))),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Color(0xFFD4AF37))),
-          ),
-        ],
-      ),
-    );
+    showPremiumPaywall(context);
   }
 
   void _showExitConfirmation() {
