@@ -276,7 +276,7 @@ export default function WritingPractice() {
         <div>
           <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider mb-4">Available Books</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Array.from({ length: 11 }).map((_, idx) => {
+            {Array.from({ length: 12 }).map((_, idx) => {
               const bookNum = 10 + idx;
               const isUnlocked = bookNum === 10;
 
@@ -284,9 +284,13 @@ export default function WritingPractice() {
                 <div
                   key={bookNum}
                   onClick={() => {
-                    setSelectedBook(bookNum);
-                    setViewState('BOOK_DETAIL');
-                    setSelectedTaskType('TASK_1');
+                    if (isUnlocked) {
+                      setSelectedBook(bookNum);
+                      setViewState('BOOK_DETAIL');
+                      setSelectedTaskType('TASK_1');
+                    } else {
+                      alert('Premium Content: Please upgrade your subscription to access all IELTS Books and Practice Tests.');
+                    }
                   }}
                   className={`bg-primary/20 border rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all ${
                     isUnlocked

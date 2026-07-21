@@ -693,7 +693,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: 11,
+          itemCount: 12,
           separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
             final bookNum = 10 + index;
@@ -701,11 +701,15 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
 
             return InkWell(
               onTap: () {
-                setState(() {
-                  _selectedBook = bookNum;
-                  _viewState = 'BOOK_DETAIL';
-                  _selectedTaskType = 'TASK_1';
-                });
+                if (isUnlocked) {
+                  setState(() {
+                    _selectedBook = bookNum;
+                    _viewState = 'BOOK_DETAIL';
+                    _selectedTaskType = 'TASK_1';
+                  });
+                } else {
+                  showPremiumPaywall(context);
+                }
               },
               borderRadius: BorderRadius.circular(16),
               child: Container(
