@@ -15,7 +15,10 @@ class ReadingPracticeScreen extends StatefulWidget {
 class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
   final ApiService _apiService = ApiService();
 
-  String _viewState = 'TESTS'; // TESTS, PRACTICE
+  String _viewState = 'TESTS'; // TESTS, OVERVIEW, PRACTICE
+  int _selectedBook = 10;
+  int _selectedTest = 1;
+  int _selectedPartTab = 1; // 1, 2, or 3
   List<dynamic> _passages = [];
   dynamic _selectedPassage;
   final Map<String, String> _userAnswers = {};
@@ -284,6 +287,7 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
     }
 
     final bool isPractice = _viewState == 'PRACTICE';
+    final bool isOverview = _viewState == 'OVERVIEW';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB), // Light Grey background
@@ -299,8 +303,10 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
               if (_timerActive) {
                 _showExitConfirmation();
               } else {
-                setState(() => _viewState = 'TESTS');
+                setState(() => _viewState = 'OVERVIEW');
               }
+            } else if (isOverview) {
+              setState(() => _viewState = 'TESTS');
             } else {
               Navigator.pop(context);
             }
@@ -311,35 +317,46 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
             style: TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.bold),
           ),
         ),
-        title: isPractice && _timerActive
-            ? Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE4E6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFECDD3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.access_time_filled, color: Color(0xFFE11D48), size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      _formatTime(_timeLeft),
-                      style: const TextStyle(
-                        color: Color(0xFFE11D48),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+        title: isOverview
+            ? Text(
+                'IELTS Book $_selectedBook Test $_selectedTest',
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               )
-            : null,
+            : (isPractice && _timerActive
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE4E6),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFECDD3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.access_time_filled, color: Color(0xFFE11D48), size: 12),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatTime(_timeLeft),
+                          style: const TextStyle(
+                            color: Color(0xFFE11D48),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : null),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
-        child: _viewState == 'TESTS' ? _buildTestsView() : _buildPracticeView(),
+        child: _viewState == 'TESTS'
+            ? _buildTestsView()
+            : (_viewState == 'OVERVIEW' ? _buildOverviewView() : _buildPracticeView()),
       ),
     );
   }
@@ -390,7 +407,10 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
               onTap: () {
                 if (isUnlocked) {
                   setState(() {
-                    _viewState = 'PRACTICE';
+                    _viewState = 'OVERVIEW';
+                    _selectedBook = bookNum;
+                    _selectedTest = testNum;
+                    _selectedPartTab = 1;
                     _userAnswers.clear();
                     _feedback = null;
                     _examSuccess = false;
@@ -487,6 +507,302 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildOverviewView() {
+    final partTitle = _selectedPartTab == 1
+        ? "Stepwells"
+        : (_selectedPartTab == 2 ? "European Transport Systems 1990-2010" : "The psychology of innovation");
+
+    final partBadge = _selectedPartTab == 1
+        ? "History/Architecture"
+        : (_selectedPartTab == 2 ? "Transportation/Economics" : "Psychology/Business");
+
+    final partQuestions = _selectedPartTab == 1
+        ? "13 Questions"
+        : (_selectedPartTab == 2 ? "13 Questions" : "14 Questions");
+
+    final partDescription = _selectedPartTab == 1
+        ? "Passage 1 usually contains a factual text with questions like finding specific information, True/False/Not Given, or short answers. It is generally the easiest passage."
+        : (_selectedPartTab == 2
+            ? "Passage 2 contains a discursive text, often with arguments and opinions. Questions may match headings, information, or complete summaries. It is moderately difficult."
+            : "Passage 3 contains a long text about a complex or abstract topic. Questions test detailed understanding, logical argument, and writer's opinion. It is the most difficult passage.");
+
+    final List<Map<String, dynamic>> questionTypes = _selectedPartTab == 1
+        ? [
+            {'type': 'Sentence Completion', 'count': 5},
+            {'type': 'Short Answer', 'count': 3},
+            {'type': 'True/False/Not Given', 'count': 5},
+          ]
+        : (_selectedPartTab == 2
+            ? [
+                {'type': 'Matching Headings', 'count': 8},
+                {'type': 'True/False/Not Given', 'count': 5},
+              ]
+            : [
+                {'type': 'Matching Information', 'count': 5},
+                {'type': 'Multiple Choice', 'count': 4},
+                {'type': 'Yes/No/Not Given', 'count': 5},
+              ]);
+
+    final partPreview = _selectedPartTab == 1
+        ? "A millennium ago, stepwells were fundamental to life in the driest parts of India. Although many have been neglected, recent restoration has returned them to their former glory. Richard Cox travelled to north-we..."
+        : (_selectedPartTab == 2
+            ? "It is difficult to conceive of vigorous economic growth without an efficient transport system. Although modern information technologies can reduce the demand for physical transport by facilitating telewor..."
+            : "Innovation is key to business survival, and companies put substantial resources into inspiring employees to develop new ideas. There are, nevertheless, people working in luxurious, state-of-the-art centres design...");
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 8),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildPartTabButton(
+                  part: 1,
+                  title: 'Part 1',
+                  subtitle: 'Beginner',
+                ),
+              ),
+              Expanded(
+                child: _buildPartTabButton(
+                  part: 2,
+                  title: 'Part 2',
+                  subtitle: 'Intermediate',
+                ),
+              ),
+              Expanded(
+                child: _buildPartTabButton(
+                  part: 3,
+                  title: 'Part 3',
+                  subtitle: 'Advanced',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          partTitle,
+          style: const TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            const Icon(Icons.local_offer_outlined, color: Color(0xFFEF4444), size: 14),
+            const SizedBox(width: 4),
+            Text(
+              partBadge,
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Text('•', style: TextStyle(color: Color(0xFF94A3B8))),
+            const SizedBox(width: 8),
+            const Icon(Icons.help_outline_rounded, color: Color(0xFF64748B), size: 14),
+            const SizedBox(width: 4),
+            Text(
+              partQuestions,
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          partDescription,
+          style: const TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Question Types',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...questionTypes.map((qt) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFECDD3),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  qt['type'],
+                  style: const TextStyle(
+                    color: Color(0xFF475569),
+                    fontSize: 13,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  qt['count'].toString(),
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 16),
+        const Text(
+          'Preview',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Text(
+            partPreview,
+            style: const TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 12,
+              height: 1.6,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
+        SizedBox(
+          height: 48,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFC62828),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              dynamic matchingPassage;
+              final String searchTitle = _selectedPartTab == 1
+                  ? "stepwell"
+                  : (_selectedPartTab == 2 ? "transport" : "psychology");
+
+              for (var p in _passages) {
+                final title = (p['title'] ?? '').toString().toLowerCase();
+                if (title.contains(searchTitle)) {
+                  matchingPassage = p;
+                  break;
+                }
+              }
+
+              setState(() {
+                if (matchingPassage != null) {
+                  _selectedPassage = matchingPassage;
+                } else if (_passages.isNotEmpty) {
+                  _selectedPassage = _passages[0];
+                }
+                _viewState = 'PRACTICE';
+                _startTimer();
+              });
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.menu_book_rounded, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Start Test',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildPartTabButton({
+    required int part,
+    required String title,
+    required String subtitle,
+  }) {
+    final bool isSelected = _selectedPartTab == part;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _selectedPartTab = part;
+        });
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFC62828) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF475569),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: isSelected ? Colors.white.withOpacity(0.8) : const Color(0xFF94A3B8),
+                fontSize: 9,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
