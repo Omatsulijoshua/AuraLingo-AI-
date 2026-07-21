@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/premium_paywall.dart';
+import '../widgets/times_up_dialog.dart';
 
 class WritingPracticeScreen extends StatefulWidget {
   const WritingPracticeScreen({super.key});
@@ -135,7 +136,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
       } else {
         _timer?.cancel();
         setState(() => _timerActive = false);
-        _submitEssay();
+        showTimesUpDialog(context, _submitEssay);
       }
     });
   }
@@ -634,7 +635,7 @@ class _WritingPracticeScreenState extends State<WritingPracticeScreen> {
         _timer?.cancel();
         if (mounted) {
           setState(() => _timerActive = false);
-          _submitOrFinish();
+          showTimesUpDialog(context, _submitOrFinish);
         }
       }
     });

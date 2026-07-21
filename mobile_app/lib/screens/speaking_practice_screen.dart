@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/premium_paywall.dart';
+import '../widgets/times_up_dialog.dart';
 
 class SpeakingPracticeScreen extends StatefulWidget {
   const SpeakingPracticeScreen({super.key});
@@ -147,7 +148,7 @@ class _SpeakingPracticeScreenState extends State<SpeakingPracticeScreen> {
       } else {
         _timer?.cancel();
         setState(() => _timerActive = false);
-        _submitSpeaking();
+        showTimesUpDialog(context, _submitSpeaking);
       }
     });
   }

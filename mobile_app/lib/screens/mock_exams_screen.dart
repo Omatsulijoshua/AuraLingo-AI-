@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/times_up_dialog.dart';
 
 class MockExamsScreen extends StatefulWidget {
   const MockExamsScreen({super.key});
@@ -155,7 +156,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
       } else {
         _timer?.cancel();
         setState(() => _timerActive = false);
-        _submitSection();
+        showTimesUpDialog(context, _submitSection);
       }
     });
   }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../services/api_service.dart';
+import '../widgets/times_up_dialog.dart';
 
 class ListeningPracticeScreen extends StatefulWidget {
   const ListeningPracticeScreen({super.key});
@@ -117,7 +118,7 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
       } else {
         _timer?.cancel();
         setState(() => _timerActive = false);
-        _submitAnswers();
+        showTimesUpDialog(context, _submitAnswers);
       }
     });
   }
