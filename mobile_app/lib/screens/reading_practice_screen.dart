@@ -20,6 +20,7 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
   int _selectedTest = 1;
   int _selectedPartTab = 1; // 1, 2, or 3
   String _activeTab = 'Passage'; // Passage, Questions
+  bool _showAnswers = false;
   List<dynamic> _passages = [];
   dynamic _selectedPassage;
   final Map<String, String> _userAnswers = {};
@@ -1009,98 +1010,73 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
             'id': 'b10t1p1q6',
             'questionType': 'SHORT_ANSWER',
             'difficulty': 'BEGINNER',
-            'instruction': 'Answer the question below with NO MORE THAN TWO WORDS from the passage.',
-            'questionText': 'What type of serious climatic event, which took place in southern Rajasthan, is mentioned in the article?',
-            'correctAnswer': 'drought',
-            'explanation': 'Paragraph F mentions: "southern Rajasthan suffered an eight-year drought".'
+            'instruction': 'Answer the questions using NO MORE THAN THREE WORDS from the passage.',
+            'questionText': 'Which part of some stepwells provided shade for people?',
+            'correctAnswer': 'pavilions',
+            'explanation': 'Paragraph E mentions: "Built from stone and supported by pillars, they also included pavilions that sheltered visitors from the relentless heat."'
           },
           {
             'id': 'b10t1p1q7',
             'questionType': 'SHORT_ANSWER',
             'difficulty': 'BEGINNER',
-            'instruction': 'Answer the question below with NO MORE THAN TWO WORDS from the passage.',
-            'questionText': 'Who commissioned the Raniji Ki Baori?',
-            'correctAnswer': 'Nathavatji',
-            'explanation': 'Paragraph J states: "commissioned in the Bundi area by Nathavatji".'
+            'instruction': 'Answer the questions using NO MORE THAN THREE WORDS from the passage.',
+            'questionText': 'What type of serious climatic event, which took place in southern Rajasthan, is mentioned in the article?',
+            'correctAnswer': 'drought',
+            'explanation': 'Paragraph F mentions: "southern Rajasthan suffered an eight-year drought".'
           },
           {
             'id': 'b10t1p1q8',
             'questionType': 'SHORT_ANSWER',
             'difficulty': 'BEGINNER',
-            'instruction': 'Answer the question below with NO MORE THAN TWO WORDS from the passage.',
-            'questionText': 'Where is the Rani Ki Vav located?',
-            'correctAnswer': 'Patan',
-            'explanation': 'Paragraph H states: "In Patan, the state\'s ancient capital, the stepwell of Rani Ki Vav".'
+            'instruction': 'Answer the questions using NO MORE THAN THREE WORDS from the passage.',
+            'questionText': 'Who are frequent visitors to stepwells nowadays?',
+            'correctAnswer': 'tourists',
+            'explanation': 'Paragraph M states: "Tourists flock to wells in far-flung corners of northwestern India..."'
           },
           {
             'id': 'b10t1p1q9',
-            'questionType': 'MULTIPLE_CHOICE',
+            'questionType': 'SENTENCE_COMPLETION',
             'difficulty': 'BEGINNER',
-            'instruction': 'Classify the statement as TRUE, FALSE or NOT GIVEN based on the passage.',
-            'questionText': 'Rani Ki Vav was built by Queen Udayamati.',
-            'options': [
-              {'optionLetter': 'A', 'optionText': 'TRUE'},
-              {'optionLetter': 'B', 'optionText': 'FALSE'},
-              {'optionLetter': 'C', 'optionText': 'NOT GIVEN'},
-            ],
-            'correctAnswer': 'A',
-            'explanation': 'Paragraph H states: "It was built by Queen Udayamati during the late 11th century".'
+            'instruction': 'Complete the sentences using words from the passage.',
+            'questionText': 'Rani Ki Vav: Excellent condition, despite the ___ of 2001.',
+            'correctAnswer': 'earthquake',
+            'explanation': 'Paragraph H states: "Incredibly, in January 2001, this ancient structure survived a devastating earthquake..."'
           },
           {
             'id': 'b10t1p1q10',
-            'questionType': 'MULTIPLE_CHOICE',
+            'questionType': 'SENTENCE_COMPLETION',
             'difficulty': 'BEGINNER',
-            'instruction': 'Classify the statement as TRUE, FALSE or NOT GIVEN based on the passage.',
-            'questionText': 'The earthquake of 2001 destroyed the Rani Ki Vav.',
-            'options': [
-              {'optionLetter': 'A', 'optionText': 'TRUE'},
-              {'optionLetter': 'B', 'optionText': 'FALSE'},
-              {'optionLetter': 'C', 'optionText': 'NOT GIVEN'},
-            ],
-            'correctAnswer': 'B',
-            'explanation': 'Paragraph H states: "Incredibly, in January 2001, this ancient structure survived a devastating earthquake".'
+            'instruction': 'Complete the sentences using words from the passage.',
+            'questionText': 'Surya Kund: Steps on the ___ produce a geometric pattern.',
+            'correctAnswer': 'four sides',
+            'explanation': 'Paragraph I states: "displays the hallmarks of stepwell architecture, including four sides of steps that descend to the bottom..."'
           },
           {
             'id': 'b10t1p1q11',
-            'questionType': 'MULTIPLE_CHOICE',
+            'questionType': 'SENTENCE_COMPLETION',
             'difficulty': 'BEGINNER',
-            'instruction': 'Classify the statement as TRUE, FALSE or NOT GIVEN based on the passage.',
-            'questionText': 'Surya Kund resembles a tank rather than a well.',
-            'options': [
-              {'optionLetter': 'A', 'optionText': 'TRUE'},
-              {'optionLetter': 'B', 'optionText': 'FALSE'},
-              {'optionLetter': 'C', 'optionText': 'NOT GIVEN'},
-            ],
-            'correctAnswer': 'A',
-            'explanation': 'Paragraph I states: "It actually resembles a tank (kund means reservoir or pond) rather than a well".'
+            'instruction': 'Complete the sentences using words from the passage.',
+            'questionText': 'Surya Kund: Looks more like a ___ than a well.',
+            'correctAnswer': 'tank',
+            'explanation': 'Paragraph I states: "It actually resembles a tank (kund means reservoir or pond) rather than a well..."'
           },
           {
             'id': 'b10t1p1q12',
-            'questionType': 'MULTIPLE_CHOICE',
+            'questionType': 'SENTENCE_COMPLETION',
             'difficulty': 'BEGINNER',
-            'instruction': 'Classify the statement as TRUE, FALSE or NOT GIVEN based on the passage.',
-            'questionText': 'Chand Baori is one of India\'s oldest and deepest wells.',
-            'options': [
-              {'optionLetter': 'A', 'optionText': 'TRUE'},
-              {'optionLetter': 'B', 'optionText': 'FALSE'},
-              {'optionLetter': 'C', 'optionText': 'NOT GIVEN'},
-            ],
-            'correctAnswer': 'A',
-            'explanation': 'Paragraph K states: "is Chand Baori, one of India\'s oldest and deepest wells".'
+            'instruction': 'Complete the sentences using words from the passage.',
+            'questionText': 'Chand Baori: Has ___ which provide a view to the steps.',
+            'correctAnswer': 'verandas',
+            'explanation': 'Paragraph K states: "On the fourth side, verandas which are supported by ornate pillars overlook the steps."'
           },
           {
             'id': 'b10t1p1q13',
-            'questionType': 'MULTIPLE_CHOICE',
+            'questionType': 'SENTENCE_COMPLETION',
             'difficulty': 'BEGINNER',
-            'instruction': 'Classify the statement as TRUE, FALSE or NOT GIVEN based on the passage.',
-            'questionText': 'Neemrana Ki Baori has 170 steps to the deepest water source.',
-            'options': [
-              {'optionLetter': 'A', 'optionText': 'TRUE'},
-              {'optionLetter': 'B', 'optionText': 'FALSE'},
-              {'optionLetter': 'C', 'optionText': 'NOT GIVEN'},
-            ],
-            'correctAnswer': 'A',
-            'explanation': 'Paragraph L states: "descends 170 steps to the deepest water source".'
+            'instruction': 'Complete the sentences using words from the passage.',
+            'questionText': 'Neemrana Ki Baori: Has two ___ levels.',
+            'correctAnswer': 'underwater',
+            'explanation': 'Paragraph L states: "Constructed in around 1700, it\'s nine storeys deep, with the last two being underwater."'
           }
         ];
       } else if (_selectedPartTab == 2) {
@@ -1138,12 +1114,172 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
     return _selectedPassage?['practiceQuestions'] ?? [];
   }
 
+  void _goToNextPart() {
+    if (_selectedPartTab < 3) {
+      setState(() {
+        _selectedPartTab++;
+        _activeTab = 'Passage';
+        _showAnswers = false;
+        _userAnswers.clear();
+        _feedback = null;
+        _examSuccess = false;
+        _timeLeft = 1200;
+      });
+    } else {
+      setState(() {
+        _viewState = 'OVERVIEW';
+      });
+    }
+  }
+
+  Widget _buildSectionHeader(String range, String type, String instruction) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0, bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            range,
+            style: const TextStyle(
+              color: Color(0xFF1E293B),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            type,
+            style: const TextStyle(
+              color: Color(0xFFEF4444),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            instruction,
+            style: const TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 12.5,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showIncompleteAnswersDialog(int answeredCount, int totalQuestions) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFFF3E0),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFFF9800),
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Incomplete Answers',
+                style: TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'You have answered $answeredCount out of $totalQuestions questions.\nAre you sure you want to proceed?',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          foregroundColor: const Color(0xFF475569),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFC62828),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _submitAnswers();
+                        },
+                        child: const Text(
+                          'Proceed',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildPracticeView() {
     final paragraphs = _getParagraphsForCurrentTest();
     final questions = _getQuestionsForCurrentTest();
 
     final bool isPassageSelected = _activeTab == 'Passage';
     final bool isQuestionsSelected = _activeTab == 'Questions';
+
+    final int totalQuestions = questions.length;
+    final int answeredCount = _userAnswers.keys.where((k) => _userAnswers[k] != null && _userAnswers[k]!.isNotEmpty).length;
 
     Widget tabSelector = Container(
       decoration: const BoxDecoration(
@@ -1153,7 +1289,6 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           Expanded(
             child: InkWell(
@@ -1205,6 +1340,39 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
               ),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Answers',
+                  style: TextStyle(
+                    color: _showAnswers ? const Color(0xFFC62828) : const Color(0xFF64748B),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SizedBox(
+                  height: 24,
+                  width: 36,
+                  child: Switch(
+                    value: _showAnswers,
+                    activeColor: Colors.white,
+                    activeTrackColor: const Color(0xFF10B981),
+                    inactiveThumbColor: Colors.white,
+                    inactiveTrackColor: const Color(0xFFCBD5E1),
+                    onChanged: (val) {
+                      setState(() {
+                        _showAnswers = val;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -1243,7 +1411,7 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
                         ...paragraphs.asMap().entries.map((entry) {
                           final int index = entry.key;
                           final String paragraphText = entry.value;
-                          final String label = String.fromCharCode(65 + index); // A, B, C...
+                          final String label = String.fromCharCode(65 + index);
                           return Container(
                             margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                             padding: const EdgeInsets.all(16.0),
@@ -1285,19 +1453,9 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Text(
-                            "Choose the correct answer for each question below.",
-                            style: TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
                         if (_feedback != null)
                           Container(
-                            margin: const EdgeInsets.only(bottom: 20),
+                            margin: const EdgeInsets.only(top: 16, bottom: 20),
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
                               color: Colors.white,
@@ -1438,7 +1596,7 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
                           ),
                         if (_examSuccess)
                           Container(
-                            margin: const EdgeInsets.only(bottom: 20),
+                            margin: const EdgeInsets.only(top: 16, bottom: 20),
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
                               color: const Color(0xFFDCFCE7),
@@ -1475,157 +1633,267 @@ class _ReadingPracticeScreenState extends State<ReadingPracticeScreen> {
                               ],
                             ),
                           ),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: questions.length,
-                          itemBuilder: (context, index) {
-                            final q = questions[index];
-                            final qId = q['id'];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 20),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'QUESTION ${index + 1}',
-                                        style: const TextStyle(
-                                          color: Color(0xFFEF4444),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        q['difficulty'] ?? '',
-                                        style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
-                                      ),
-                                    ],
+                        ...questions.asMap().entries.map((entry) {
+                          final int index = entry.key;
+                          final q = entry.value;
+                          final qId = q['id'];
+                          final String qTypeStr = q['questionType'] == 'MULTIPLE_CHOICE'
+                              ? 'True/False/Not Given'
+                              : (q['questionType'] == 'SHORT_ANSWER' ? 'Short Answer' : 'Sentence Completion');
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Group Headers
+                              if (_selectedBook == 10 && _selectedTest == 1 && _selectedPartTab == 1) ...[
+                                if (index == 0)
+                                  _buildSectionHeader(
+                                    'Questions 1-5',
+                                    'True/False/Not Given',
+                                    'Classify the statement as TRUE, FALSE or NOT GIVEN based on the passage.',
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    q['instruction'] ?? '',
-                                    style: const TextStyle(
-                                      color: Color(0xFF475569),
-                                      fontSize: 11,
-                                      fontStyle: FontStyle.italic,
-                                    ),
+                                if (index == 5)
+                                  _buildSectionHeader(
+                                    'Questions 6-8',
+                                    'Short Answer',
+                                    'Answer the questions using NO MORE THAN THREE WORDS from the passage.',
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    q['questionText'] ?? '',
-                                    style: const TextStyle(
-                                      color: Color(0xFF1E293B),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                if (index == 8)
+                                  _buildSectionHeader(
+                                    'Questions 9-13',
+                                    'Sentence Completion',
+                                    'Complete the sentences using words from the passage.',
                                   ),
-                                  const SizedBox(height: 16),
-                                  if (q['questionType'] == 'MULTIPLE_CHOICE')
-                                    Column(
-                                      children: (q['options'] as List? ?? []).map((opt) {
-                                        final letter = opt['optionLetter'] ?? '';
-                                        final optionText = opt['optionText'] ?? '';
-                                        final isSelected = _userAnswers[qId] == letter;
-                                        return Padding(
-                                          padding: const EdgeInsets.only(bottom: 8.0),
-                                          child: InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                _userAnswers[qId] = letter;
-                                              });
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                              decoration: BoxDecoration(
-                                                color: isSelected ? const Color(0xFFFFE4E6) : Colors.white,
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: isSelected ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
-                                                  width: 1.5,
-                                                ),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Container(
-                                                    width: 18,
-                                                    height: 18,
-                                                    decoration: BoxDecoration(
-                                                      shape: BoxShape.circle,
-                                                      border: Border.all(
-                                                        color: isSelected ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
-                                                        width: 1.5,
-                                                      ),
-                                                    ),
-                                                    child: isSelected
-                                                        ? const Center(
-                                                            child: Icon(Icons.circle, color: Color(0xFFEF4444), size: 10),
-                                                          )
-                                                        : null,
-                                                  ),
-                                                  const SizedBox(width: 10),
-                                                  Expanded(
-                                                    child: Text(
-                                                      "$letter. $optionText",
-                                                      style: const TextStyle(
-                                                        color: Color(0xFF1E293B),
-                                                        fontSize: 12.5,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
+                              ] else if (index == 0) ...[
+                                _buildSectionHeader(
+                                  'Questions 1-$totalQuestions',
+                                  qTypeStr,
+                                  q['instruction'] ?? 'Answer the questions based on the passage.',
+                                ),
+                              ],
+
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 20),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFC62828),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            'Q${index + 1}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        );
-                                      }).toList(),
-                                    )
-                                  else
-                                    TextField(
-                                      onChanged: (val) => _userAnswers[qId] = val,
-                                      style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13),
-                                      decoration: InputDecoration(
-                                        labelText: 'Your Answer',
-                                        labelStyle: const TextStyle(color: Color(0xFF64748B)),
-                                        filled: true,
-                                        fillColor: Colors.white,
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: const BorderSide(color: Color(0xFFEF4444)),
                                         ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          qTypeStr,
+                                          style: const TextStyle(
+                                            color: Color(0xFF64748B),
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      q['questionText'] ?? '',
+                                      style: const TextStyle(
+                                        color: Color(0xFF1E293B),
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                ],
+                                    const SizedBox(height: 16),
+                                    if (q['questionType'] == 'MULTIPLE_CHOICE')
+                                      Column(
+                                        children: (q['options'] as List? ?? []).map((opt) {
+                                          final letter = opt['optionLetter'] ?? '';
+                                          final optionText = opt['optionText'] ?? '';
+                                          final isSelected = _userAnswers[qId] == letter;
+                                          return Padding(
+                                            padding: const EdgeInsets.only(bottom: 8.0),
+                                            child: InkWell(
+                                              onTap: () {
+                                                setState(() {
+                                                  _userAnswers[qId] = letter;
+                                                });
+                                              },
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected ? const Color(0xFFFFE4E6) : Colors.white,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: isSelected ? const Color(0xFFEF4444) : const Color(0xFFE2E8F0),
+                                                    width: 1.5,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 18,
+                                                      height: 18,
+                                                      decoration: BoxDecoration(
+                                                        shape: BoxShape.circle,
+                                                        border: Border.all(
+                                                          color: isSelected ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                                                          width: 1.5,
+                                                        ),
+                                                      ),
+                                                      child: isSelected
+                                                          ? const Center(
+                                                              child: Icon(Icons.circle, color: Color(0xFFEF4444), size: 10),
+                                                            )
+                                                          : null,
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: Text(
+                                                        "$letter. $optionText",
+                                                        style: const TextStyle(
+                                                          color: Color(0xFF1E293B),
+                                                          fontSize: 12.5,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      )
+                                    else
+                                      TextFormField(
+                                        key: ValueKey(qId),
+                                        initialValue: _userAnswers[qId] ?? '',
+                                        onChanged: (val) {
+                                          setState(() {
+                                            _userAnswers[qId] = val;
+                                          });
+                                        },
+                                        style: const TextStyle(color: Color(0xFF1E293B), fontSize: 13),
+                                        decoration: InputDecoration(
+                                          hintText: 'Type your answer',
+                                          hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12.5),
+                                          filled: true,
+                                          fillColor: const Color(0xFFF8FAFC),
+                                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: const BorderSide(color: Color(0xFFEF4444)),
+                                          ),
+                                        ),
+                                      ),
+                                    if (_showAnswers) ...[
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 12.0),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 16),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Answer: ${q['correctAnswer']}',
+                                              style: const TextStyle(
+                                                color: Color(0xFF10B981),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
-                            );
-                          },
+                            ],
+                          );
+                        }).toList(),
+                        const SizedBox(height: 16),
+
+                        // Action Buttons: See Results & Next Part
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.assignment_turned_in_outlined, color: Color(0xFFC62828), size: 18),
+                            label: const Text(
+                              'See Results',
+                              style: TextStyle(
+                                color: Color(0xFFC62828),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFE4E6),
+                              side: const BorderSide(color: Color(0xFFFECDD3)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () {
+                              if (answeredCount < totalQuestions) {
+                                _showIncompleteAnswersDialog(answeredCount, totalQuestions);
+                              } else {
+                                _submitAnswers();
+                              }
+                            },
+                          ),
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
+                          height: 48,
                           child: ElevatedButton(
-                            onPressed: _submitting ? null : _submitAnswers,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF10B981),
+                              backgroundColor: const Color(0xFFC62828),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                            child: Text(
-                              _submitting ? 'Submitting...' : 'Submit All Answers',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            onPressed: _goToNextPart,
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Next Part',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward_rounded, size: 16),
+                              ],
                             ),
                           ),
                         ),
