@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../services/api_service.dart';
 import '../widgets/times_up_dialog.dart';
 import '../widgets/premium_paywall.dart';
+import '../services/localization.dart';
 
 class ListeningPracticeScreen extends StatefulWidget {
   const ListeningPracticeScreen({super.key});
@@ -987,6 +988,27 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        selectedItemColor: const Color(0xFFC62828),
+        unselectedItemColor: Colors.black38,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+        unselectedLabelStyle: const TextStyle(fontSize: 10),
+        onTap: (index) {
+          if (index != 0) {
+            Navigator.pop(context, index);
+          }
+        },
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: LocalizationService.translate('menu_home')),
+          BottomNavigationBarItem(icon: const Icon(Icons.calendar_month), label: LocalizationService.translate('menu_plan')),
+          BottomNavigationBarItem(icon: const Icon(Icons.construction), label: LocalizationService.translate('menu_tools')),
+          BottomNavigationBarItem(icon: const Icon(Icons.history), label: LocalizationService.translate('menu_history')),
+          BottomNavigationBarItem(icon: const Icon(Icons.settings), label: LocalizationService.translate('menu_settings')),
+        ],
       ),
     );
   }

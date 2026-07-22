@@ -135,7 +135,20 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen));
+    _navigateToPractice(targetScreen);
+  }
+
+  Future<void> _navigateToPractice(Widget screen) async {
+    final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
+    final result = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+    if (result != null && dashboardState != null) {
+      dashboardState.setState(() {
+        dashboardState._currentIndex = result;
+      });
+    }
   }
 
   String _getGreetingText() {
@@ -459,16 +472,16 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                 crossAxisSpacing: 12,
                 children: [
                   _buildPracticeGridItem('Speaking', Icons.mic, const Color(0xFFD4AF37), () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
+                    _navigateToPractice(const SpeakingPracticeScreen());
                   }),
                   _buildPracticeGridItem('Writing', Icons.edit, Colors.amberAccent, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+                    _navigateToPractice(const WritingPracticeScreen());
                   }),
                   _buildPracticeGridItem('Reading', Icons.book, Colors.blueAccent, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
+                    _navigateToPractice(const ReadingPracticeScreen());
                   }),
                   _buildPracticeGridItem('Listening', Icons.headset, Colors.greenAccent, () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
+                    _navigateToPractice(const ListeningPracticeScreen());
                   }),
                 ],
               ),
@@ -576,7 +589,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                 iconColor: Colors.blueAccent,
                 bgColor: Colors.blue.withOpacity(0.08),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ListeningPracticeScreen()));
+                  _navigateToPractice(const ListeningPracticeScreen());
                 },
               ),
               _buildContinueCard(
@@ -588,7 +601,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                 iconColor: Colors.purpleAccent,
                 bgColor: Colors.purple.withOpacity(0.08),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPracticeScreen()));
+                  _navigateToPractice(const ReadingPracticeScreen());
                 },
               ),
               _buildContinueCard(
@@ -600,7 +613,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                 iconColor: Colors.amberAccent,
                 bgColor: Colors.amber.withOpacity(0.08),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const WritingPracticeScreen()));
+                  _navigateToPractice(const WritingPracticeScreen());
                 },
               ),
               _buildContinueCard(
@@ -612,7 +625,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
                 iconColor: Colors.greenAccent,
                 bgColor: Colors.green.withOpacity(0.08),
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SpeakingPracticeScreen()));
+                  _navigateToPractice(const SpeakingPracticeScreen());
                 },
               ),
               const SizedBox(height: 20),
