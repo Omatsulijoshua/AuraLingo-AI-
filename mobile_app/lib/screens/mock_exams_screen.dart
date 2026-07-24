@@ -61,7 +61,19 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
         'instructions': 'Listen to the USA Self-Drive Tours audio and answer questions 1-10 (e.g. 1. Ardleigh, 2. newspaper, etc.) in the box below.',
         'listeningAudio': {
           'audioUrl': 'https://bandup-ielts-prep.vercel.app/audio/b10t1_listening.mpeg',
-        }
+        },
+        'questions': [
+          "1. Address: 24 ___ Road",
+          "2. Heard about company from: ___",
+          "3. Trip One - Los Angeles: customer wants to visit some ___ parks with her children",
+          "4. Trip One - Yosemite Park: customer wants to stay in a lodge, not a ___",
+          "5. Trip Two: customer wants to see the ___ on the way to Cambria",
+          "6. Trip Two - At San Diego: wants to spend time on the ___",
+          "7. Trip One (12 days) - Total distance: ___ km",
+          "8. Trip One (£525) - Includes: accommodation, car, one ___",
+          "9. Trip Two (9 days, 980 km) - Price per person: £___",
+          "10. Trip Two - Includes: accommodation, car, ___"
+        ]
       },
       {
         'id': 'mock_sec_reading',
@@ -71,19 +83,33 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
         'readingPassage': {
           'title': 'The Science of Climate Change and Eco-friendly Living',
           'text': 'Climate change is one of the most pressing issues of our time, with far-reaching consequences for our planet and its inhabitants. The scientific consensus is clear: human activities, particularly the burning of fossil fuels and deforestation, are releasing large amounts of greenhouse gases, such as carbon dioxide and methane, into the atmosphere, leading to a global average temperature increase of over 1°C since the late 19th century. This warming is causing melting of polar ice caps, sea-level rise, and altered weather patterns, resulting in more frequent and severe heatwaves, droughts, and storms. Transitioning to eco-friendly living can significantly mitigate the effects of climate change. This can be achieved through simple actions such as reducing energy consumption, using public transport, carpooling, or driving electric or hybrid vehicles, and adopting a plant-based diet.'
-        }
+        },
+        'questions': [
+          "11. What is the main cause of the increase in global average temperature?\n    A. Natural climate variability\n    B. Human activities, such as burning fossil fuels and deforestation\n    C. Changes in ocean currents\n    D. Volcanic eruptions",
+          "12. What can individuals do to mitigate the effects of climate change?\n    A. Investing in renewable energy sources\n    B. Reducing energy consumption and using public transport\n    C. Increasing energy efficiency in industrial processes\n    D. Implementing recycling programs",
+          "13. What role can technology play in promoting eco-friendly living?\n    A. Increasing energy consumption\n    B. Providing innovative solutions to reduce waste and increase efficiency\n    C. Reducing the use of renewable energy sources\n    D. Decreasing sustainable agriculture practices"
+        ]
       },
       {
         'id': 'mock_sec_writing',
         'mockTestId': testId,
         'title': 'Section 3: Writing (Task 1 & Task 2)',
-        'instructions': 'Task 1: Describe the Australian Household Energy Use chart (write a report of 150 words). Task 2: Discuss the pros and cons of high tuition fees in higher education (write an essay of 250 words).'
+        'instructions': 'Task 1: Describe the Australian Household Energy Use chart (write a report of 150 words). Task 2: Discuss the pros and cons of high tuition fees in higher education (write an essay of 250 words).',
+        'questions': [
+          "Task 1: Describe the Australian Household Energy Use chart (write a report of 150 words).",
+          "Task 2: Discuss the pros and cons of high tuition fees in higher education (write an essay of 250 words)."
+        ]
       },
       {
         'id': 'mock_sec_speaking',
         'mockTestId': testId,
         'title': 'Section 4: Speaking (Interview & Cue Card)',
-        'instructions': 'Part 1: Introduce yourself and describe your hometown library. Part 2: Describe an eco-friendly product you recently purchased. Part 3: Discuss remote work and its impact on work-life balance.'
+        'instructions': 'Part 1: Introduce yourself and describe your hometown library. Part 2: Describe an eco-friendly product you recently purchased. Part 3: Discuss remote work and its impact on work-life balance.',
+        'questions': [
+          "Part 1: Introduce yourself and describe your hometown library.",
+          "Part 2: Describe an eco-friendly product you recently purchased.",
+          "Part 3: Discuss remote work and its impact on work-life balance."
+        ]
       }
     ];
   }
@@ -1327,6 +1353,36 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
                         ),
                         const SizedBox(height: 12),
                         const Text('🎧 Play audio from web browser or simulator.', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                if (section['questions'] != null && (section['questions'] as List).isNotEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF091424),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF1E3E6E)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '📝 Practice Questions',
+                          style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        ...(section['questions'] as List).map((q) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Text(
+                            q.toString(),
+                            style: const TextStyle(color: Colors.white, fontSize: 11, height: 1.4),
+                          ),
+                        )).toList(),
                       ],
                     ),
                   ),
