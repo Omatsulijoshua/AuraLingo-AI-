@@ -470,7 +470,7 @@ export default function ListeningPractice() {
                         >
                           {isUnlocked ? (
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 18v-6a9 9 0 0118 0v6M3 18a2 2 0 002 2h2a2 2 0 002-2v-4a2 2 0 00-2-2H3v6zm18 0a2 2 0 002 2h-2a2 2 0 00-2-2v-4a2 2 0 002-2h2v6z" />
                             </svg>
                           ) : (
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -513,9 +513,19 @@ export default function ListeningPractice() {
           <main className="max-w-xl w-full mx-auto p-6 md:p-10 space-y-6 pb-28">
             <div className="space-y-3">
               <h1 className="text-2xl font-extrabold text-slate-900">IELTS Book {selectedBook} Test {selectedTest}</h1>
-              <div className="flex gap-4 text-xs font-semibold">
-                <span className="text-rose-500 flex items-center gap-1">⏱️ 4 Sections</span>
-                <span className="text-slate-500 flex items-center gap-1">❓ 40 Questions</span>
+              <div className="flex gap-4 text-xs font-bold">
+                <span className="text-rose-500 flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  4 Sections
+                </span>
+                <span className="text-slate-500 flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  40 Questions
+                </span>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">
                 The Listening test takes approximately 30-40 minutes. You will hear four recordings of native English speakers and then write your answers to a series of questions.
