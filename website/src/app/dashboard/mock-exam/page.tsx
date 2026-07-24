@@ -231,18 +231,226 @@ export default function MockExamsPage() {
         await new Promise(resolve => setTimeout(resolve, 500));
         if (currentSectionIndex + 1 < (activeAttempt.mockTest?.sections?.length || 0)) {
           setCurrentSectionIndex((prev) => prev + 1);
-          setAnswersInput({});
           alert('Section submitted successfully! Moving to next section.');
         } else {
           setTimerActive(false);
           setActiveAttempt(null);
+          
+          // Generate client-side corrections based on actual responses
+          const sections = getMockSections('complete_b10t1_mock_test');
+          const userAnswers: any[] = [];
+          
+          // Section 1: Listening
+          const listeningCorrect = ["ardleigh", "newspaper", "theme", "tent", "castle", "beach", "2020", "flight", "429", "dinner"];
+          const listeningExplanations = [
+            "'24, Ardleigh Road.' - spelled out as A-R-D-L-E-I-G-H.",
+            "'No, I read about you in the newspaper.' Not a friend and not an advert.",
+            "'The first one begins in Los Angeles and there's plenty of time to visit some of the theme parks there.'",
+            "'We wanted to stay in a lodge, but they were full, so we decided on a tent instead.'",
+            "'She really wants to stop off and see the Hearst Castle on the way.'",
+            "'Then in San Diego, we'll spend most of our time at the beach.'",
+            "'The total distance for Trip One is about two thousand and twenty kilometers.'",
+            "'The price includes accommodation, car hire, and one internal flight.'",
+            "'It is four hundred and twenty-nine pounds per person.'",
+            "'This trip includes accommodation, car hire, and dinner.'"
+          ];
+
+          let listeningCorrectCount = 0;
+          for (let i = 0; i < 10; i++) {
+            const userAns = (answersInput[`q_mock_sec_listening_${i+1}`] || '').trim();
+            const isCorrect = userAns.toLowerCase() === listeningCorrect[i];
+            if (isCorrect) listeningCorrectCount++;
+            userAnswers.push({
+              id: `ans_l_${i+1}`,
+              answerText: userAns,
+              isCorrect,
+              sectionId: 'mock_sec_listening',
+              question: {
+                listeningAudioId: 'mock_sec_listening_audio',
+                questionText: sections[0].questions[i],
+                explanation: listeningExplanations[i],
+                answers: [{ correctText: listeningCorrect[i] }]
+              }
+            });
+          }
+
+          // Section 2: Reading
+          const readingOptions = [
+            [
+              { optionLetter: 'A', optionText: 'Natural climate variability', isCorrect: false },
+              { optionLetter: 'B', optionText: 'Human activities, such as burning fossil fuels and deforestation', isCorrect: true },
+              { optionLetter: 'C', optionText: 'Changes in ocean currents', isCorrect: false },
+              { optionLetter: 'D', optionText: 'Volcanic eruptions', isCorrect: false }
+            ],
+            [
+              { optionLetter: 'A', optionText: 'Investing in renewable energy sources', isCorrect: false },
+              { optionLetter: 'B', optionText: 'Reducing energy consumption and using public transport', isCorrect: true },
+              { optionLetter: 'C', optionText: 'Increasing energy efficiency in industrial processes', isCorrect: false },
+              { optionLetter: 'D', optionText: 'Implementing recycling programs', isCorrect: false }
+            ],
+            [
+              { optionLetter: 'A', optionText: 'Increasing energy consumption', isCorrect: false },
+              { optionLetter: 'B', optionText: 'Providing innovative solutions to reduce waste and increase efficiency', isCorrect: true },
+              { optionLetter: 'C', optionText: 'Reducing the use of renewable energy sources', isCorrect: false },
+              { optionLetter: 'D', optionText: 'Decreasing sustainable agriculture practices', isCorrect: false }
+            ]
+          ];
+          const readingExplanations = [
+            "The passage explicitly states: 'human activities, particularly the burning of fossil fuels and deforestation... are releasing greenhouse gases... leading to a global average temperature increase.'",
+            "The text mentions: 'Transitioning to eco-friendly living can significantly mitigate the effects of climate change. This can be achieved through simple actions such as reducing energy consumption, using public transport...'",
+            "The passage lists transitioning to eco-friendly living and adopting new practices, where technology provides the framework to reduce waste and optimize efficiency."
+          ];
+
+          let readingCorrectCount = 0;
+          for (let i = 0; i < 3; i++) {
+            const userAns = (answersInput[`q_mock_sec_reading_${i+1}`] || '').trim();
+            const isCorrect = userAns.toLowerCase().startsWith('b') || 
+                              userAns.toLowerCase().includes('human') || 
+                              userAns.toLowerCase().includes('reducing') || 
+                              userAns.toLowerCase().includes('providing');
+            if (isCorrect) readingCorrectCount++;
+            userAnswers.push({
+              id: `ans_r_${i+1}`,
+              answerText: userAns,
+              isCorrect,
+              sectionId: 'mock_sec_reading',
+              question: {
+                readingPassageId: 'mock_sec_reading_passage',
+                questionText: sections[1].questions[i],
+                explanation: readingExplanations[i],
+                options: readingOptions[i]
+              }
+            });
+          }
+
+          // Section 3: Writing
+          const w1 = (answersInput['q_mock_sec_writing_1'] || '').trim();
+          const w2 = (answersInput['q_mock_sec_writing_2'] || '').trim();
+          userAnswers.push({
+            id: 'ans_w_1',
+            answerText: w1,
+            isCorrect: w1.length > 200,
+            sectionId: 'mock_sec_writing',
+            question: {
+              questionText: sections[2].questions[0],
+              explanation: "Task 1 Report check: Ensure you compared the main energy sources and highlighted key trends. Aim for 150+ words."
+            }
+          });
+          userAnswers.push({
+            id: 'ans_w_2',
+            answerText: w2,
+            isCorrect: w2.length > 300,
+            sectionId: 'mock_sec_writing',
+            question: {
+              questionText: sections[2].questions[1],
+              explanation: "Task 2 Essay check: Ensure you discussed both sides (pros and cons of tuition fees) and clearly stated your opinion. Aim for 250+ words."
+            }
+          });
+
+          // Section 4: Speaking
+          const s1 = (answersInput['q_mock_sec_speaking_1'] || '').trim();
+          const s2 = (answersInput['q_mock_sec_speaking_2'] || '').trim();
+          const s3 = (answersInput['q_mock_sec_speaking_3'] || '').trim();
+          userAnswers.push({
+            id: 'ans_s_1',
+            answerText: s1,
+            isCorrect: s1.length > 100,
+            sectionId: 'mock_sec_speaking',
+            question: {
+              questionText: sections[3].questions[0],
+              explanation: "Part 1 check: Answered self-introduction and home library context. Use fluent transition phrases."
+            }
+          });
+          userAnswers.push({
+            id: 'ans_s_2',
+            answerText: s2,
+            isCorrect: s2.length > 150,
+            sectionId: 'mock_sec_speaking',
+            question: {
+              questionText: sections[3].questions[1],
+              explanation: "Part 2 cue card check: Described the eco-friendly product. Cover what it is, why you bought it, and how you feel about it."
+            }
+          });
+          userAnswers.push({
+            id: 'ans_s_3',
+            answerText: s3,
+            isCorrect: s3.length > 150,
+            sectionId: 'mock_sec_speaking',
+            question: {
+              questionText: sections[3].questions[2],
+              explanation: "Part 3 check: Discussed remote work balance. Use complex sentences and give supporting examples."
+            }
+          });
+
+          // Band score calculators
+          const getListeningBand = (correct: number) => {
+            const scaled = correct * 4;
+            if (scaled >= 39) return 9.0;
+            if (scaled >= 37) return 8.5;
+            if (scaled >= 35) return 8.0;
+            if (scaled >= 32) return 7.5;
+            if (scaled >= 30) return 7.0;
+            if (scaled >= 26) return 6.5;
+            if (scaled >= 23) return 6.0;
+            if (scaled >= 18) return 5.5;
+            if (scaled >= 16) return 5.0;
+            if (scaled >= 13) return 4.5;
+            if (scaled >= 10) return 4.0;
+            return 3.5;
+          };
+
+          const getReadingBand = (correct: number) => {
+            const scaled = correct * 13;
+            if (scaled >= 39) return 9.0;
+            if (scaled >= 37) return 8.5;
+            if (scaled >= 35) return 8.0;
+            if (scaled >= 32) return 7.5;
+            if (scaled >= 30) return 7.0;
+            if (scaled >= 26) return 6.5;
+            if (scaled >= 23) return 6.0;
+            if (scaled >= 18) return 5.5;
+            if (scaled >= 16) return 5.0;
+            if (scaled >= 13) return 4.5;
+            if (scaled >= 10) return 4.0;
+            return 3.5;
+          };
+
+          const lBand = getListeningBand(listeningCorrectCount);
+          const rBand = getReadingBand(readingCorrectCount);
+          const wLen = w1.length + w2.length;
+          const wBand = wLen > 1500 ? 7.5 : wLen > 800 ? 7.0 : wLen > 300 ? 6.5 : 6.0;
+          const sLen = s1.length + s2.length + s3.length;
+          const sBand = sLen > 1000 ? 7.5 : sLen > 500 ? 7.0 : sLen > 200 ? 6.5 : 6.0;
+
+          const rawOverall = (lBand + rBand + wBand + sBand) / 4.0;
+          const overallBand = Math.round(rawOverall * 2) / 2.0;
+
+          const calculatedCorrections = {
+            id: 'mock_attempt_client_side',
+            mockTest: {
+              id: 'complete_b10t1_mock_test',
+              title: 'IELTS Book 10 Complete Mock Test',
+              examType: 'ACADEMIC',
+              sections: sections,
+            },
+            mode: activeAttempt.mode,
+            listeningScore: lBand.toFixed(1),
+            readingScore: rBand.toFixed(1),
+            writingScore: wBand.toFixed(1),
+            speakingScore: sBand.toFixed(1),
+            overallBandEstimate: overallBand.toFixed(1),
+            answers: userAnswers,
+          };
+
+          setCorrectionsData(calculatedCorrections);
+
           const clientResult = {
-            attempt: activeAttempt,
-            overallBandScore: '7.5',
-            listeningScore: '8.0',
-            readingScore: '7.5',
-            writingScore: '7.0',
-            speakingScore: '7.5',
+            attempt: calculatedCorrections,
+            overallBandScore: overallBand.toFixed(1),
+            listeningScore: lBand.toFixed(1),
+            readingScore: rBand.toFixed(1),
+            writingScore: wBand.toFixed(1),
+            speakingScore: sBand.toFixed(1),
           };
           setFinalResult(clientResult);
         }
@@ -308,6 +516,14 @@ export default function MockExamsPage() {
   };
 
   const fetchCorrections = async (attemptId: string) => {
+    if (attemptId === 'mock_attempt_client_side') {
+      setViewingCorrectionsAttemptId(attemptId);
+      if (correctionsData?.mockTest?.sections?.[0]) {
+        setCorrectionsTab(correctionsData.mockTest.sections[0].id);
+      }
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await api.request<any>(`/mock-tests/attempts/${attemptId}`);
@@ -348,9 +564,12 @@ export default function MockExamsPage() {
     const currentSection = sections.find((s: any) => s.id === correctionsTab);
 
     // Filter answers for the current selected section
-    const sectionQuestions = currentSection ? (currentSection.readingPassageId 
-      ? answers.filter((a: any) => a.question.readingPassageId === currentSection.readingPassageId)
-      : answers.filter((a: any) => a.question.listeningAudioId === currentSection.listeningAudioId)
+    const sectionQuestions = currentSection ? (
+      currentSection.readingPassageId 
+        ? answers.filter((a: any) => a.question?.readingPassageId === currentSection.readingPassageId || a.sectionId === currentSection.id || a.question?.sectionId === currentSection.id)
+        : currentSection.listeningAudioId 
+          ? answers.filter((a: any) => a.question?.listeningAudioId === currentSection.listeningAudioId || a.sectionId === currentSection.id || a.question?.sectionId === currentSection.id)
+          : answers.filter((a: any) => a.sectionId === currentSection.id || a.question?.sectionId === currentSection.id)
     ) : [];
 
     const isPracticeMode = attempt.mode && attempt.mode.startsWith('PRACTICE');
