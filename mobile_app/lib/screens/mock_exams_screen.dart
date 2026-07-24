@@ -17,6 +17,8 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
   final TextEditingController _responseController = TextEditingController();
   final TextEditingController _aiInputController = TextEditingController();
 
+  final Map<String, String> _answersMap = {};
+
   List<dynamic> _mockTests = [];
   bool _loading = true;
   dynamic _activeAttempt;
@@ -161,6 +163,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           };
           _currentSectionIndex = 0;
           _responseController.clear();
+          _answersMap.clear();
           _timeSetting = 'STANDARD';
           _timeLeft = 160 * 60;
           _timerActive = true;
@@ -182,6 +185,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           _activeAttempt = attempt;
           _currentSectionIndex = 0;
           _responseController.clear();
+          _answersMap.clear();
           _timeSetting = 'STANDARD';
           
           final end = DateTime.parse(attempt['completedAt'] ?? DateTime.now().add(const Duration(minutes: 160)).toString());
@@ -231,6 +235,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           };
           _currentSectionIndex = 0;
           _responseController.clear();
+          _answersMap.clear();
           _timeSetting = timeLimit;
           _timeLeft = customDuration * 60;
           _timerActive = timeLimit != 'UNTIMED';
@@ -257,6 +262,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           _activeAttempt = attempt;
           _currentSectionIndex = 0;
           _responseController.clear();
+          _answersMap.clear();
           _timeSetting = timeLimit;
           
           final end = DateTime.parse(attempt['completedAt'] ?? DateTime.now().add(Duration(minutes: customDuration)).toString());
@@ -302,6 +308,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           setState(() {
             _currentSectionIndex++;
             _responseController.clear();
+            _answersMap.clear();
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Section submitted! Moving to next section.')),
@@ -311,6 +318,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           setState(() {
             _timerActive = false;
             _activeAttempt = null;
+            _answersMap.clear();
           });
 
           showDialog(
@@ -446,6 +454,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           setState(() {
             _currentSectionIndex++;
             _responseController.clear();
+            _answersMap.clear();
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Section submitted! Moving to next section.')),
@@ -459,6 +468,7 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
           setState(() {
             _timerActive = false;
             _activeAttempt = null;
+            _answersMap.clear();
           });
 
           showDialog(
@@ -1360,48 +1370,77 @@ class _MockExamsScreenState extends State<MockExamsScreen> {
                 ],
 
                 if (section['questions'] != null && (section['questions'] as List).isNotEmpty) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF091424),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFF1E3E6E)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '📝 Practice Questions',
-                          style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 12),
-                        ...(section['questions'] as List).map((q) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: Text(
-                            q.toString(),
-                            style: const TextStyle(color: Colors.white, fontSize: 11, height: 1.4),
-                          ),
-                        )).toList(),
-                      ],
-                    ),
+                  const Text(
+                    '📝 Practice Questions & Answers',
+                    style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 20),
-                ],
+                  const SizedBox(height: 12),
+                  ...(section['questions'] as List).asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final q = entry.value.toString();
+                    final questionKey = 'q_${section['id']}_${idx + 1}';
+                    
+                    final isLongAnswer = section['id'].toString().contains('writing') ||
+                        section['id'].toString().contains('speaking') ||
+                        section['title'].toString().toLowerCase().contains('writing') ||
+                        section['title'].toString().toLowerCase().contains('speaking');
 
-                TextField(
-                  controller: _responseController,
-                  maxLines: 10,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                  decoration: const InputDecoration(
-                    labelText: 'Type your answers to all questions in this section here (e.g. 1. A, 2. B)...',
-                    labelStyle: TextStyle(color: Colors.white54, fontSize: 11),
-                    alignLabelWithHint: true,
-                    filled: true,
-                    fillColor: Color(0xFF0B1E36),
-                    border: OutlineInputBorder(),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF091424),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF1E3E6E)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            q,
+                            style: const TextStyle(color: Colors.white, fontSize: 11, height: 1.4, fontFamily: 'monospace'),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            initialValue: _answersMap[questionKey] ?? '',
+                            maxLines: isLongAnswer ? 5 : 1,
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            decoration: InputDecoration(
+                              hintText: isLongAnswer ? 'Type your response here...' : 'Type your answer here...',
+                              hintStyle: const TextStyle(color: Colors.white30, fontSize: 11),
+                              filled: true,
+                              fillColor: const Color(0xFF0B1E36),
+                              border: const OutlineInputBorder(),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                            onChanged: (val) {
+                              _answersMap[questionKey] = val;
+                              final List<String> joined = [];
+                              _answersMap.forEach((k, v) {
+                                joined.add('$k: $v');
+                              });
+                              _responseController.text = joined.join('\n');
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ] else ...[
+                  TextField(
+                    controller: _responseController,
+                    maxLines: 10,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(
+                      labelText: 'Type your answers to all questions in this section here (e.g. 1. A, 2. B)...',
+                      labelStyle: TextStyle(color: Colors.white54, fontSize: 11),
+                      alignLabelWithHint: true,
+                      filled: true,
+                      fillColor: Color(0xFF0B1E36),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 24),
 
                 Row(

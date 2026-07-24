@@ -709,30 +709,51 @@ export default function MockExamsPage() {
                   </div>
                 )}
 
-                {section.questions && section.questions.length > 0 && (
-                  <div className="bg-navy/45 p-5 rounded-xl border border-primary-light/15 max-h-[35vh] overflow-y-auto space-y-3">
-                    <p className="text-gold font-bold text-xs uppercase tracking-wider mb-1">📝 Practice Questions</p>
-                    <div className="space-y-3 text-slate-300 text-xs leading-relaxed whitespace-pre-wrap font-mono">
-                      {section.questions.map((q: string, idx: number) => (
-                        <div key={idx} className="p-3 bg-navy/20 border border-primary-light/10 rounded-lg">
-                          {q}
-                        </div>
-                      ))}
+                {section.questions && section.questions.length > 0 ? (
+                  <div className="space-y-4">
+                    <p className="text-gold font-bold text-xs uppercase tracking-wider mb-2">📝 Practice Questions & Answers</p>
+                    <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
+                      {section.questions.map((q: string, idx: number) => {
+                        const questionKey = `q_${section.id}_${idx + 1}`;
+                        const isLongAnswer = section.id.includes('writing') || section.id.includes('speaking') || section.title?.toLowerCase().includes('writing') || section.title?.toLowerCase().includes('speaking');
+                        
+                        return (
+                          <div key={idx} className="p-4 bg-navy/40 border border-primary-light/10 rounded-xl space-y-3">
+                            <p className="text-slate-200 text-xs font-semibold leading-relaxed font-mono whitespace-pre-wrap">{q}</p>
+                            {isLongAnswer ? (
+                              <textarea
+                                rows={6}
+                                value={answersInput[questionKey] || ''}
+                                onChange={(e) => setAnswersInput(prev => ({ ...prev, [questionKey]: e.target.value }))}
+                                placeholder="Type your response here..."
+                                className="w-full bg-navy/50 border border-primary-light/35 focus:border-gold rounded-lg p-3 text-white text-xs leading-relaxed focus:outline-none transition-colors"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={answersInput[questionKey] || ''}
+                                onChange={(e) => setAnswersInput(prev => ({ ...prev, [questionKey]: e.target.value }))}
+                                placeholder="Type your answer here..."
+                                className="w-full bg-navy/50 border border-primary-light/35 focus:border-gold rounded-lg px-3 py-2 text-white text-xs focus:outline-none transition-colors"
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-400 italic">Please write your answers to the practice questions below based on the section contents (e.g. 1. A, 2. B, 3. library name).</p>
+                    <textarea
+                      rows={10}
+                      value={answersInput['section_responses'] || ''}
+                      onChange={(e) => setAnswersInput({ 'section_responses': e.target.value })}
+                      placeholder="Type your answers to all questions in this section here..."
+                      className="w-full bg-navy/55 border border-primary-light/60 focus:border-gold rounded-xl p-4 text-white text-xs leading-relaxed focus:outline-none"
+                    />
+                  </div>
                 )}
-
-                {/* Simulated practice questions block */}
-                <div className="space-y-4">
-                  <p className="text-xs text-slate-400 italic">Please write your answers to the practice questions below based on the section contents (e.g. 1. A, 2. B, 3. library name).</p>
-                  <textarea
-                    rows={10}
-                    value={answersInput['section_responses'] || ''}
-                    onChange={(e) => setAnswersInput({ 'section_responses': e.target.value })}
-                    placeholder="Type your answers to all questions in this section here..."
-                    className="w-full bg-navy/55 border border-primary-light/60 focus:border-gold rounded-xl p-4 text-white text-xs leading-relaxed focus:outline-none"
-                  />
-                </div>
 
                 <div className="flex justify-between items-center pt-4 border-t border-primary-light/20">
                   <button
