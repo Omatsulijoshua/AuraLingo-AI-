@@ -8,6 +8,7 @@ import 'listening_practice_screen.dart';
 import 'reading_practice_screen.dart';
 import 'writing_practice_screen.dart';
 import 'speaking_practice_screen.dart';
+import 'dashboard_screen.dart';
 
 class PlanScreen extends ConsumerStatefulWidget {
   const PlanScreen({super.key});
@@ -66,7 +67,18 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => targetScreen));
+    _navigateToPractice(targetScreen);
+  }
+
+  Future<void> _navigateToPractice(Widget screen) async {
+    final dashboardState = context.findAncestorStateOfType<DashboardScreenState>();
+    final result = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+    if (result != null && dashboardState != null) {
+      dashboardState.setTabIndex(result);
+    }
   }
 
   int _getHistoryCount(dynamic history) {

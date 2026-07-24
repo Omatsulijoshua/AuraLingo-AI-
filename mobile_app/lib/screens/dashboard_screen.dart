@@ -20,11 +20,17 @@ class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => DashboardScreenState();
 }
 
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+class DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _currentIndex = 0;
+
+  void setTabIndex(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   final List<Widget> _screens = [
     const HomeTabView(),
@@ -139,15 +145,13 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
   }
 
   Future<void> _navigateToPractice(Widget screen) async {
-    final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
+    final dashboardState = context.findAncestorStateOfType<DashboardScreenState>();
     final result = await Navigator.push<int>(
       context,
       MaterialPageRoute(builder: (_) => screen),
     );
     if (result != null && dashboardState != null) {
-      dashboardState.setState(() {
-        dashboardState._currentIndex = result;
-      });
+      dashboardState.setTabIndex(result);
     }
   }
 
