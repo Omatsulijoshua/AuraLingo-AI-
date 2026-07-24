@@ -19,10 +19,12 @@ export default function ListeningPractice() {
   const [timerActive, setTimerActive] = useState(false);
 
   // New View states matching mobile app
-  const [viewState, setViewState] = useState<'TESTS' | 'DETAILS' | 'PRACTICE'>('TESTS');
+  const [viewState, setViewState] = useState<'TESTS' | 'DETAILS' | 'PRACTICE' | 'RESULTS'>('TESTS');
   const [selectedBook, setSelectedBook] = useState<number>(10);
   const [selectedTest, setSelectedTest] = useState<number>(1);
   const [enableAudioControls, setEnableAudioControls] = useState<boolean>(false);
+  const [selectedPartTab, setSelectedPartTab] = useState<number>(1);
+  const [showAnswers, setShowAnswers] = useState<boolean>(false);
 
   // Modal display states
   const [showWarningModal, setShowWarningModal] = useState<boolean>(false);
@@ -38,19 +40,31 @@ export default function ListeningPractice() {
   const getMockQuestions = () => {
     const list: any[] = [];
     const part1Questions = [
-      "Name of clerk: ___",
-      "Survey start time: ___",
-      "Most frequent transport mode used: ___",
-      "Nearest train ___ is 2 miles away.",
-      "Primary purpose of travel: ___",
-      "The trains are generally ___ and tidy.",
-      "Customer complains about the ___'s attitude.",
-      "Wants to submit an official ___.",
-      "Usually gets a ___ easily in the morning.",
-      "Believes the ticket ___ is too high."
+      "Address: 24 ___ Road",
+      "Heard about company from: ___",
+      "Trip One - Los Angeles: customer wants to visit some ___ parks with her children",
+      "Trip One - Yosemite Park: customer wants to stay in a lodge, not a ___",
+      "Trip Two: customer wants to see the ___ on the way to Cambria",
+      "Trip Two - At San Diego: wants to spend time on the ___",
+      "Trip One (12 days) - Total distance: ___ km",
+      "Trip One (£525) - Includes: accommodation, car, one ___",
+      "Trip Two (9 days, 980 km) - Price per person: £___",
+      "Trip Two - Includes: accommodation, car, ___"
     ];
     const part1Answers = [
-      "Sarah", "1:30", "bus", "station", "shopping", "clean", "driver", "complaint", "seat", "price"
+      "Ardleigh", "newspaper", "theme", "tent", "castle", "beach", "1200", "flight", "980", "insurance"
+    ];
+    const part1Explanations = [
+      "'24, Ardleigh Road.' - spelled out as A-R-D-L-E-I-G-H.",
+      "'No, I read about you in the newspaper.' Not a friend and not an advert.",
+      "'The first one begins in Los Angeles and there's plenty of time to visit some of the theme parks there.'",
+      "'We wanted to stay in a lodge, but they were full, so we decided on a tent instead.'",
+      "'She really wants to stop off and see the Hearst Castle on the way.'",
+      "'Then in San Diego, we'll spend most of our time at the beach.'",
+      "'The total distance for Trip One is about twelve hundred kilometers.'",
+      "'The price includes accommodation, car hire, and one internal flight.'",
+      "'It is nine hundred and eighty pounds per person.'",
+      "'This trip includes accommodation, car hire, and fully comprehensive insurance.'"
     ];
 
     for (let i = 0; i < 10; i++) {
@@ -58,10 +72,12 @@ export default function ListeningPractice() {
         id: `b10t1l_q${i+1}`,
         questionType: 'SHORT_ANSWER',
         difficulty: 'BEGINNER',
-        instruction: 'Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.',
+        instruction: i < 6
+          ? 'Note Completion (Write ONE WORD for each answer)'
+          : 'Table Completion (Write ONE WORD AND/OR A NUMBER for each answer)',
         questionText: part1Questions[i],
         correctAnswer: part1Answers[i],
-        explanation: 'Based on the recording conversation in Part 1.'
+        explanation: part1Explanations[i]
       });
     }
 
@@ -603,289 +619,342 @@ export default function ListeningPractice() {
       )}
 
       {/* -------------------- 3. ACTIVE simulator VIEW -------------------- */}
-      {viewState === 'PRACTICE' && selectedAudio && (
-        <>
-          <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 md:px-12 sticky top-0 z-10 shadow-sm">
-            <button
-              onClick={() => setShowExitModal(true)}
-              className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer text-lg"
-            >
-              ×
-            </button>
-            <span className="text-slate-800 font-extrabold text-sm">IELTS Book {selectedBook} Test {selectedTest}</span>
-            <div className="flex gap-2">
-              {timerActive && (
-                <div className="bg-red-50 text-red-500 px-3 py-1 rounded-full text-xs font-bold font-mono flex items-center gap-1 border border-red-100">
-                  ⏱️ {formatTime(timeLeft)}
-                </div>
-              )}
-              <div className="bg-rose-50 text-rose-500 px-3 py-1 rounded-full text-xs font-bold font-mono border border-rose-100">
-                {Object.keys(userAnswers).filter(k => userAnswers[k] && userAnswers[k].trim().length > 0).length} / {selectedAudio.practiceQuestions?.length || 0}
-              </div>
-            </div>
-          </header>
+      {viewState === 'PRACTICE' && selectedAudio && (() => {
+        const startIndex = (selectedPartTab - 1) * 10;
+        const endIndex = startIndex + 10;
+        const questions = (selectedAudio.practiceQuestions || []).slice(startIndex, endIndex);
 
-          <main className="max-w-xl w-full mx-auto p-6 md:p-10 space-y-6 pb-28">
-            {/* Native HTML5 Audio Controller Tag (Hidden, manipulated via ref) */}
-            <audio
-              ref={audioRef}
-              src={selectedAudio.audioUrl}
-              onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
-              onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              className="hidden"
-            />
-
-            {/* Custom Audio Controller UI */}
-            {enableAudioControls ? (
-              <div className="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm space-y-4">
-                <div className="flex items-center justify-center gap-6">
-                  <button
-                    onClick={() => seekRelative(-10)}
-                    className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 cursor-pointer"
-                  >
-                    ↺ 10
-                  </button>
-                  <button
-                    onClick={togglePlay}
-                    className="w-14 h-14 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/20 hover:bg-rose-600 cursor-pointer"
-                  >
-                    {isPlaying ? (
-                      <span className="text-xl">⏸</span>
-                    ) : (
-                      <span className="text-xl ml-0.5">▶</span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => seekRelative(10)}
-                    className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 cursor-pointer"
-                  >
-                    10 ↻
-                  </button>
-                </div>
-                <div className="space-y-1">
-                  <input
-                    type="range"
-                    min={0}
-                    max={duration || 100}
-                    value={currentTime}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (audioRef.current) audioRef.current.currentTime = val;
-                      setCurrentTime(val);
-                    }}
-                    className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>{formatDuration(currentTime)}</span>
-                    <span>{formatDuration(duration)}</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-5 bg-slate-100 border border-slate-200 rounded-2xl shadow-sm space-y-3">
-                <div className="flex items-center justify-center gap-2 text-rose-500 font-bold text-xs tracking-wider">
-                  <span>🎧</span> EXAM MODE
-                </div>
-                <p className="text-slate-500 text-xs text-center leading-relaxed">
-                  Audio plays continuously once. Seek and pause controls are disabled to simulate actual IELTS exam conditions.
-                </p>
-                <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
-                  <div
-                    className="bg-rose-500 h-full transition-all duration-300"
-                    style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Correct Correction Feedback display */}
-            {feedback && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-slate-800 font-bold text-base">Practice Results</h3>
-                  <span className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg text-xs font-bold">
-                    Score: {feedback.correctCount} / {feedback.totalCount}
-                  </span>
-                </div>
-                <hr className="border-slate-100" />
-                <div className="space-y-4">
-                  {feedback.results.map((res: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className={`p-4 rounded-xl border flex flex-col space-y-2 ${
-                        res.isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center text-xs font-bold">
-                        <span className="text-slate-500">Question {idx + 1}</span>
-                        <span className={res.isCorrect ? 'text-emerald-700' : 'text-rose-600'}>
-                          {res.isCorrect ? '✓ Correct' : '✗ Incorrect'}
-                        </span>
-                      </div>
-                      <p className="text-sm font-bold text-slate-800">{res.questionText}</p>
-                      <div className="grid grid-cols-2 gap-2 text-xs font-medium pt-1">
-                        <p className={res.isCorrect ? 'text-emerald-700' : 'text-rose-600'}>
-                          Your Answer: {res.userAnswer || '(blank)'}
-                        </p>
-                        <p className="text-rose-600 font-bold">
-                          Correct: {res.correctAnswerStr}
-                        </p>
-                      </div>
-                      <div className="pt-2 text-[11px] text-slate-500 border-t border-slate-100/50 leading-relaxed">
-                        <span className="font-bold text-slate-600 block mb-0.5">Explanation:</span>
-                        {res.explanation}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Exam mode submission screen */}
-            {examSuccess && (
-              <div className="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-xl">
-                  ★
-                </div>
-                <h3 className="text-emerald-800 font-bold text-base">Exam Submitted Successfully!</h3>
-                <p className="text-emerald-700 text-xs max-w-sm mx-auto leading-relaxed">
-                  Your answers have been logged in Exam Mode for evaluation. You can check details in Attempt History later.
-                </p>
+        return (
+          <>
+            <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 md:px-12 sticky top-0 z-10 shadow-sm">
+              <button
+                onClick={() => setShowExitModal(true)}
+                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer text-lg font-bold"
+              >
+                ×
+              </button>
+              <span className="text-slate-800 font-extrabold text-sm">IELTS Book {selectedBook} Test {selectedTest}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-slate-500 font-bold text-xs">Answers</span>
                 <button
-                  onClick={() => {
-                    setViewState('DETAILS');
-                    setExamSuccess(false);
-                  }}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer transition-colors"
+                  onClick={() => setShowAnswers(!showAnswers)}
+                  className={`w-10 h-5.5 flex items-center rounded-full p-0.5 cursor-pointer transition-colors duration-300 ${
+                    showAnswers ? 'bg-rose-500' : 'bg-slate-300'
+                  }`}
                 >
-                  Practice Again
+                  <div
+                    className={`bg-white w-4.5 h-4.5 rounded-full shadow-md transform transition-transform duration-300 ${
+                      showAnswers ? 'translate-x-4.5' : 'translate-x-0'
+                    }`}
+                  />
                 </button>
               </div>
-            )}
+            </header>
 
-            {/* Questions List */}
-            <div className="space-y-6">
-              {selectedAudio.practiceQuestions?.map((q: any, index: number) => {
-                const isMCQ = q.questionType === 'MULTIPLE_CHOICE';
-                const answer = userAnswers[q.id] || '';
+            <main className="max-w-xl w-full mx-auto p-6 md:p-10 space-y-6 pb-28">
+              {/* Native HTML5 Audio Controller Tag (Hidden) */}
+              <audio
+                ref={audioRef}
+                src={selectedAudio.audioUrl}
+                onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime || 0)}
+                onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                className="hidden"
+              />
 
-                const showPartHeader = (idx: number) => {
-                  if (idx === 0) {
-                    return (
-                      <div className="pt-4 pb-2 border-b border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-900">Questions 1-10</h2>
-                        <p className="text-rose-500 text-xs font-bold">Part 1: Social Conversation</p>
-                        <p className="text-slate-400 text-xs italic mt-1">{q.instruction}</p>
-                      </div>
-                    );
-                  }
-                  if (idx === 10) {
-                    return (
-                      <div className="pt-6 pb-2 border-b border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-900">Questions 11-20</h2>
-                        <p className="text-rose-500 text-xs font-bold">Part 2: Social Monologue</p>
-                        <p className="text-slate-400 text-xs italic mt-1">{q.instruction}</p>
-                      </div>
-                    );
-                  }
-                  if (idx === 20) {
-                    return (
-                      <div className="pt-6 pb-2 border-b border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-900">Questions 21-30</h2>
-                        <p className="text-rose-500 text-xs font-bold">Part 3: Educational Conversation</p>
-                        <p className="text-slate-400 text-xs italic mt-1">{q.instruction}</p>
-                      </div>
-                    );
-                  }
-                  if (idx === 30) {
-                    return (
-                      <div className="pt-6 pb-2 border-b border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-900">Questions 31-40</h2>
-                        <p className="text-rose-500 text-xs font-bold">Part 4: Academic Monologue</p>
-                        <p className="text-slate-400 text-xs italic mt-1">{q.instruction}</p>
-                      </div>
-                    );
-                  }
-                  return null;
-                };
+              {/* Part selector navigation pills */}
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {[1, 2, 3, 4].map(partNum => (
+                  <button
+                    key={partNum}
+                    onClick={() => setSelectedPartTab(partNum)}
+                    className={`px-4 py-2 rounded-full font-bold text-xs border transition-all cursor-pointer whitespace-nowrap ${
+                      selectedPartTab === partNum
+                        ? 'bg-rose-600 border-rose-600 text-white shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
+                  >
+                    Part {partNum}
+                  </button>
+                ))}
+              </div>
 
-                return (
-                  <div key={q.id} className="space-y-4">
-                    {showPartHeader(index)}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                      <div className="flex gap-2 items-center">
-                        <span className="bg-rose-500 text-white font-bold text-[10px] px-2 py-0.5 rounded-md">
-                          Q{index + 1}
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          {isMCQ ? 'Choose the Correct Letter' : 'Short Answer'}
-                        </span>
-                      </div>
-                      <p className="text-slate-800 font-bold text-sm leading-relaxed">{q.questionText}</p>
+              {/* Questions list */}
+              <div className="space-y-6">
+                {questions.map((q: any, idx: number) => {
+                  const absoluteIndex = startIndex + idx;
+                  const answer = userAnswers[q.id] || '';
+                  const showInstructionHeader =
+                    (absoluteIndex === 0 && selectedPartTab === 1) ||
+                    (absoluteIndex === 6 && selectedPartTab === 1) ||
+                    (absoluteIndex === startIndex && selectedPartTab > 1);
 
-                      {isMCQ ? (
-                        <div className="space-y-2">
-                          {q.options?.map((opt: any) => {
-                            const isSelected = answer === opt.optionLetter;
-                            return (
-                              <label
-                                key={opt.optionLetter}
-                                onClick={() => setUserAnswers(prev => ({ ...prev, [q.id]: opt.optionLetter }))}
-                                className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                                  isSelected
-                                    ? 'bg-rose-50 border-rose-500 text-rose-700 font-semibold'
-                                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                                }`}
-                              >
-                                <div
-                                  className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center ${
-                                    isSelected ? 'border-rose-500' : 'border-slate-300'
-                                  }`}
-                                >
-                                  {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />}
-                                </div>
-                                <span className="text-xs">{opt.optionLetter}. {opt.optionText}</span>
-                              </label>
-                            );
-                          })}
+                  return (
+                    <div key={q.id} className="space-y-4">
+                      {showInstructionHeader && (
+                        <div className="pt-2 pb-1">
+                          <p className="text-slate-600 font-bold text-sm leading-relaxed">{q.instruction}</p>
                         </div>
-                      ) : (
+                      )}
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <div className="flex gap-2 items-start text-sm">
+                          <span className="text-rose-500 font-extrabold">{absoluteIndex + 1}.</span>
+                          <p className="text-slate-800 font-bold leading-relaxed">{q.questionText}</p>
+                        </div>
+
+                        {showAnswers && (
+                          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
+                            <p className="text-emerald-700 font-bold text-xs">Correct: {q.correctAnswer}</p>
+                            {q.explanation && (
+                              <p className="text-emerald-700 text-xs italic">{q.explanation}</p>
+                            )}
+                          </div>
+                        )}
+
                         <input
                           type="text"
                           value={answer}
                           onChange={(e) => setUserAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
-                          placeholder="Type your answer"
+                          placeholder="Your answer"
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-rose-500 focus:bg-white transition-all"
                         />
-                      )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="space-y-3 pt-4">
+                <button
+                  onClick={() => setViewState('RESULTS')}
+                  className="w-full flex items-center justify-center gap-2 bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 font-bold py-3 rounded-xl transition-colors cursor-pointer text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  See Results
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (selectedPartTab < 4) {
+                      setSelectedPartTab(prev => prev + 1);
+                    } else {
+                      setViewState('RESULTS');
+                    }
+                  }}
+                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer text-sm"
+                >
+                  {selectedPartTab < 4 ? 'Next Part ➔' : 'Finish Test ➔'}
+                </button>
+              </div>
+            </main>
+
+            {/* Bottom player control bar */}
+            <div className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white p-4 z-15">
+              <div className="max-w-xl mx-auto space-y-2">
+                {enableAudioControls ? (
+                  <div className="flex flex-col space-y-3">
+                    <div className="flex items-center justify-center gap-6">
+                      <button
+                        onClick={() => seekRelative(-10)}
+                        className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 cursor-pointer text-xs"
+                      >
+                        ↺ 10
+                      </button>
+                      <button
+                        onClick={togglePlay}
+                        className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg shadow-rose-500/20 hover:bg-rose-600 cursor-pointer"
+                      >
+                        {isPlaying ? '⏸' : '▶'}
+                      </button>
+                      <button
+                        onClick={() => seekRelative(10)}
+                        className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 cursor-pointer text-xs"
+                      >
+                        10 ↻
+                      </button>
+                    </div>
+                    <div className="space-y-1">
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration || 100}
+                        value={currentTime}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (audioRef.current) audioRef.current.currentTime = val;
+                          setCurrentTime(val);
+                        }}
+                        className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                        <span>{formatDuration(currentTime)}</span>
+                        <span>{formatDuration(duration)}</span>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
+                ) : (
+                  <div className="space-y-1">
+                    <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
+                      <div
+                        className="bg-rose-500 h-full transition-all duration-300"
+                        style={{ width: `${(35 / 400) * 100}%` }} // mock progress matching mobile 00:35 / 06:40
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                      <span>0:35</span>
+                      <span>6:40</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+          </>
+        );
+      })()}
 
-            {/* Bottom Actions */}
-            <div className="pt-4">
+      {/* -------------------- 3.5 RESULTS SCREEN -------------------- */}
+      {viewState === 'RESULTS' && selectedAudio && (() => {
+        const startIndex = (selectedPartTab - 1) * 10;
+        const endIndex = startIndex + 10;
+        const questions = (selectedAudio.practiceQuestions || []).slice(startIndex, endIndex);
+
+        let correct = 0;
+        let wrong = 0;
+        let skipped = 0;
+
+        questions.forEach((q: any) => {
+          const uAns = (userAnswers[q.id] || '').trim().toLowerCase();
+          const cAns = (q.correctAnswer || '').toString().trim().toLowerCase();
+
+          if (!uAns) {
+            skipped++;
+          } else if (uAns === cAns) {
+            correct++;
+          } else {
+            wrong++;
+          }
+        });
+
+        const accuracy = questions.length ? Math.round((correct / questions.length) * 100) : 0;
+
+        return (
+          <>
+            <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6 md:px-12 sticky top-0 z-10 shadow-sm">
               <button
-                onClick={() => {
-                  const answered = Object.keys(userAnswers).filter(k => userAnswers[k] && userAnswers[k].trim().length > 0).length;
-                  const total = selectedAudio.practiceQuestions?.length || 0;
-                  if (answered < total) {
-                    setShowIncompleteModal(true);
-                  } else {
-                    handleSubmit();
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 bg-rose-50 border border-rose-100 text-rose-600 hover:bg-rose-100 font-bold py-3.5 rounded-2xl transition-colors cursor-pointer"
+                onClick={() => setViewState('TESTS')}
+                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 cursor-pointer text-lg font-bold"
               >
-                <span>✓</span> See Results
+                ×
               </button>
-            </div>
-          </main>
-        </>
-      )}
+              <span className="text-slate-800 font-extrabold text-sm">Part {selectedPartTab} Results</span>
+              <div className="w-8" />
+            </header>
+
+            <main className="max-w-xl w-full mx-auto p-6 md:p-10 space-y-6 pb-28">
+              <div className="flex flex-col items-center">
+                {/* Gauge */}
+                <div className="w-36 h-36 rounded-full border-[8px] border-slate-100 shadow-inner flex flex-col items-center justify-center bg-white">
+                  <span className="text-3xl font-extrabold text-slate-800">{accuracy}%</span>
+                  <span className="text-slate-400 text-xs font-bold mt-1">Accuracy</span>
+                </div>
+              </div>
+
+              {/* Metrics Row */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-emerald-50 rounded-2xl py-4 flex flex-col items-center">
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">✓</div>
+                  <span className="text-lg font-extrabold text-slate-800 mt-2">{correct}</span>
+                  <span className="text-slate-500 text-xs">Correct</span>
+                </div>
+                <div className="bg-rose-50 rounded-2xl py-4 flex flex-col items-center">
+                  <div className="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs">×</div>
+                  <span className="text-lg font-extrabold text-slate-800 mt-2">{wrong}</span>
+                  <span className="text-slate-500 text-xs">Wrong</span>
+                </div>
+                <div className="bg-slate-100 rounded-2xl py-4 flex flex-col items-center">
+                  <div className="w-6 h-6 rounded-full bg-slate-400 text-white flex items-center justify-center text-xs">-</div>
+                  <span className="text-lg font-extrabold text-slate-800 mt-2">{skipped}</span>
+                  <span className="text-slate-500 text-xs">Skipped</span>
+                </div>
+              </div>
+
+              {/* Navigation dots */}
+              <div className="flex justify-center gap-4 text-xs font-semibold">
+                {[1, 2, 3, 4].map(partNum => {
+                  const isCurrent = partNum === selectedPartTab;
+                  return (
+                    <span
+                      key={partNum}
+                      className={`flex items-center gap-1 ${isCurrent ? 'text-emerald-700 font-bold' : 'text-slate-400'}`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-emerald-600' : 'bg-slate-300'}`} />
+                      Part {partNum}
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* Breakdown title */}
+              <div className="flex justify-between items-center border-t border-slate-100 pt-4">
+                <span className="text-slate-800 font-bold text-sm">Question Breakdown</span>
+                <span className="text-rose-500 font-bold text-sm">{correct}/10</span>
+              </div>
+
+              {/* Cards list */}
+              <div className="space-y-3">
+                {questions.map((q: any, idx: number) => {
+                  const absoluteIndex = startIndex + idx;
+                  const uAns = (userAnswers[q.id] || '').trim().toLowerCase();
+                  const cAns = (q.correctAnswer || '').toString().trim().toLowerCase();
+
+                  const isCorrect = uAns && uAns === cAns;
+                  const isSkipped = !uAns;
+
+                  return (
+                    <div key={q.id} className="bg-white border border-slate-200 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          isSkipped ? 'bg-slate-100 text-slate-400' : (isCorrect ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600')
+                        }`}>
+                          {isSkipped ? '--' : (isCorrect ? '✓' : '×')}
+                        </div>
+                        <div>
+                          <p className="text-slate-400 font-bold text-xs">Question {absoluteIndex + 1}</p>
+                          <p className="text-emerald-600 font-bold text-xs mt-0.5">✓ {q.correctAnswer}</p>
+                        </div>
+                      </div>
+                      <span className="bg-slate-100 text-slate-500 text-xxs font-extrabold px-2 py-1 rounded-md">
+                        Q{absoluteIndex + 1}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Bottom Continue Button */}
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 z-15">
+                <button
+                  onClick={() => {
+                    if (selectedPartTab < 4) {
+                      setSelectedPartTab(prev => prev + 1);
+                      setViewState('PRACTICE');
+                    } else {
+                      setViewState('TESTS');
+                    }
+                  }}
+                  className="w-full max-w-xl mx-auto bg-rose-600 hover:bg-rose-700 text-white font-bold py-3.5 rounded-2xl transition-colors cursor-pointer text-sm"
+                >
+                  {selectedPartTab < 4 ? `Continue to Part ${selectedPartTab + 1} ➔` : 'Return to Tests ➔'}
+                </button>
+              </div>
+            </main>
+          </>
+        );
+      })()}
 
       {/* -------------------- 4. WARNING MODALS OVERLAYS -------------------- */}
 
