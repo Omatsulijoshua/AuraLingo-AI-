@@ -256,21 +256,18 @@ export default function ListeningPractice() {
     try {
       const data = await api.request<any[]>('/content/audios');
       const loadedAudios = data || [];
-      if (loadedAudios.length === 0) {
-        const fallback = [
-          {
-            id: 'b10t1_listening',
-            title: 'IELTS Book 10 Test 1',
-            audioUrl: '/audio/b10t1_listening.mpeg',
-            practiceQuestions: getMockQuestions(),
-          }
-        ];
-        setAudios(fallback);
-        setSelectedAudio(fallback[0]);
-      } else {
-        setAudios(loadedAudios);
-        setSelectedAudio(loadedAudios[0]);
-      }
+      const filtered = loadedAudios.filter(item => item.id !== 'b10t1_listening');
+      const list = [
+        {
+          id: 'b10t1_listening',
+          title: 'IELTS Book 10 Test 1',
+          audioUrl: '/audio/b10t1_listening.mpeg',
+          practiceQuestions: getMockQuestions(),
+        },
+        ...filtered
+      ];
+      setAudios(list);
+      setSelectedAudio(list[0]);
     } catch (err) {
       console.error('Failed to fetch listening audios', err);
       const fallback = [

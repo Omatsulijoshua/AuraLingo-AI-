@@ -317,16 +317,13 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
       debugPrint('Error fetching listening audios: $e');
     } finally {
       setState(() {
-        if (_audios.isEmpty) {
-          _audios = [
-            {
-              'id': 'b10t1_listening',
-              'title': 'IELTS Book 10 Test 1',
-              'audioUrl': 'https://bandup-ielts-prep.vercel.app/audio/b10t1_listening.mpeg',
-              'practiceQuestions': _getMockQuestions(),
-            }
-          ];
-        }
+        _audios.removeWhere((item) => item['id'] == 'b10t1_listening');
+        _audios.insert(0, {
+          'id': 'b10t1_listening',
+          'title': 'IELTS Book 10 Test 1',
+          'audioUrl': 'https://bandup-ielts-prep.vercel.app/audio/b10t1_listening.mpeg',
+          'practiceQuestions': _getMockQuestions(),
+        });
         _selectedAudio = _audios[0];
         _loading = false;
       });
