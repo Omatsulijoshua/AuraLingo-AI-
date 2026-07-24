@@ -801,12 +801,12 @@ export default function ListeningPractice() {
                     <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
                       <div
                         className="bg-rose-500 h-full transition-all duration-300"
-                        style={{ width: `${(35 / 400) * 100}%` }} // mock progress matching mobile 00:35 / 06:40
+                        style={{ width: `${(currentTime / (duration || 400)) * 100}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                      <span>0:35</span>
-                      <span>6:40</span>
+                      <span>{formatDuration(currentTime)}</span>
+                      <span>{formatDuration(duration || 400)}</span>
                     </div>
                   </div>
                 )}

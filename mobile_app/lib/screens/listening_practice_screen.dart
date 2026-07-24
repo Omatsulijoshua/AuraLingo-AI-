@@ -1664,6 +1664,13 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
     }
 
     // Default Player layout when Audio Controls is OFF (Matches Image 1-3)
+    final double maxSecs = _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 400.0;
+    final double currSecs = _duration.inSeconds > 0
+        ? _position.inSeconds.toDouble().clamp(0.0, maxSecs)
+        : _position.inSeconds.toDouble().clamp(0.0, 400.0);
+    final String currStr = _formatDuration(_position);
+    final String totalStr = _duration.inSeconds > 0 ? _formatDuration(_duration) : '06:40';
+
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 24),
@@ -1679,22 +1686,22 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
             ),
             child: Slider(
               min: 0.0,
-              max: 400.0, // mock duration in seconds: 6m 40s = 400s
-              value: 35.0, // mock current position: 00:35
+              max: maxSecs,
+              value: currSecs,
               onChanged: null,
             ),
           ),
           const SizedBox(height: 4),
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '00:35',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.bold),
+                currStr,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.bold),
               ),
               Text(
-                '06:40',
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.bold),
+                totalStr,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.bold),
               ),
             ],
           ),
