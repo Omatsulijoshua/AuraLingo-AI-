@@ -322,7 +322,7 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
             {
               'id': 'b10t1_listening',
               'title': 'IELTS Book 10 Test 1',
-              'audioUrl': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+              'audioUrl': 'https://bandup-ielts-prep.vercel.app/audio/b10t1_listening.mpeg',
               'practiceQuestions': _getMockQuestions(),
             }
           ];

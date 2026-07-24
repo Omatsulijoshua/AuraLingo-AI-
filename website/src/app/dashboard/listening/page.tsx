@@ -261,7 +261,7 @@ export default function ListeningPractice() {
           {
             id: 'b10t1_listening',
             title: 'IELTS Book 10 Test 1',
-            audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+            audioUrl: '/audio/b10t1_listening.mpeg',
             practiceQuestions: getMockQuestions(),
           }
         ];
@@ -277,7 +277,7 @@ export default function ListeningPractice() {
         {
           id: 'b10t1_listening',
           title: 'IELTS Book 10 Test 1',
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          audioUrl: '/audio/b10t1_listening.mpeg',
           practiceQuestions: getMockQuestions(),
         }
       ];
