@@ -86,6 +86,8 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
 
   List<dynamic> _getMockQuestions() {
     final List<dynamic> list = [];
+
+    // Part 1 Questions
     final part1Questions = [
       "Address: 24 ___ Road",
       "Heard about company from: ___",
@@ -99,7 +101,7 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
       "Trip Two - Includes: accommodation, car, ___"
     ];
     final part1Answers = [
-      "Ardleigh", "newspaper", "theme", "tent", "castle", "beach", "1200", "flight", "980", "insurance"
+      "Ardleigh", "newspaper", "theme", "tent", "castle", "beach", "2020", "flight", "429", "dinner"
     ];
     final part1Explanations = [
       "'24, Ardleigh Road.' - spelled out as A-R-D-L-E-I-G-H.",
@@ -108,10 +110,10 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
       "'We wanted to stay in a lodge, but they were full, so we decided on a tent instead.'",
       "'She really wants to stop off and see the Hearst Castle on the way.'",
       "'Then in San Diego, we'll spend most of our time at the beach.'",
-      "'The total distance for Trip One is about twelve hundred kilometers.'",
+      "'The total distance for Trip One is about two thousand and twenty kilometers.'",
       "'The price includes accommodation, car hire, and one internal flight.'",
-      "'It is nine hundred and eighty pounds per person.'",
-      "'This trip includes accommodation, car hire, and fully comprehensive insurance.'"
+      "'It is four hundred and twenty-nine pounds per person.'",
+      "'This trip includes accommodation, car hire, and dinner.'"
     ];
 
     for (int i = 0; i < 10; i++) {
@@ -128,182 +130,160 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
       });
     }
 
+    // Part 2 Questions
     final part2Questions = [
-      "The recreation center expansion was funded mainly by:",
-      "The new swimming pool will open on:",
-      "Who will cut the ribbon during the ceremony?",
-      "The fitness gym entrance fee for members is:",
-      "The new yoga studio is located on the:",
-      "Which facility requires advance reservation?",
-      "The main café now offers more choices of:",
-      "The children's play area has been moved next to the:",
-      "Parking capacity has been increased by:",
-      "The center is now closed on which day?"
+      "Which facility at the leisure club has recently been improved first?",
+      "Which other facility at the leisure club has recently been improved?",
+      "Personal Assessment: New members should describe any ___",
+      "The ___ will be explained to you before you use the equipment.",
+      "You will be given a six-week ___",
+      "Types of membership: There is a compulsory £90 ___ fee for members.",
+      "Gold members are given ___ to all the LP clubs.",
+      "Premier members are given priority during ___ hours.",
+      "Premier members can bring some ___ every month.",
+      "Members should always take their ___ with them."
     ];
     final part2Options = [
       [
-        {'optionLetter': 'A', 'optionText': 'Local council grants'},
-        {'optionLetter': 'B', 'optionText': 'Private member donations'},
-        {'optionLetter': 'C', 'optionText': 'National lottery funding'}
+        {'optionLetter': 'A', 'optionText': 'the gym'},
+        {'optionLetter': 'B', 'optionText': 'the tracks'},
+        {'optionLetter': 'C', 'optionText': 'the outdoor pool'},
+        {'optionLetter': 'D', 'optionText': 'the sports training for children'}
       ],
       [
-        {'optionLetter': 'A', 'optionText': 'First Monday of July'},
-        {'optionLetter': 'B', 'optionText': 'Second Saturday of August'},
-        {'optionLetter': 'C', 'optionText': 'Last Friday of September'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'The Mayor'},
-        {'optionLetter': 'B', 'optionText': 'A local Olympic athlete'},
-        {'optionLetter': 'C', 'optionText': 'The center director'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Totally free of charge'},
-        {'optionLetter': 'B', 'optionText': 'Half price on weekdays'},
-        {'optionLetter': 'C', 'optionText': 'Standard entry fee'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Ground floor'},
-        {'optionLetter': 'B', 'optionText': 'First floor'},
-        {'optionLetter': 'C', 'optionText': 'Basement level'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Squash courts'},
-        {'optionLetter': 'B', 'optionText': 'Sauna room'},
-        {'optionLetter': 'C', 'optionText': 'Tennis courts'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Hot meals'},
-        {'optionLetter': 'B', 'optionText': 'Organic beverages'},
-        {'optionLetter': 'C', 'optionText': 'Gluten-free snacks'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Reception lobby'},
-        {'optionLetter': 'B', 'optionText': 'Outdoor courtyard'},
-        {'optionLetter': 'C', 'optionText': 'Swimming pool view area'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': '50 spaces'},
-        {'optionLetter': 'B', 'optionText': '100 spaces'},
-        {'optionLetter': 'C', 'optionText': '150 spaces'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Sundays'},
-        {'optionLetter': 'B', 'optionText': 'Mondays'},
-        {'optionLetter': 'C', 'optionText': 'Tuesdays'}
-      ],
+        {'optionLetter': 'A', 'optionText': 'the gym'},
+        {'optionLetter': 'B', 'optionText': 'the tracks'},
+        {'optionLetter': 'C', 'optionText': 'the indoor pool'},
+        {'optionLetter': 'D', 'optionText': 'the sports training for children'}
+      ]
     ];
     final part2Answers = [
-      "C", "A", "B", "A", "B", "C", "C", "A", "B", "B"
+      "A", "C", "health problems", "safety rules", "plan", "joining", "free entry", "peak", "guests", "photo card"
+    ];
+    final part2Explanations = [
+      "The gym has been refurbished with state-of-the-art machines.",
+      "We've also upgraded the indoor pool with a brand-new heating system.",
+      "New members should describe any health problems they have.",
+      "The safety rules will be explained to you before you use any equipment.",
+      "You will be given a six-week personal fitness plan.",
+      "There is a compulsory ninety pounds joining fee for new members.",
+      "Gold membership gives you free entry to all the other LP clubs.",
+      "Premier members get priority booking during peak hours.",
+      "Premier members are allowed to bring some guests every month.",
+      "All members must carry their photo card at all times."
     ];
 
     for (int i = 0; i < 10; i++) {
+      final isMCQ = i < 2;
       list.add({
         'id': 'b10t1l_q${i+11}',
-        'questionType': 'MULTIPLE_CHOICE',
+        'questionType': isMCQ ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
         'difficulty': 'INTERMEDIATE',
-        'instruction': 'Choose the correct letter, A, B or C.',
+        'instruction': isMCQ ? 'Choose the correct letter, A, B, C or D.' : 'Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.',
         'questionText': part2Questions[i],
-        'options': part2Options[i],
+        if (isMCQ) 'options': part2Options[i],
         'correctAnswer': part2Answers[i],
-        'explanation': 'Based on the monologue in Part 2.'
+        'explanation': part2Explanations[i]
       });
     }
 
+    // Part 3 Questions
     final part3Questions = [
-      "The students chose the marketing topic because:",
-      "Which database did the professor recommend first?",
-      "The primary issue with the first case study was:",
-      "How did they collect the survey questionnaires?",
-      "The response rate of the survey was approximately:",
-      "What surprised the students about the survey results?",
-      "The students decide to shorten their presentation because:",
-      "Who will present the statistics slide?",
-      "The professor advised them to add more:",
-      "Their final draft needs to be submitted by:"
+      "What is the main focus of this year’s design competition?",
+      "Which aspect of the appliance should the design focus on?",
+      "What is the problem with the current kitchen appliance?",
+      "What is the requirement for the new design?",
+      "What is the benefit of the competition for students?",
+      "The students must submit a ___",
+      "They also need to provide a ___",
+      "They should specify the ___ used.",
+      "The winning design will receive a ___",
+      "The focus of the evaluation will be ___"
     ];
     final part3Options = [
       [
-        {'optionLetter': 'A', 'optionText': 'It was easy to find data'},
-        {'optionLetter': 'B', 'optionText': 'They both had interest in retail'},
-        {'optionLetter': 'C', 'optionText': 'It was suggested by a senior'}
+        {'optionLetter': 'A', 'optionText': 'a new kitchen appliance'},
+        {'optionLetter': 'B', 'optionText': 'a more energy-efficient design'},
+        {'optionLetter': 'C', 'optionText': 'a new use for current technology'}
       ],
       [
-        {'optionLetter': 'A', 'optionText': 'Business Source Complete'},
-        {'optionLetter': 'B', 'optionText': 'Emerald Insight'},
-        {'optionLetter': 'C', 'optionText': 'Google Scholar'}
+        {'optionLetter': 'A', 'optionText': 'ease of use'},
+        {'optionLetter': 'B', 'optionText': 'aesthetic appeal'},
+        {'optionLetter': 'C', 'optionText': 'low manufacturing cost'}
       ],
       [
-        {'optionLetter': 'A', 'optionText': 'Outdated statistics'},
-        {'optionLetter': 'B', 'optionText': 'Irrelevant conclusion'},
-        {'optionLetter': 'C', 'optionText': 'Lack of detail'}
+        {'optionLetter': 'A', 'optionText': 'it is too expensive'},
+        {'optionLetter': 'B', 'optionText': 'it is too complicated'},
+        {'optionLetter': 'C', 'optionText': 'it is difficult to clean'}
       ],
       [
-        {'optionLetter': 'A', 'optionText': 'Sent via email list'},
-        {'optionLetter': 'B', 'optionText': 'Handed out in library lobby'},
-        {'optionLetter': 'C', 'optionText': 'Posted on social media group'}
+        {'optionLetter': 'A', 'optionText': 'it must be attractive'},
+        {'optionLetter': 'B', 'optionText': 'it must be made of recyclable materials'},
+        {'optionLetter': 'C', 'optionText': 'it must be compact'}
       ],
       [
-        {'optionLetter': 'A', 'optionText': '35%'},
-        {'optionLetter': 'B', 'optionText': '60%'},
-        {'optionLetter': 'C', 'optionText': '85%'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'A high degree of customer loyalty'},
-        {'optionLetter': 'B', 'optionText': 'Preference for online delivery'},
-        {'optionLetter': 'C', 'optionText': 'Dislike of automated checkout'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Strict 10-minute limit'},
-        {'optionLetter': 'B', 'optionText': 'Two slides were redundant'},
-        {'optionLetter': 'C', 'optionText': 'They want more time for Q&A'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Jack'},
-        {'optionLetter': 'B', 'optionText': 'Lisa'},
-        {'optionLetter': 'C', 'optionText': 'Both of them'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Visual charts'},
-        {'optionLetter': 'B', 'optionText': 'Academic references'},
-        {'optionLetter': 'C', 'optionText': 'Critical analysis'}
-      ],
-      [
-        {'optionLetter': 'A', 'optionText': 'Next Wednesday'},
-        {'optionLetter': 'B', 'optionText': 'Next Friday'},
-        {'optionLetter': 'C', 'optionText': 'End of the month'}
-      ],
+        {'optionLetter': 'A', 'optionText': 'winning a cash prize'},
+        {'optionLetter': 'B', 'optionText': 'meeting industry experts'},
+        {'optionLetter': 'C', 'optionText': 'gaining practical experience'}
+      ]
     ];
     final part3Answers = [
-      "B", "A", "A", "B", "B", "A", "A", "C", "C", "B"
+      "C", "A", "B", "A", "C", "presentation", "model", "material", "grant", "technical"
+    ];
+    final part3Explanations = [
+      "The competition focus is finding a new use for existing household technology.",
+      "The appliance must be extremely easy to use for elderly people.",
+      "The biggest problem is that it is too complicated with too many buttons.",
+      "The design brief specifies that the design must look attractive.",
+      "The biggest advantage is gaining practical work experience.",
+      "Students must submit a detailed presentation of their concept.",
+      "They are also required to build a physical model.",
+      "The design report must list all the materials used.",
+      "The winning design will be awarded a research grant.",
+      "The panel's evaluation will be heavily technical."
     ];
 
     for (int i = 0; i < 10; i++) {
+      final isMCQ = i < 5;
       list.add({
         'id': 'b10t1l_q${i+21}',
-        'questionType': 'MULTIPLE_CHOICE',
+        'questionType': isMCQ ? 'MULTIPLE_CHOICE' : 'SHORT_ANSWER',
         'difficulty': 'INTERMEDIATE',
-        'instruction': 'Choose the correct letter, A, B or C.',
+        'instruction': isMCQ ? 'Choose the correct letter, A, B or C.' : 'Complete the notes below. Write NO MORE THAN TWO WORDS for each answer.',
         'questionText': part3Questions[i],
-        'options': part3Options[i],
+        if (isMCQ) 'options': part3Options[i],
         'correctAnswer': part3Answers[i],
-        'explanation': 'Based on the academic discussion in Part 3.'
+        'explanation': part3Explanations[i]
       });
     }
 
+    // Part 4 Questions
     final part4Questions = [
-      "Sleep patterns are regulated by a ___ clock.",
-      "Most mammals sleep for a ___ of their day.",
-      "Birds can sleep while flying due to unihemispheric ___ activity.",
-      "Predator species tend to sleep more ___ than prey species.",
-      "Prey species have developed ___ sleep cycles to stay alert.",
-      "Lack of sleep reduces the efficiency of the animal's ___ system.",
-      "Slower brainwaves during deep sleep help in memory ___.",
-      "Sea lions sleep in water to escape land-based ___.",
-      "Dolphins keep one ___ open while sleeping.",
-      "The study concluded that sleep is essential for brain ___."
+      "Its colour comes from an uncommon ___",
+      "Local people believe that it has unusual ___",
+      "They protect the bear from ___",
+      "The surrounding landscape is affected by ___",
+      "Bears are often found on ___",
+      "The habitats are threatened by the construction of ___",
+      "The bears' diet often consists of ___",
+      "A key factor in the bear's survival is ___",
+      "Researchers use a specific ___ to study the bears.",
+      "Future efforts will focus on habitat ___"
     ];
     final part4Answers = [
-      "biological", "third", "brain", "deeply", "short", "immune", "consolidation", "predators", "eye", "recovery"
+      "gene", "power", "strangers", "erosion", "islands", "roads", "fishing", "reproduction", "method", "expansion"
+    ];
+    final part4Explanations = [
+      "The white fur color is due to an uncommon recessive gene.",
+      "Local tribes believe the bear has unusual spiritual power.",
+      "The local community protects the bear from strangers coming into the area.",
+      "Deforestation of the landscape has led to soil erosion.",
+      "Bears are most frequently found on the nearby islands.",
+      "The habitat is being destroyed by the construction of logging roads.",
+      "During autumn, their diet consists primarily of salmon fishing.",
+      "A key factor in the species' survival is successful reproduction.",
+      "Researchers use a specific non-invasive method to collect hair samples.",
+      "Future conservation efforts will focus on habitat expansion."
     ];
 
     for (int i = 0; i < 10; i++) {
@@ -311,10 +291,10 @@ class _ListeningPracticeScreenState extends State<ListeningPracticeScreen> {
         'id': 'b10t1l_q${i+31}',
         'questionType': 'SHORT_ANSWER',
         'difficulty': 'ADVANCED',
-        'instruction': 'Write NO MORE THAN ONE WORD for each answer.',
+        'instruction': 'Complete the notes below. Write ONE WORD ONLY for each answer.',
         'questionText': part4Questions[i],
         'correctAnswer': part4Answers[i],
-        'explanation': 'Based on the lecture recording in Part 4.'
+        'explanation': part4Explanations[i]
       });
     }
 
