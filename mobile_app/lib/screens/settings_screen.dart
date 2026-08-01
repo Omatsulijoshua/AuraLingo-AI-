@@ -157,7 +157,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
     final targetExam = user?['targetExam'] ?? 'ACADEMIC';
-    final targetBand = (user?['targetBand'] ?? 7.0) as double;
+    final targetBand = (user?['targetBand'] as num? ?? 7.0).toDouble();
 
     return Scaffold(
       backgroundColor: const Color(0xFF050E1A),

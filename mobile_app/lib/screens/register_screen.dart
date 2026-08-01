@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import 'dashboard_screen.dart';
+import 'login_screen.dart';
 import 'subscription_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -17,6 +18,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _referralController = TextEditingController();
   String _targetExam = 'ACADEMIC';
   double _targetBand = 7.0;
 
@@ -25,25 +27,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _referralController.dispose();
     super.dispose();
   }
 
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final success = await ref.read(authProvider.notifier).register(
+    final success = await ref
+        .read(authProvider.notifier)
+        .register(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
           targetExam: _targetExam,
           targetBand: _targetBand,
+          referralCode: _referralController.text.trim(),
         );
 
     if (success && mounted) {
-      final loginSuccess = await ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text,
-          );
+      final loginSuccess = await ref
+          .read(authProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text);
 
       if (loginSuccess && mounted) {
         final prefs = await SharedPreferences.getInstance();
@@ -58,7 +63,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Expanded(
                   child: Text(
                     '🎉 Account created and logged in successfully!',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -71,7 +79,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         if (hasSeenOnboarding) {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const SubscriptionScreen(isRegisterFlow: true)),
+            MaterialPageRoute(
+              builder: (_) => const SubscriptionScreen(isRegisterFlow: true),
+            ),
           );
         } else {
           Navigator.pushReplacement(
@@ -98,14 +108,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 8.0,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -143,12 +159,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.red.withValues(alpha: 0.1),
-                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: Colors.red.withValues(alpha: 0.3),
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         authState.errorMessage!,
-                        style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 13,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -162,7 +183,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Full Name',
                       labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                      prefixIcon: const Icon(Icons.person_outline, color: Color(0xFFD4AF37)),
+                      prefixIcon: const Icon(
+                        Icons.person_outline,
+                        color: Color(0xFFD4AF37),
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: Color(0xFF1E3E6E)),
@@ -189,7 +213,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Email Address',
                       labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                      prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFFD4AF37)),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: Color(0xFFD4AF37),
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: Color(0xFF1E3E6E)),
@@ -219,7 +246,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Password (min 6 characters)',
                       labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                      prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFFD4AF37)),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline_rounded,
+                        color: Color(0xFFD4AF37),
+                      ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: Color(0xFF1E3E6E)),
@@ -244,7 +274,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   // Target Exam Selector
                   const Text(
                     'Target IELTS Exam Type',
-                    style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Color(0xFFCBD5E1),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -261,7 +295,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           selectedColor: const Color(0xFFD4AF37),
                           backgroundColor: const Color(0xFF0B1E36),
                           labelStyle: TextStyle(
-                            color: _targetExam == 'ACADEMIC' ? const Color(0xFF050E1A) : Colors.white,
+                            color: _targetExam == 'ACADEMIC'
+                                ? const Color(0xFF050E1A)
+                                : Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                           shape: RoundedRectangleBorder(
@@ -282,7 +318,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           selectedColor: const Color(0xFFD4AF37),
                           backgroundColor: const Color(0xFF0B1E36),
                           labelStyle: TextStyle(
-                            color: _targetExam == 'GENERAL' ? const Color(0xFF050E1A) : Colors.white,
+                            color: _targetExam == 'GENERAL'
+                                ? const Color(0xFF050E1A)
+                                : Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                           shape: RoundedRectangleBorder(
@@ -295,11 +333,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   const SizedBox(height: 20),
                   const Text(
                     'Target Band Score',
-                    style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Color(0xFFCBD5E1),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0B1E36),
                       borderRadius: BorderRadius.circular(10),
@@ -310,19 +355,59 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         value: _targetBand,
                         dropdownColor: const Color(0xFF0B1E36),
                         iconEnabledColor: const Color(0xFFD4AF37),
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                         isExpanded: true,
-                        items: [4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map((band) {
-                          return DropdownMenuItem<double>(
-                            value: band,
-                            child: Text('Band $band'),
-                          );
-                        }).toList(),
+                        items:
+                            [
+                              4.0,
+                              4.5,
+                              5.0,
+                              5.5,
+                              6.0,
+                              6.5,
+                              7.0,
+                              7.5,
+                              8.0,
+                              8.5,
+                              9.0,
+                            ].map((band) {
+                              return DropdownMenuItem<double>(
+                                value: band,
+                                child: Text('Band $band'),
+                              );
+                            }).toList(),
                         onChanged: (val) {
                           if (val != null) {
                             setState(() => _targetBand = val);
                           }
                         },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Referral input
+                  TextFormField(
+                    controller: _referralController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Referral ID (Optional)',
+                      labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                      prefixIcon: const Icon(
+                        Icons.card_giftcard_outlined,
+                        color: Color(0xFFD4AF37),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFF1E3E6E)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFD4AF37)),
                       ),
                     ),
                   ),
@@ -350,7 +435,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           )
                         : const Text(
                             'Create Account',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                   ),
                   const SizedBox(height: 24),
@@ -360,10 +448,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     children: [
                       const Text(
                         'Already have an account? ',
-                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 14,
+                        ),
                       ),
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        },
                         child: const Text(
                           'Sign In',
                           style: TextStyle(

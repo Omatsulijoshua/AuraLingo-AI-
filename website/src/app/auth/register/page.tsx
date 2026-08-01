@@ -13,6 +13,7 @@ function RegisterForm() {
   const [password, setPassword] = useState('');
   const [targetExam, setTargetExam] = useState<'ACADEMIC' | 'GENERAL'>('ACADEMIC');
   const [targetBand, setTargetBand] = useState<number>(7.0);
+  const [referralCode, setReferralCode] = useState(searchParams.get('ref') || '');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +32,7 @@ function RegisterForm() {
           targetExam,
           targetBand,
           role: 'STUDENT',
-          referralCode: searchParams.get('ref') || undefined,
+          referralCode: referralCode.trim() || undefined,
         }),
       });
 
@@ -161,6 +162,20 @@ function RegisterForm() {
                 <option key={b} value={b}>Band {b}</option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2" htmlFor="referralCode">
+              Referral ID (Optional)
+            </label>
+            <input
+              id="referralCode"
+              type="text"
+              value={referralCode}
+              onChange={(e) => setReferralCode(e.target.value)}
+              className="w-full bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none transition-all duration-200"
+              placeholder="e.g. USER-1234"
+            />
           </div>
 
           <button

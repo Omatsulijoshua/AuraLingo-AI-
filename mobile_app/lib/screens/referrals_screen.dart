@@ -178,10 +178,10 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
         ? _stats['referralLink'] as String
         : 'https://bandup-ielts-prep.vercel.app/auth/register?ref=${_stats?['userId'] ?? 'your-id'}';
 
-    final double balance = (_stats?['referralBalance'] ?? 0.0) as double;
-    final double withdrawable = (_stats?['withdrawableBalance'] ?? 0.0) as double;
-    final double locked = (_stats?['lockedBalance'] ?? 0.0) as double;
-    final double thisMonth = (_stats?['madeThisMonth'] ?? 0.0) as double;
+    final double balance = (_stats?['referralBalance'] as num? ?? 0.0).toDouble();
+    final double withdrawable = (_stats?['withdrawableBalance'] as num? ?? 0.0).toDouble();
+    final double locked = (_stats?['lockedBalance'] as num? ?? 0.0).toDouble();
+    final double thisMonth = (_stats?['madeThisMonth'] as num? ?? 0.0).toDouble();
 
     final rawReferrals = _stats?['referralsList'] as List? ?? [];
     final referralsList = rawReferrals.where((item) {
@@ -205,13 +205,13 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
     final double filteredCount = referralsList.length.toDouble();
     final double filteredEarnings = referralsList.fold(0.0, (sum, item) {
       final isPaid = item['isPaidUser'] == true;
-      final double earned = (item['rewardEarned'] ?? 0.0) as double;
-      return sum + (isPaid ? (earned > 0 ? earned : (_stats?['rewardPerUser'] ?? 1000.0) as double) : 0.0);
+      final double earned = (item['rewardEarned'] as num? ?? 0.0).toDouble();
+      return sum + (isPaid ? (earned > 0 ? earned : (_stats?['rewardPerUser'] as num? ?? 1000.0).toDouble()) : 0.0);
     });
     final double filteredPending = referralsList.fold(0.0, (sum, item) {
       final isPaid = item['isPaidUser'] == true;
-      final double earned = (item['rewardEarned'] ?? 0.0) as double;
-      return sum + (!isPaid ? (earned > 0 ? earned : (_stats?['rewardPerUser'] ?? 1000.0) as double) : 0.0);
+      final double earned = (item['rewardEarned'] as num? ?? 0.0).toDouble();
+      return sum + (!isPaid ? (earned > 0 ? earned : (_stats?['rewardPerUser'] as num? ?? 1000.0).toDouble()) : 0.0);
     });
 
     return Scaffold(
@@ -530,7 +530,7 @@ class _ReferralsScreenState extends State<ReferralsScreen> {
                               final item = referralsList[idx];
                               final isPaid = item['isPaidUser'] == true;
                               final dateStr = _formatDate(item['createdAt']);
-                              final double earned = (item['rewardEarned'] ?? 0.0) as double;
+                              final double earned = (item['rewardEarned'] as num? ?? 0.0).toDouble();
 
                               return Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

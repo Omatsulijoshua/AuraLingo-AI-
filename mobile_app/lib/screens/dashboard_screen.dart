@@ -169,7 +169,7 @@ class _HomeTabViewState extends ConsumerState<HomeTabView> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final double targetBand = (user?['targetBand'] ?? 7.0) as double;
+    final double targetBand = (user?['targetBand'] as num? ?? 7.0).toDouble();
     final String level = user?['currentLevel'] ?? 'INTERMEDIATE';
     final String levelName = level == 'BEGINNER' ? _t('level_beg') : (level == 'ADVANCED' ? _t('level_adv') : 'Advance');
 

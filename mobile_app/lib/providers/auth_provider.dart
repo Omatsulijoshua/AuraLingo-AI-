@@ -101,6 +101,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
     required String targetExam,
     double targetBand = 7.0,
+    String? referralCode,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
@@ -113,6 +114,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           'password': password,
           'targetExam': targetExam,
           'targetBand': targetBand,
+          if (referralCode != null && referralCode.isNotEmpty) 'referralCode': referralCode,
         }),
       );
 
