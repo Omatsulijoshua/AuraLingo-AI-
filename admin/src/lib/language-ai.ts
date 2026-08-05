@@ -7,7 +7,39 @@ export interface LanguageProfile {
   preference: 'VOICE_PRIORITY' | 'TEXT_PRIORITY' | 'BALANCED';
   studyStreak: number;
   isOnboarded: boolean;
+  // Phase 2 Settings
+  voiceEngine: 'WEB_SPEECH' | 'GEMINI_AUDIO' | 'ELEVENLABS_PRO';
+  regionalAccent: string;
+  elevenLabsApiKey?: string;
+  elevenLabsVoiceId?: string;
 }
+
+export interface RegionalAccentOption {
+  code: string;
+  name: string;
+  flag: string;
+  language: string;
+  elevenLabsSampleVoiceId: string;
+}
+
+export const REGIONAL_ACCENT_OPTIONS: RegionalAccentOption[] = [
+  // Spanish
+  { code: 'ES_MADRID', name: 'Castilian Spanish (Madrid)', flag: '🇪🇸', language: 'Spanish', elevenLabsSampleVoiceId: 'pNInz6obpgDQGcFmaJgB' },
+  { code: 'ES_MEXICO', name: 'Mexican Spanish (Mexico City)', flag: '🇲🇽', language: 'Spanish', elevenLabsSampleVoiceId: 'ErXwobaYiN019PkySvjV' },
+  { code: 'ES_ARGENTINA', name: 'Argentine Spanish (Buenos Aires)', flag: '🇦🇷', language: 'Spanish', elevenLabsSampleVoiceId: 'VR6AewLTigWG4xSOukaG' },
+  
+  // French
+  { code: 'FR_PARIS', name: 'Parisian Standard French', flag: '🇫🇷', language: 'French', elevenLabsSampleVoiceId: 'XB0fDUnXU5powFXDhCwa' },
+  { code: 'FR_QUEBEC', name: 'Québécois French (Montreal)', flag: '🇨🇦', language: 'French', elevenLabsSampleVoiceId: 'EXAVITQu4vr4xnSDxMaL' },
+
+  // German
+  { code: 'DE_BERLIN', name: 'Hochdeutsch German (Berlin)', flag: '🇩🇪', language: 'German', elevenLabsSampleVoiceId: '21m00Tcm4TlvDq8ikWAM' },
+  { code: 'DE_VIENNA', name: 'Austrian German (Vienna)', flag: '🇦🇹', language: 'German', elevenLabsSampleVoiceId: 'AZnzlk1XvdvUeBnXmlld' },
+
+  // English
+  { code: 'EN_BRITISH', name: 'RP British English (London)', flag: '🇬🇧', language: 'English', elevenLabsSampleVoiceId: 'pFZP5JQG7iQjIQuC4Bku' },
+  { code: 'EN_AMERICAN', name: 'General American English', flag: '🇺🇸', language: 'English', elevenLabsSampleVoiceId: '29vD33N1CtxCmqQRPOHJ' },
+];
 
 export interface CurriculumUnit {
   id: string;
@@ -32,6 +64,7 @@ export interface Scenario {
     role: string;
     avatarUrl: string;
     greeting: string;
+    elevenLabsVoiceId?: string;
   };
   keyVocabulary: string[];
   culturalNote: string;
@@ -79,7 +112,7 @@ export interface DynamicExercise {
   explanation: string;
 }
 
-// Initial Mock Language Profile
+// Initial Mock Language Profile (Updated with Phase 2 defaults)
 export const DEFAULT_LANGUAGE_PROFILE: LanguageProfile = {
   nativeLanguage: 'English',
   targetLanguage: 'Spanish',
@@ -89,6 +122,10 @@ export const DEFAULT_LANGUAGE_PROFILE: LanguageProfile = {
   preference: 'BALANCED',
   studyStreak: 7,
   isOnboarded: true,
+  voiceEngine: 'WEB_SPEECH',
+  regionalAccent: 'ES_MADRID',
+  elevenLabsApiKey: '',
+  elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB'
 };
 
 // Initial Scenarios
@@ -103,7 +140,8 @@ export const PRESET_SCENARIOS: Scenario[] = [
       name: 'Sofia Ramirez',
       role: 'Head of Engineering Talent',
       avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-      greeting: '¡Hola! Bienvenido a la entrevista. Cuéntame sobre tu experiencia profesional previa en desarrollo de software.'
+      greeting: '¡Hola! Bienvenido a la entrevista. Cuéntame sobre tu experiencia profesional previa en desarrollo de software.',
+      elevenLabsVoiceId: 'pNInz6obpgDQGcFmaJgB'
     },
     keyVocabulary: ['Desarrollo de software', 'Arquitectura de sistemas', 'Trabajo en equipo', 'Resolución de problemas'],
     culturalNote: 'In Spanish business contexts, starting with polite small talk ("¿Cómo estuvo tu día?") establishes trust before diving into technical details.'
@@ -118,7 +156,8 @@ export const PRESET_SCENARIOS: Scenario[] = [
       name: 'Mateo Garcia',
       role: 'Friendly Tapas Bar Owner',
       avatarUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-      greeting: '¡Buenas noches! Bienvenidos. ¿Tienen mesa reservada o prefieren sentarse en la barra?'
+      greeting: '¡Buenas noches! Bienvenidos. ¿Tienen mesa reservada o prefieren sentarse en la barra?',
+      elevenLabsVoiceId: 'ErXwobaYiN019PkySvjV'
     },
     keyVocabulary: ['La cuenta, por favor', 'Recomendación de la casa', 'Sin gluten', 'Vino tinto'],
     culturalNote: 'Asking "La cuenta, por favor" when ready to leave is customary; waiters in Spain rarely bring the check unsolicited to avoid rushing guests.'
@@ -133,7 +172,8 @@ export const PRESET_SCENARIOS: Scenario[] = [
       name: 'Carmen Delgado',
       role: 'Property Owner',
       avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-      greeting: 'Hola, buenas tardes. Gracias por venir a ver el piso. ¿Tienes alguna pregunta sobre el contrato de arrendamiento?'
+      greeting: 'Hola, buenas tardes. Gracias por venir a ver el piso. ¿Tienes alguna pregunta sobre el contrato de arrendamiento?',
+      elevenLabsVoiceId: 'VR6AewLTigWG4xSOukaG'
     },
     keyVocabulary: ['Contrato de arrendamiento', 'Fianza', 'Gastos incluidos', 'Plazo de alquiler'],
     culturalNote: 'Confirming whether community fees ("gastos de comunidad") are included in the price is essential before signing rental contracts in Spain.'
@@ -148,7 +188,8 @@ export const PRESET_SCENARIOS: Scenario[] = [
       name: 'Alejandro Morales',
       role: 'Airline Desk Agent',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      greeting: 'Buenas tardes, bienvenido al servicio al cliente. ¿En qué le puedo ayudar hoy?'
+      greeting: 'Buenas tardes, bienvenido al servicio al cliente. ¿En qué le puedo ayudar hoy?',
+      elevenLabsVoiceId: 'ErXwobaYiN019PkySvjV'
     },
     keyVocabulary: ['Equipaje perdido', 'Número de vuelo', 'Reclamación', 'Descripción de la maleta'],
     culturalNote: 'Always state your flight number ("número de vuelo") and baggage tag code first to speed up tracking.'
@@ -367,13 +408,47 @@ export class LanguageAIService {
     });
   }
 
+  // Phase 2: Synthesize voice speech via ElevenLabs API or Web Speech API fallback
+  public static async synthesizeElevenLabsAudio(
+    text: string,
+    voiceId: string = 'pNInz6obpgDQGcFmaJgB',
+    apiKey?: string
+  ): Promise<string | null> {
+    if (!apiKey) return null;
+    try {
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+          },
+        }),
+      });
+
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (e) {
+      console.error('ElevenLabs Audio Generation Error:', e);
+      return null;
+    }
+  }
+
   // Simulate real-time AI Tutor reply with micro-coaching analysis
   public static async simulateAITutorTurn(
     scenario: Scenario,
     userMessage: string
-  ): Promise<{ responseText: string; feedback: CoachingFeedback }> {
+  ): Promise<{ responseText: string; feedback: CoachingFeedback; audioUrl?: string }> {
     await new Promise((res) => setTimeout(res, 1200));
 
+    const profile = this.getProfile();
     const lower = userMessage.toLowerCase();
     const hasGrammarMistake = lower.includes('yo ir') || lower.includes('yo tener') || lower.includes('una coche');
 
@@ -419,6 +494,16 @@ export class LanguageAIService {
       });
     }
 
-    return { responseText, feedback };
+    let audioUrl: string | undefined;
+    if (profile.voiceEngine === 'ELEVENLABS_PRO' && profile.elevenLabsApiKey) {
+      const generated = await this.synthesizeElevenLabsAudio(
+        responseText,
+        scenario.tutorPersona.elevenLabsVoiceId || profile.elevenLabsVoiceId,
+        profile.elevenLabsApiKey
+      );
+      if (generated) audioUrl = generated;
+    }
+
+    return { responseText, feedback, audioUrl };
   }
 }

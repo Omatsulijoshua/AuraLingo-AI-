@@ -6,6 +6,10 @@ class LanguageProfile {
   int dailyMinutes;
   int studyStreak;
   bool isOnboarded;
+  // Phase 2 Settings
+  String voiceEngine; // WEB_SPEECH, GEMINI_AUDIO, ELEVENLABS_PRO
+  String regionalAccent; // ES_MADRID, ES_MEXICO, FR_PARIS, etc.
+  String? elevenLabsApiKey;
 
   LanguageProfile({
     required this.nativeLanguage,
@@ -15,6 +19,9 @@ class LanguageProfile {
     required this.dailyMinutes,
     required this.studyStreak,
     required this.isOnboarded,
+    this.voiceEngine = 'WEB_SPEECH',
+    this.regionalAccent = 'ES_MADRID',
+    this.elevenLabsApiKey,
   });
 }
 
@@ -23,12 +30,14 @@ class TutorPersona {
   final String role;
   final String avatarUrl;
   final String greeting;
+  final String? elevenLabsVoiceId;
 
   TutorPersona({
     required this.name,
     required this.role,
     required this.avatarUrl,
     required this.greeting,
+    this.elevenLabsVoiceId,
   });
 }
 
