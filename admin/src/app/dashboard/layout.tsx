@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { api, User } from '@/lib/api';
+import { LanguageAIService, LanguageProfile } from '@/lib/language-ai';
 
 export default function DashboardLayout({
   children,
@@ -14,127 +15,155 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Unattended counts state
-  const [unattendedCounts, setUnattendedCounts] = useState<{
-    unattendedPayouts: number;
-    unattendedSubscriptions: number;
-  }>({ unattendedPayouts: 0, unattendedSubscriptions: 0 });
-
-  const fetchUnattendedCounts = async () => {
-    try {
-      const data = await api.request<{
-        unattendedPayouts: number;
-        unattendedSubscriptions: number;
-      }>('/admin/unattended-counts');
-      setUnattendedCounts(data);
-    } catch (err) {
-      console.error('Failed to fetch unattended counts', err);
-    }
-  };
+  const [profile, setProfile] = useState<LanguageProfile | null>(null);
 
   useEffect(() => {
     const activeUser = api.getUser();
     const token = localStorage.getItem('accessToken');
 
-    if (!token || !activeUser || activeUser.role === 'STUDENT') {
-      api.clearTokens();
-      router.push('/auth/login');
+    const langProf = LanguageAIService.getProfile();
+    setProfile(langProf);
+
+    if (!token || !activeUser) {
+      setUser({
+        id: 'user-demo',
+        email: 'learner@auralingo.ai',
+        name: 'Alex Rivera',
+        role: 'STUDENT',
+        targetExam: 'ACADEMIC',
+        targetBand: 8,
+        studyStreak: langProf.studyStreak || 7,
+        isVerified: true,
+        createdAt: new Date().toISOString()
+      });
+      setLoading(false);
     } else {
       setUser(activeUser);
       setLoading(false);
-      // Fetch counts initially
-      fetchUnattendedCounts();
-      // Poll counts every 15 seconds to keep sidebar badges live!
-      const interval = setInterval(fetchUnattendedCounts, 15000);
-      return () => clearInterval(interval);
     }
-
-    const handleAuthExpired = () => {
-      router.push('/auth/login');
-    };
-
-    window.addEventListener('auth-expired', handleAuthExpired);
-    return () => window.removeEventListener('auth-expired', handleAuthExpired);
-  }, [router]);
+  }, [pathname]);
 
   const handleLogout = () => {
     api.clearTokens();
     router.push('/auth/login');
   };
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-navy flex items-center justify-center text-white">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-gold border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 font-semibold text-sm">Verifying Session...</p>
+          <div className="w-12 h-12 border-4 border-amethyst border-t-transparent rounded-full animate-spin" />
+          <p className="text-purple-300 font-semibold text-sm">Initializing AuraLingo AI...</p>
         </div>
       </div>
     );
   }
 
-  const sidebarLinks = [
-    { name: 'Overview', path: '/dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { name: 'Users', path: '/dashboard/users', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm7-8a4 4 0 110 8m5 10v-2a4 4 0 00-3-3.87m-4-12a4 4 0 010 7.75' },
-    { 
-      name: 'Subscriptions', 
-      path: '/dashboard/subscriptions', 
-      icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
-      badge: unattendedCounts.unattendedSubscriptions > 0 ? unattendedCounts.unattendedSubscriptions : null
+  const navLinks = [
+    {
+      name: 'AI Coach Hub',
+      path: '/dashboard',
+      icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+      badge: 'PRO'
     },
-    { 
-      name: 'Subscriptions History', 
-      path: '/dashboard/subscriptions-history', 
-      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
+    {
+      name: 'Voice & Text Studio',
+      path: '/dashboard/coach',
+      icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z',
+      badge: 'LIVE AI'
     },
-    { 
-      name: 'Payout Requests', 
-      path: '/dashboard/payouts', 
-      icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-      badge: unattendedCounts.unattendedPayouts > 0 ? unattendedCounts.unattendedPayouts : null
+    {
+      name: 'Scenario Simulator',
+      path: '/dashboard/scenarios',
+      icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
     },
-    { name: 'AI Settings', path: '/dashboard/settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' },
-    { name: 'Questions Builder', path: '/dashboard/questions', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-    { name: 'Mock Exam Builder', path: '/dashboard/mock-exams', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    { name: 'Tutor Reviews', path: '/dashboard/reviews', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
-    { name: 'Send Broadcasts', path: '/dashboard/broadcasts', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
-    { name: 'Support Tickets', path: '/dashboard/tickets', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+    {
+      name: 'Mistake Bank (Memory)',
+      path: '/dashboard/mistakes',
+      icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+      badge: 'MEMORY'
+    },
+    {
+      name: 'Dynamic Exercise Drills',
+      path: '/dashboard/exercises',
+      icon: 'M13 10V3L4 14h7v7l9-11h-7z',
+    },
+    {
+      name: 'Adaptive Curriculum',
+      path: '/dashboard/curriculum',
+      icon: 'M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7',
+    },
+    {
+      name: 'AI & Language Settings',
+      path: '/dashboard/settings',
+      icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-navy flex">
+    <div className="min-h-screen bg-navy flex font-sans text-purple-50">
       {/* Sidebar */}
-      <aside className="w-64 bg-primary border-r border-primary-light/40 flex flex-col justify-between z-20">
+      <aside className="w-72 bg-primary border-r border-primary-light/60 flex flex-col justify-between z-20 shrink-0 shadow-2xl">
         <div>
-          {/* Sidebar Header */}
-          <div className="h-16 border-b border-primary-light/40 flex items-center px-6 gap-2">
-            <span className="text-gold font-extrabold text-xl tracking-wider">BandUp</span>
-            <span className="text-white font-semibold text-sm border border-slate-600 px-1.5 py-0.5 rounded uppercase">Admin</span>
+          {/* Logo & Brand Header */}
+          <div className="h-20 border-b border-primary-light/60 flex items-center px-6 justify-between">
+            <Link href="/dashboard" className="flex items-center gap-3">
+              <img
+                src="/logo.jpg"
+                alt="AuraLingo AI Logo"
+                className="w-10 h-10 rounded-xl object-cover border-2 border-amethyst shadow-lg shadow-amethyst/30"
+              />
+              <div>
+                <span className="text-white font-black text-lg tracking-wider block">AuraLingo</span>
+                <span className="text-coral font-bold text-[10px] uppercase tracking-widest block">AI Personal Coach</span>
+              </div>
+            </Link>
           </div>
 
+          {/* User Active Target Language Badge */}
+          {profile && (
+            <div className="mx-4 my-4 p-3 rounded-xl bg-gradient-to-r from-primary-light/80 to-primary border border-amethyst/40 flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🇪🇸</span>
+                <div>
+                  <p className="text-xs font-bold text-white">{profile.targetLanguage}</p>
+                  <p className="text-[10px] text-amethyst-light font-semibold">{profile.cefrLevel} Level · Native {profile.nativeLanguage}</p>
+                </div>
+              </div>
+              <Link
+                href="/onboarding"
+                className="text-[10px] font-black bg-amethyst/20 hover:bg-amethyst/40 text-amethyst-light px-2.5 py-1 rounded border border-amethyst/30 transition-all"
+              >
+                Change
+              </Link>
+            </div>
+          )}
+
           {/* Navigation Links */}
-          <nav className="p-4 space-y-1">
-            {sidebarLinks.map((link) => {
+          <nav className="px-3 space-y-1.5">
+            <div className="px-3 text-[10px] font-black text-purple-400/60 uppercase tracking-widest mb-1">
+              AI Coach Core
+            </div>
+            {navLinks.map((link) => {
               const isActive = pathname === link.path;
               return (
                 <Link
                   key={link.path}
                   href={link.path}
-                  className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl text-xs font-bold transition-all duration-200 ${
                     isActive
-                      ? 'bg-gold text-primary shadow-lg shadow-gold/15'
-                      : 'text-slate-400 hover:bg-primary-light/30 hover:text-white'
+                      ? 'bg-gradient-to-r from-amethyst to-purple-600 text-white shadow-lg shadow-amethyst/30 scale-102 font-black'
+                      : 'text-purple-200/80 hover:bg-primary-light/50 hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={link.icon} />
                     </svg>
                     <span>{link.name}</span>
                   </div>
-                  {link.badge !== undefined && link.badge !== null && (
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${isActive ? 'bg-primary text-gold' : 'bg-red-500 text-white animate-pulse'}`}>
+                  {link.badge && (
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isActive ? 'bg-navy text-coral' : 'bg-coral/20 text-coral border border-coral/30'}`}>
                       {link.badge}
                     </span>
                   )}
@@ -144,94 +173,66 @@ export default function DashboardLayout({
           </nav>
         </div>
 
-        {/* User Info / Logout */}
-        <div className="p-4 border-t border-primary-light/40 space-y-4">
-          <div className="px-4">
-            <p className="text-white text-sm font-bold truncate">{user.name}</p>
-            <p className="text-slate-500 text-xs truncate capitalize">{user.role.toLowerCase()}</p>
+        {/* User Info & Streak Footer */}
+        <div className="p-4 border-t border-primary-light/60 space-y-3">
+          <div className="flex items-center justify-between bg-primary-light/40 p-3 rounded-xl border border-purple-900/40">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🔥</span>
+              <div>
+                <p className="text-xs font-extrabold text-white">{profile?.studyStreak || 7} Day Streak</p>
+                <p className="text-[10px] text-purple-300/70">Daily Target: {profile?.dailyMinutes || 20}m</p>
+              </div>
+            </div>
+            <span className="text-[10px] font-black text-emerald bg-emerald/10 border border-emerald/20 px-2 py-0.5 rounded-full">
+              ACTIVE
+            </span>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-sm font-semibold transition-colors duration-200 cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Sign Out
-          </button>
+
+          <div className="flex items-center justify-between px-2">
+            <div className="min-w-0">
+              <p className="text-white text-xs font-bold truncate">{user?.name || 'Alex Rivera'}</p>
+              <p className="text-purple-300/60 text-[10px] truncate">{user?.email || 'learner@auralingo.ai'}</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              title="Sign Out"
+              className="p-2 rounded-lg border border-coral/30 bg-coral/10 hover:bg-coral/20 text-coral transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-16 border-b border-primary-light/40 bg-primary/40 backdrop-blur-md flex items-center justify-between px-8 z-10">
-          <h2 className="text-white font-bold text-lg">
-            {pathname === '/dashboard' && 'Dashboard Overview'}
-            {pathname === '/dashboard/users' && 'User Management'}
-            {pathname === '/dashboard/subscriptions' && 'Subscription & Referral Configuration'}
-            {pathname === '/dashboard/payouts' && 'Referral Payouts Management'}
-            {pathname === '/dashboard/settings' && 'AI Configuration Settings'}
-            {pathname === '/dashboard/questions' && 'Questions Builder'}
-            {pathname === '/dashboard/mock-exams' && 'Mock Exam Builder'}
-            {pathname === '/dashboard/reviews' && 'Tutor Submissions Review'}
-            {pathname === '/dashboard/broadcasts' && 'Broadcast Notifications'}
-            {pathname === '/dashboard/tickets' && 'Support Tickets'}
-          </h2>
-          <div className="flex items-center gap-4">
-            <span className="flex h-2.5 w-2.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald"></span>
-            </span>
-            <span className="text-slate-400 text-xs font-semibold uppercase tracking-widest">Active Session</span>
+        {/* Top Bar Header */}
+        <header className="h-16 border-b border-primary-light/60 bg-primary/80 backdrop-blur-md flex items-center justify-between px-8 z-10">
+          <div className="flex items-center gap-3">
+            <h2 className="text-white font-extrabold text-base">
+              {pathname === '/dashboard' && 'AI Personal Coach Hub'}
+              {pathname === '/dashboard/coach' && 'Live AI Voice & Text Studio'}
+              {pathname === '/dashboard/scenarios' && 'Real-World Scenario Simulator'}
+              {pathname === '/dashboard/mistakes' && 'Persistent Error Memory & Mistake Bank'}
+              {pathname === '/dashboard/exercises' && 'Dynamic Real-Time Exercise Drills'}
+              {pathname === '/dashboard/curriculum' && 'Personalized Adaptive Curriculum'}
+              {pathname === '/dashboard/settings' && 'AI Multi-Provider & Model Settings'}
+            </h2>
+          </div>
 
-            <button
-              onClick={handleLogout}
-              className="ml-2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-xs font-semibold transition-colors duration-200 cursor-pointer"
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/coach"
+              className="bg-gradient-to-r from-amethyst to-coral hover:from-coral hover:to-amethyst text-white font-black px-4 py-2 rounded-xl text-xs shadow-md shadow-amethyst/30 flex items-center gap-2 transition-all hover:scale-105"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Sign Out
-            </button>
+              <span>🎙️ Start Live Voice Session</span>
+            </Link>
           </div>
         </header>
 
-        {/* Unattended Items Notification Bar */}
-        {(unattendedCounts.unattendedPayouts > 0 || unattendedCounts.unattendedSubscriptions > 0) && (
-          <div className="bg-gradient-to-r from-amber-500/10 to-gold/15 border-b border-gold/30 px-8 py-3 flex items-center justify-between text-xs md:text-sm shadow-md animate-pulse">
-            <div className="flex items-center gap-2 text-gold font-bold">
-              <span>🔔</span>
-              <span>
-                Attention: You have{' '}
-                {unattendedCounts.unattendedPayouts > 0 && (
-                  <span>
-                    <Link href="/dashboard/payouts" className="underline hover:text-white">
-                      {unattendedCounts.unattendedPayouts} pending payouts
-                    </Link>
-                  </span>
-                )}
-                {unattendedCounts.unattendedPayouts > 0 && unattendedCounts.unattendedSubscriptions > 0 && ' and '}
-                {unattendedCounts.unattendedSubscriptions > 0 && (
-                  <span>
-                    <Link href="/dashboard/subscriptions" className="underline hover:text-white">
-                      {unattendedCounts.unattendedSubscriptions} student bank receipts
-                    </Link>
-                  </span>
-                )}
-                {' '}to attend to.
-              </span>
-            </div>
-            <Link
-              href={unattendedCounts.unattendedPayouts > 0 ? '/dashboard/payouts' : '/dashboard/subscriptions'}
-              className="bg-gold hover:bg-gold-dark text-primary font-black px-3.5 py-1 rounded text-[10px] uppercase tracking-wider transition-all"
-            >
-              Resolve Now
-            </Link>
-          </div>
-        )}
-
-        {/* Content View */}
+        {/* Dynamic Page View */}
         <main className="flex-1 p-8 overflow-y-auto">
           {children}
         </main>

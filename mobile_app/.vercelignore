@@ -1,7 +1,0 @@
-# Ignore everything
-*
-
-# Allow build/web
-!build
-!build/web
-!build/web/**

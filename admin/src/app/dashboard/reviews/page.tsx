@@ -1,260 +1,185 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import React, { useState } from 'react';
 
-interface SubmissionItem {
+interface AudioReviewSession {
   id: string;
-  userId: string;
-  user: { name: string; email: string };
-  prompt: { title: string; promptText: string; taskType?: string; topic?: string };
-  userText?: string;
-  transcription?: string;
-  audioUrl?: string;
-  bandScoreEstimate: number;
-  feedbackJson: any;
+  learnerName: string;
+  learnerEmail: string;
+  scenarioTitle: string;
+  targetLanguage: string;
+  cefrLevel: string;
+  phoneticScore: number;
+  transcriptSample: string;
+  aiFeedbackText: string;
   createdAt: string;
 }
 
-export default function TutorReviews() {
-  const [writing, setWriting] = useState<SubmissionItem[]>([]);
-  const [speaking, setSpeaking] = useState<SubmissionItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Selected for review
-  const [selectedSub, setSelectedSub] = useState<SubmissionItem | null>(null);
-  const [selectedType, setSelectedType] = useState<'WRITING' | 'SPEAKING' | null>(null);
-
-  // Grading form
-  const [tutorScore, setTutorScore] = useState(7.0);
-  const [tutorComment, setTutorComment] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const fetchPending = async () => {
-    try {
-      const data = await api.request('/content/tutor/pending');
-      setWriting(data.writing || []);
-      setSpeaking(data.speaking || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch tutor tasks');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPending();
-  }, []);
-
-  const handleOpenReview = (sub: SubmissionItem, type: 'WRITING' | 'SPEAKING') => {
-    setSelectedSub(sub);
-    setSelectedType(type);
-    setTutorScore(sub.bandScoreEstimate || 7.0);
-    setTutorComment('');
-  };
-
-  const handleCloseReview = () => {
-    setSelectedSub(null);
-    setSelectedType(null);
-  };
-
-  const handleSubmitGrade = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSub || !selectedType) return;
-    setSubmitting(true);
-
-    try {
-      await api.request(`/content/tutor/grade/${selectedSub.id}`, {
-        method: 'POST',
-        body: JSON.stringify({
-          bandScore: Number(tutorScore),
-          feedbackText: tutorComment,
-          submissionType: selectedType,
-        }),
-      });
-
-      alert('Tutor feedback submitted successfully!');
-      handleCloseReview();
-      await fetchPending();
-    } catch (err: any) {
-      alert(err.message || 'Failed to submit grade override');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+const PENDING_VOICE_SESSIONS: AudioReviewSession[] = [
+  {
+    id: 'rev-1',
+    learnerName: 'Alex Rivera',
+    learnerEmail: 'alex@auralingo.ai',
+    scenarioTitle: 'Tech Job Interview Simulation',
+    targetLanguage: 'Spanish 🇪🇸',
+    cefrLevel: 'B2',
+    phoneticScore: 88,
+    transcriptSample: 'Yo fui a la entrevista de trabajo ayer y tener mucho entusiasmo.',
+    aiFeedbackText: 'Good past tense usage of "fui". Note: change infinitive "tener" to "tenía" for continuous state.',
+    createdAt: '10 mins ago'
+  },
+  {
+    id: 'rev-2',
+    learnerName: 'Sofia Chen',
+    learnerEmail: 'sofia.c@gmail.com',
+    scenarioTitle: 'Tapas Bar Order & Small Talk',
+    targetLanguage: 'Spanish 🇪🇸',
+    cefrLevel: 'A2',
+    phoneticScore: 92,
+    transcriptSample: 'Quisiera dos tapas de jamón ibérico y una copa de vino tinto, por favor.',
+    aiFeedbackText: 'Excellent polite phrasing using conditional "quisiera". Native pronunciation accent.',
+    createdAt: '25 mins ago'
   }
+];
+
+export default function AuraLingoTutorReviews() {
+  const [reviews, setReviews] = useState<AudioReviewSession[]>(PENDING_VOICE_SESSIONS);
+  const [selectedReview, setSelectedReview] = useState<AudioReviewSession | null>(null);
+  const [coachNote, setCoachNote] = useState('');
+  const [scoreOverride, setScoreOverride] = useState(90);
+
+  const handleApprove = (id: string) => {
+    setReviews(reviews.filter(r => r.id !== id));
+    setSelectedReview(null);
+    setCoachNote('');
+  };
 
   return (
-    <div className="space-y-8 max-w-5xl">
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center">
-          {error}
+    <div className="space-y-6 text-purple-50">
+      {/* Header */}
+      <div className="bg-primary/80 border border-primary-light/60 rounded-3xl p-6 shadow-2xl backdrop-blur-md">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-black bg-coral/10 text-coral border border-coral/30 px-3 py-1 rounded-full uppercase tracking-wider">
+            AuraLingo AI Quality Control
+          </span>
         </div>
-      )}
-
-      {/* Grid listing submissions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* Writing Submissions list */}
-        <div className="bg-primary/20 border border-primary-light/40 rounded-xl p-6 shadow-xl space-y-4">
-          <h3 className="text-white font-bold text-base border-b border-primary-light/20 pb-3">
-            Pending Writing Submissions ({writing.length})
-          </h3>
-          {writing.length === 0 ? (
-            <p className="text-slate-500 text-xs py-12 text-center">No writing submissions pending tutor review.</p>
-          ) : (
-            <div className="space-y-3 max-h-[500px] overflow-y-auto">
-              {writing.map((sub) => (
-                <div key={sub.id} className="p-4 bg-navy/40 border border-primary-light/30 rounded-lg flex justify-between items-center hover:border-gold transition-colors">
-                  <div>
-                    <p className="text-white font-bold text-sm">{sub.user.name}</p>
-                    <p className="text-slate-400 text-xs mt-0.5">{sub.prompt.title} (Est. Band {sub.bandScoreEstimate})</p>
-                  </div>
-                  <button
-                    onClick={() => handleOpenReview(sub, 'WRITING')}
-                    className="bg-gold hover:bg-gold-dark text-primary font-bold px-3 py-1.5 rounded text-xs transition-colors cursor-pointer"
-                  >
-                    Grade
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Speaking Submissions list */}
-        <div className="bg-primary/20 border border-primary-light/40 rounded-xl p-6 shadow-xl space-y-4">
-          <h3 className="text-white font-bold text-base border-b border-primary-light/20 pb-3">
-            Pending Speaking Submissions ({speaking.length})
-          </h3>
-          {speaking.length === 0 ? (
-            <p className="text-slate-500 text-xs py-12 text-center">No speaking submissions pending tutor review.</p>
-          ) : (
-            <div className="space-y-3 max-h-[500px] overflow-y-auto">
-              {speaking.map((sub) => (
-                <div key={sub.id} className="p-4 bg-navy/40 border border-primary-light/30 rounded-lg flex justify-between items-center hover:border-gold transition-colors">
-                  <div>
-                    <p className="text-white font-bold text-sm">{sub.user.name}</p>
-                    <p className="text-slate-400 text-xs mt-0.5">{sub.prompt.topic} (Est. Band {sub.bandScoreEstimate})</p>
-                  </div>
-                  <button
-                    onClick={() => handleOpenReview(sub, 'SPEAKING')}
-                    className="bg-gold hover:bg-gold-dark text-primary font-bold px-3 py-1.5 rounded text-xs transition-colors cursor-pointer"
-                  >
-                    Grade
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
+        <h1 className="text-2xl font-black text-white">Live Voice Session Reviews & Human Coach Audit</h1>
+        <p className="text-purple-300/70 text-xs mt-1">Review AI phonetic scores, transcript corrections, and human coach note overrides.</p>
       </div>
 
-      {/* Review Modal Form overlay */}
-      {selectedSub && selectedType && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-primary border border-primary-light/40 rounded-2xl max-w-2xl w-full p-8 shadow-2xl relative space-y-6">
-            <button
-              onClick={handleCloseReview}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-
-            <div className="border-b border-primary-light/20 pb-4">
-              <span className="bg-gold/15 text-gold text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase border border-gold/30">
-                {selectedType} Review
-              </span>
-              <h3 className="text-white text-xl font-bold mt-2">Grading Submission for {selectedSub.user.name}</h3>
-            </div>
-
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-              {/* Prompt Text */}
-              <div className="bg-navy/40 p-4 rounded-lg border border-primary-light/20">
-                <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Prompt</p>
-                <p className="text-white text-xs font-semibold">{selectedSub.prompt.promptText || selectedSub.prompt.topic}</p>
-              </div>
-
-              {/* Student Response */}
-              <div className="bg-navy/40 p-4 rounded-lg border border-primary-light/20">
-                <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Student Answer</p>
-                <p className="text-slate-200 text-xs whitespace-pre-wrap leading-relaxed">
-                  {selectedSub.userText || selectedSub.transcription}
-                </p>
-              </div>
-
-              {/* AI Estimate */}
-              <div className="bg-navy/40 p-4 rounded-lg border border-primary-light/20 flex justify-between items-center">
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {reviews.map((rev) => (
+          <div
+            key={rev.id}
+            className="bg-primary/80 border border-primary-light/60 hover:border-amethyst/60 p-6 rounded-2xl space-y-4 shadow-xl transition-all flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">AI Estimate Score</p>
-                  <p className="text-white text-xs mt-1">Overall Band Score</p>
+                  <h3 className="font-extrabold text-white text-base">{rev.learnerName}</h3>
+                  <p className="text-purple-300/60 text-xs">{rev.learnerEmail}</p>
                 </div>
-                <div className="text-right">
-                  <span className="bg-emerald/10 border border-emerald/30 text-emerald font-black text-xl px-4 py-2 rounded-lg">
-                    {selectedSub.bandScoreEstimate || '6.5'}
-                  </span>
-                </div>
+                <span className="text-xs font-bold text-coral bg-coral/10 border border-coral/30 px-2.5 py-0.5 rounded-full">
+                  {rev.targetLanguage} ({rev.cefrLevel})
+                </span>
+              </div>
+
+              <div className="bg-navy/80 p-3.5 rounded-xl border border-purple-900/60 space-y-1">
+                <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider block">Scenario</span>
+                <p className="text-xs font-bold text-white">{rev.scenarioTitle}</p>
+                <p className="text-xs text-purple-200/80 italic mt-1 font-serif">"{rev.transcriptSample}"</p>
+              </div>
+
+              <div className="flex items-center justify-between text-xs bg-emerald/10 p-3 rounded-xl border border-emerald/20">
+                <span className="text-purple-200 font-semibold">AI Phonetic Accuracy</span>
+                <span className="font-black text-emerald text-sm">{rev.phoneticScore}%</span>
               </div>
             </div>
 
-            {/* Grading Form */}
-            <form onSubmit={handleSubmitGrade} className="space-y-4 pt-4 border-t border-primary-light/20">
-              <div className="grid grid-cols-3 gap-4 items-center">
-                <label className="block text-slate-300 text-xs font-bold uppercase tracking-wider col-span-2">
-                  Tutor Final Band Score
-                </label>
+            <div className="pt-4 border-t border-purple-900/60 flex items-center justify-between">
+              <span className="text-[10px] text-purple-400">{rev.createdAt}</span>
+              <button
+                onClick={() => {
+                  setSelectedReview(rev);
+                  setScoreOverride(rev.phoneticScore);
+                }}
+                className="bg-gradient-to-r from-amethyst to-purple-600 hover:from-purple-600 hover:to-amethyst text-white font-black px-4 py-2 rounded-xl text-xs shadow-md shadow-amethyst/20 cursor-pointer"
+              >
+                Audit Session →
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Review Modal */}
+      {selectedReview && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-primary border border-primary-light/60 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-xs font-black text-coral uppercase tracking-wider">Coach Audit</span>
+                <h3 className="text-xl font-black text-white">{selectedReview.learnerName}</h3>
+                <p className="text-xs text-purple-300/70">{selectedReview.scenarioTitle}</p>
+              </div>
+              <button
+                onClick={() => setSelectedReview(null)}
+                className="text-purple-400 hover:text-white font-bold text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="bg-navy/80 p-4 rounded-2xl border border-purple-900/60 space-y-1">
+                <span className="text-[10px] font-black text-purple-400 uppercase">Spoken Audio Transcript</span>
+                <p className="text-white font-medium italic">"{selectedReview.transcriptSample}"</p>
+              </div>
+
+              <div className="bg-navy/80 p-4 rounded-2xl border border-purple-900/60 space-y-1">
+                <span className="text-[10px] font-black text-coral uppercase">AI Automated Feedback</span>
+                <p className="text-purple-200">{selectedReview.aiFeedbackText}</p>
+              </div>
+
+              <div>
+                <label className="block text-purple-200 font-bold mb-1">Human Coach Phonetic Score Override (%)</label>
                 <input
                   type="number"
-                  step="0.5"
-                  min="0.0"
-                  max="9.0"
-                  required
-                  value={tutorScore}
-                  onChange={(e) => setTutorScore(Number(e.target.value))}
-                  className="bg-navy border border-primary-light focus:border-gold rounded-lg px-3 py-2 text-white text-sm focus:outline-none text-center font-bold"
+                  min="0"
+                  max="100"
+                  value={scoreOverride}
+                  onChange={(e) => setScoreOverride(parseInt(e.target.value) || 0)}
+                  className="w-full bg-navy/80 border border-purple-900/60 focus:border-amethyst rounded-xl px-4 py-2 text-white font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-300 text-xs font-bold uppercase tracking-wider mb-2">
-                  Tutor Detailed Comments & Advice
-                </label>
+                <label className="block text-purple-200 font-bold mb-1">Human Coach Personal Advice Note</label>
                 <textarea
-                  required
-                  rows={4}
-                  placeholder="Provide guidance, point out specific errors, and give advice to reach the target band..."
-                  value={tutorComment}
-                  onChange={(e) => setTutorComment(e.target.value)}
-                  className="w-full bg-navy border border-primary-light focus:border-gold rounded-lg p-3 text-white text-xs focus:outline-none leading-relaxed"
+                  rows={3}
+                  value={coachNote}
+                  onChange={(e) => setCoachNote(e.target.value)}
+                  placeholder="Add personalized encouraging tip for the learner..."
+                  className="w-full bg-navy/80 border border-purple-900/60 focus:border-amethyst rounded-xl p-3 text-white placeholder-purple-400/50 focus:outline-none"
                 />
               </div>
+            </div>
 
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleCloseReview}
-                  className="flex-1 border border-primary-light hover:border-red-500/40 text-slate-300 hover:text-red-400 font-bold py-3 rounded-lg text-xs transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 bg-gold hover:bg-gold-dark text-primary font-bold py-3 rounded-lg text-xs transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {submitting ? 'Submitting Override...' : 'Submit Override Grade'}
-                </button>
-              </div>
-            </form>
+            <div className="flex gap-2 justify-end pt-4 border-t border-purple-900/60">
+              <button
+                onClick={() => setSelectedReview(null)}
+                className="bg-primary-light/40 text-purple-300 font-bold px-4 py-2 rounded-xl text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleApprove(selectedReview.id)}
+                className="bg-gradient-to-r from-amethyst to-coral text-white font-black px-5 py-2 rounded-xl text-xs shadow-lg shadow-amethyst/30"
+              >
+                Approve & Send Feedback ✓
+              </button>
+            </div>
           </div>
         </div>
       )}

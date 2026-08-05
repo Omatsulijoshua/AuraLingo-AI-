@@ -1,11 +1,11 @@
 {
-    "name": "BandUp IELTS",
-    "short_name": "BandUp IELTS",
+    "name": "mobile_app",
+    "short_name": "mobile_app",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#050E1A",
-    "theme_color": "#0B1E36",
-    "description": "BandUp IELTS - Practice Smarter. Improve Faster.",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -23,241 +23,162 @@ interface UserItem {
   subscriptions: Array<{ plan: { id: string; name: string; code: string } }>;
 }
 
-export default function UserManagement() {
-  const [users, setUsers] = useState<UserItem[]>([]);
-  const [plans, setPlans] = useState<PlanItem[]>([]);
+const MOCK_AURALINGO_STUDENTS: UserItem[] = [
+  {
+    id: 'usr-1',
+    name: 'Alex Rivera',
+    email: 'alex@auralingo.ai',
+    role: 'STUDENT',
+    targetExam: 'ACADEMIC',
+    targetBand: 8,
+    studyStreak: 7,
+    isVerified: true,
+    createdAt: '2026-08-01T10:00:00Z',
+    subscriptions: [{ plan: { id: 'p-pro', name: 'AuraLingo Pro AI Unlimited', code: 'PRO_MONTHLY' } }]
+  },
+  {
+    id: 'usr-2',
+    name: 'Sofia Chen',
+    email: 'sofia.c@gmail.com',
+    role: 'STUDENT',
+    targetExam: 'GENERAL',
+    targetBand: 7,
+    studyStreak: 14,
+    isVerified: true,
+    createdAt: '2026-07-28T14:20:00Z',
+    subscriptions: [{ plan: { id: 'p-pro', name: 'AuraLingo Pro AI Unlimited', code: 'PRO_MONTHLY' } }]
+  },
+  {
+    id: 'usr-3',
+    name: 'Mateo Rossi',
+    email: 'mateo@rossi.it',
+    role: 'STUDENT',
+    targetExam: 'ACADEMIC',
+    targetBand: 8,
+    studyStreak: 3,
+    isVerified: false,
+    createdAt: '2026-08-04T09:15:00Z',
+    subscriptions: []
+  }
+];
+
+export default function AuraLingoUserManagement() {
+  const [users, setUsers] = useState<UserItem[]>(MOCK_AURALINGO_STUDENTS);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const query = [];
-      if (search) query.push(`search=${encodeURIComponent(search)}`);
-      if (roleFilter) query.push(`role=${encodeURIComponent(roleFilter)}`);
-      const queryString = query.length ? `?${query.join('&')}` : '';
-
-      const data = await api.request<UserItem[]>(`/admin/users${queryString}`);
-      setUsers(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch users');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPlans = async () => {
-    try {
-      const data = await api.request<PlanItem[]>('/subscriptions/plans');
-      setPlans(data);
-    } catch (err) {
-      console.error('Failed to fetch subscription plans', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-    fetchPlans();
-  }, [roleFilter]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchUsers();
-  };
-
-  const toggleVerification = async (userId: string, currentStatus: boolean) => {
+  const toggleVerification = (userId: string, currentStatus: boolean) => {
     setUpdatingId(userId);
-    try {
-      await api.request(`/admin/users/${userId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ isVerified: !currentStatus }),
-      });
-      // Refresh list
-      await fetchUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to update user verification');
-    } finally {
-      setUpdatingId(null);
-    }
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerified: !currentStatus } : u));
+    setTimeout(() => setUpdatingId(null), 300);
   };
 
-  const changeRole = async (userId: string, newRole: string) => {
-    setUpdatingId(userId);
-    try {
-      await api.request(`/admin/users/${userId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ role: newRole }),
-      });
-      await fetchUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to update user role');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
-
-  const handleActivatePlan = async (studentId: string, planId: string) => {
-    if (!planId) return;
-    setUpdatingId(studentId);
-    try {
-      await api.request('/subscriptions/manual-activate', {
-        method: 'POST',
-        body: JSON.stringify({ studentId, planId, note: 'Activated by Admin' }),
-      });
-      alert('Subscription plan updated successfully!');
-      await fetchUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to update subscription plan');
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+  const filteredUsers = users.filter(u => {
+    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter ? u.role === roleFilter : true;
+    return matchSearch && matchRole;
+  });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-purple-50">
       {/* Search & Filter Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-primary/20 p-5 rounded-xl border border-primary-light/40 backdrop-blur-sm shadow-xl">
-        <form onSubmit={handleSearchSubmit} className="flex-1 max-w-md flex gap-2">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-primary/80 p-5 rounded-2xl border border-primary-light/60 backdrop-blur-md shadow-xl">
+        <div className="flex-1 max-w-md flex gap-2">
           <input
             type="text"
-            placeholder="Search students by name or email..."
+            placeholder="Search AuraLingo learners by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none transition-colors duration-200 text-sm"
+            className="flex-1 bg-navy/80 border border-purple-900/60 focus:border-amethyst rounded-xl px-4 py-2.5 text-white placeholder-purple-400/50 focus:outline-none transition-all text-sm"
           />
-          <button
-            type="submit"
-            className="bg-gold hover:bg-gold-dark text-primary px-4 py-2 rounded-lg font-bold text-sm transition-colors duration-200 cursor-pointer"
-          >
-            Search
-          </button>
-        </form>
+        </div>
 
         <div className="flex gap-2">
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-navy/60 border border-primary-light/60 focus:border-gold rounded-lg px-4 py-2.5 text-white focus:outline-none text-sm transition-colors duration-200"
+            className="bg-navy/80 border border-purple-900/60 focus:border-amethyst rounded-xl px-4 py-2.5 text-white focus:outline-none text-sm transition-all"
           >
-            <option value="">All Roles</option>
-            <option value="STUDENT">Student</option>
-            <option value="TUTOR">Examiner / Tutor</option>
-            <option value="ADMIN">Admin</option>
+            <option value="">All Learner Roles</option>
+            <option value="STUDENT">Active Student</option>
+            <option value="TUTOR">Human Coach / Examiner</option>
+            <option value="ADMIN">Platform Admin</option>
           </select>
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center">
-          {error}
-        </div>
-      )}
-
       {/* Users Table */}
-      <div className="bg-primary/20 border border-primary-light/40 rounded-xl overflow-hidden shadow-xl backdrop-blur-sm">
-        {loading ? (
-          <div className="py-24 w-full flex items-center justify-center">
-            <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : users.length === 0 ? (
-          <p className="text-slate-500 text-sm text-center py-24">No users found matching search criteria.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="text-xs uppercase text-slate-400 bg-primary/40 border-b border-primary-light/40 font-bold">
-                <tr>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Role</th>
-                  <th className="px-6 py-4">Target Exam / Band</th>
-                  <th className="px-6 py-4">Active Subscription (Privilege)</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-primary-light/20">
-                {users.map((user) => {
-                  const currentSub = user.subscriptions[0];
-                  return (
-                    <tr key={user.id} className="hover:bg-primary-light/10 transition-colors duration-200">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-white font-bold">{user.name}</p>
-                          <p className="text-slate-500 text-xs mt-0.5">{user.email}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <select
-                          disabled={updatingId === user.id || user.role === 'SUPER_ADMIN'}
-                          value={user.role}
-                          onChange={(e) => changeRole(user.id, e.target.value)}
-                          className="bg-navy/80 border border-primary-light/40 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-gold"
-                        >
-                          <option value="STUDENT">Student</option>
-                          <option value="TUTOR">Tutor / Examiner</option>
-                          <option value="ADMIN">Admin</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4">
-                        {user.role === 'STUDENT' ? (
-                          <div>
-                            <span className="bg-primary-light/40 text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
-                              {user.targetExam.replace('_', ' ')}
-                            </span>
-                            <span className="text-gold font-bold text-xs ml-2">Band {user.targetBand}</span>
-                          </div>
-                        ) : (
-                          <span className="text-slate-500 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        {user.role === 'STUDENT' ? (
-                          <select
-                            disabled={updatingId === user.id}
-                            value={currentSub?.plan.id || ''}
-                            onChange={(e) => handleActivatePlan(user.id, e.target.value)}
-                            className="bg-navy/80 border border-primary-light/40 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-gold"
-                          >
-                            <option value="">No Active Plan</option>
-                            {plans.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} ({p.code})
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="text-slate-500 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                          user.isVerified ? 'bg-emerald/10 text-emerald' : 'bg-red-500/10 text-red-400'
-                        }`}>
-                          {user.isVerified ? 'Verified' : 'Pending'}
+      <div className="bg-primary/80 border border-primary-light/60 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-purple-200">
+            <thead className="text-xs uppercase text-purple-300/70 bg-navy/80 border-b border-primary-light/60 font-black">
+              <tr>
+                <th className="px-6 py-4">Learner Profile</th>
+                <th className="px-6 py-4">Role</th>
+                <th className="px-6 py-4">Target Language & CEFR</th>
+                <th className="px-6 py-4">Active AI Subscription</th>
+                <th className="px-6 py-4">Verification</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-purple-900/40">
+              {filteredUsers.map((user) => {
+                const currentSub = user.subscriptions[0];
+                return (
+                  <tr key={user.id} className="hover:bg-primary-light/30 transition-all duration-200">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-white font-bold text-sm">{user.name}</p>
+                        <p className="text-purple-300/60 text-xs mt-0.5">{user.email}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="bg-amethyst/20 text-amethyst-light border border-amethyst/30 text-[10px] font-black px-2.5 py-1 rounded-full uppercase">
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🇪🇸</span>
+                        <span className="text-xs font-bold text-white">Spanish (B2)</span>
+                        <span className="text-[10px] text-coral font-black bg-coral/10 px-2 py-0.5 rounded border border-coral/20">
+                          🔥 {user.studyStreak}d Streak
                         </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          disabled={updatingId === user.id || user.role === 'SUPER_ADMIN'}
-                          onClick={() => toggleVerification(user.id, user.isVerified)}
-                          className={`text-xs font-bold px-3 py-1.5 rounded transition-all duration-200 cursor-pointer ${
-                            user.isVerified
-                              ? 'border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400'
-                              : 'border border-emerald/20 bg-emerald/5 hover:bg-emerald/10 text-emerald'
-                          } disabled:opacity-50`}
-                        >
-                          {user.isVerified ? 'Revoke Verify' : 'Verify'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-xs font-bold text-emerald bg-emerald/10 border border-emerald/20 px-2.5 py-1 rounded-full">
+                        {currentSub?.plan.name || 'AuraLingo Pro AI'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase border ${
+                        user.isVerified ? 'bg-emerald/10 text-emerald border-emerald/30' : 'bg-red-500/10 text-red-400 border-red-500/30'
+                      }`}>
+                        {user.isVerified ? 'Verified Learner' : 'Pending Verification'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        disabled={updatingId === user.id}
+                        onClick={() => toggleVerification(user.id, user.isVerified)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer ${
+                          user.isVerified
+                            ? 'border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300'
+                            : 'border border-emerald/30 bg-emerald/10 hover:bg-emerald/20 text-emerald'
+                        }`}
+                      >
+                        {user.isVerified ? 'Revoke Access' : 'Verify Learner'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
